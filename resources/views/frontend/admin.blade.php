@@ -27,9 +27,13 @@
                 <tbody>
                     @forelse($users as $user)
                     @php
-                    $rowClass = ($user->email_verified === 0 || $user->phone_verified === 0) 
-    ? '' 
-    : 'table-danger';
+                    if ($user->email_verified === 0 || $user->phone_verified === 0) {
+                        // যদি যেকোনো একটা 0 হয় → normal
+                        $rowClass = '';
+                    } else {
+                        // অন্য যেকোনো মান (1,2,3,null, ইত্যাদি) → red
+                        $rowClass = 'table-danger';
+                    }
 
                     @endphp
                     <tr class="{{ $rowClass }}">
