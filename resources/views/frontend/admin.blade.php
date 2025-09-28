@@ -27,7 +27,7 @@
                 <tbody>
                     @forelse($users as $user)
                     @php
-                    if ($user->email_verified == 0 || $user->phone_verified == 0) {
+                    if ($user->email_verified === 0 || $user->phone_verified === 0) {
                         // যদি যেকোনো একটা 0 হয় → normal
                         $rowClass = '';
                     } else {
