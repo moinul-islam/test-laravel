@@ -9,12 +9,108 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use App\Models\User;  // ⬅️ এই line টা add করো
 use App\Models\Country;
 use App\Models\City;
 use App\Models\Category;
 
 class ProfileController extends Controller
 {
+
+
+ 
+
+// Update method for AJAX
+public function adminUserUpdate(Request $request, $userId)
+{
+    $user = User::findOrFail($userId);
+    
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'nullable|email|unique:users,email,' . $user->id,
+        'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+        'phone_number' => 'nullable|string|max:25|unique:users,phone_number,' . $user->id,
+        'job_title' => 'nullable|string|max:255',
+        'category_id' => 'nullable|exists:categories,id',
+        'country_id' => 'required|exists:countries,id',
+        'city_id' => 'required|exists:cities,id',
+        'area' => 'nullable|string|max:255',
+        'service_hr' => 'nullable|array',
+        'email_verified' => 'nullable',
+        'phone_verified' => 'nullable',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+    ]);
+
+    // Service hours processing
+    if ($request->has('service_hr')) {
+        $serviceHours = [];
+        foreach ($request->service_hr as $day => $data) {
+            if ($data['status'] === 'closed') {
+                $serviceHours[$day] = 'closed';
+            } else {
+                $serviceHours[$day] = [
+                    'open' => $data['open'],
+                    'close' => $data['close']
+                ];
+            }
+        }
+        $validated['service_hr'] = json_encode($serviceHours);
+    }
+
+    // Handle job title and category
+    if ($request->filled('category_id') && $request->category_id != '') {
+        $validated['category_id'] = $request->category_id;
+        $validated['job_title'] = null;
+    } else {
+        $validated['job_title'] = $request->job_title;
+        $validated['category_id'] = null;
+    }
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        if ($user->image) {
+            $oldImagePath = public_path('profile-image/' . $user->image);
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+        }
+        
+        $imageName = time() . '.' . $request->image->extension();
+        $request->image->move(public_path('profile-image'), $imageName);
+        $validated['image'] = $imageName;
+    }
+
+    $user->update($validated);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'User updated successfully!'
+    ]);
+}
+
+
+public function getUserData($userId)
+{
+    try {
+        // with('category') add করো category data পাওয়ার জন্য
+        $user = User::with('category')->findOrFail($userId);
+        $countries = Country::all();
+        $categories = Category::where('cat_type', 'profile')->get();
+        
+        return response()->json([
+            'success' => true,
+            'user' => $user,
+            'countries' => $countries,
+            'categories' => $categories
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found'
+        ], 404);
+    }
+}
+   
 
     public function getMissingFields($user = null)
 {

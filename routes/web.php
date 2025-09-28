@@ -40,6 +40,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories');
 });
 
+
+// web.php এ
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Other admin routes...
+    
+    // AJAX route for getting user data - এইটা add করো
+    Route::get('/admin/users/{userId}/data', [ProfileController::class, 'getUserData'])->name('admin.users.data');
+    Route::put('/admin/users/{userId}', [ProfileController::class, 'adminUserUpdate'])->name('admin.users.update');
+});
+
 // web.php এ add করুন
 // Route::middleware(['auth', 'role:delivery|admin'])->group(function () {
 //     Route::get('/delivery', [OrderController::class, 'deliveryPage'])->name('delivery.page');
