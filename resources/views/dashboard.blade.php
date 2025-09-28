@@ -256,7 +256,7 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
 
     @if($posts->count() > 0)
     <section class="grid-section mb-4" id="category-{{ $category->id }}">
-        <div class="container">
+        <div class="">
             <!-- Category Title -->
             <div class="row mb-4">
                 <div class="col-12">

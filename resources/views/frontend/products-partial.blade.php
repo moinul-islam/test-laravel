@@ -13,8 +13,8 @@
                 $isOwnProfile = auth()->check() && auth()->id() == $item->id;
                 $categoryType = 'profile'; // Manually set as profile for users
                 
-                // Profile card শুধুমাত্র তখনই show করবে যখন email_verified = 0 হবে
-                $shouldShowCard = ($item->email_verified === 0);
+                // Profile card শুধুমাত্র তখনই show করবে যখন phone_verified = 0 হবে
+                $shouldShowCard = true;
             } else {
                 // This is a Post object
                 $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
