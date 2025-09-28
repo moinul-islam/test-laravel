@@ -27,7 +27,10 @@
                 <tbody>
                     @forelse($users as $user)
                     @php
-                        $rowClass = ($user->email_verified !== 0 && $user->phone_verified !== 0) ? 'table-danger' : '';
+                    $rowClass = ($user->email_verified === 0 || $user->phone_verified === 0) 
+    ? '' 
+    : 'table-danger';
+
                     @endphp
                     <tr class="{{ $rowClass }}">
                         <td>{{ ($users->total() - ($users->firstItem() - 1)) - $loop->index }}</td>
