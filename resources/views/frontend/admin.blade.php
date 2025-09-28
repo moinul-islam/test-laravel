@@ -12,7 +12,6 @@
                         <!-- <th>Image</th> -->
                         <th>SN</th>                                  
                         <th>Name</th>                                  
-                        <th>Time</th>                                  
                         <th>Job Title</th>
                         <th>Category</th>
                         <th>Country</th>
@@ -20,13 +19,15 @@
                         <th>Area</th>
                         <th>Email</th>
                         <th>Verified</th>
+                        <th>Phone</th>                       
+                        <th>Verified</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($users as $user)
                     @php
-                        $rowClass = ($user->email_verified !== 0) ? 'table-danger' : '';
+                        $rowClass = ($user->email_verified !== 0 && $user->phone_verified !== 0) ? 'table-danger' : '';
                     @endphp
                     <tr class="{{ $rowClass }}">
                         <td>{{ ($users->total() - ($users->firstItem() - 1)) - $loop->index }}</td>
@@ -34,8 +35,9 @@
                             <a href="/{{ $user->username }}">
                                 {{ $user->name }} <span class="badge bg-primary">{{ $user->role }}</span>
                             </a>
+                            <br>
+                            <small style="font-size: 11px;">{!! $user->created_at->timezone('Asia/Dhaka')->format('d M Y') !!} - {!! $user->created_at->timezone('Asia/Dhaka')->format('h:i A') !!}</small>
                         </td>
-                        <td style="width:110px;">{!! $user->created_at->timezone('Asia/Dhaka')->format('d M Y') !!} <br> {!! $user->created_at->timezone('Asia/Dhaka')->format('h:i A') !!}</td>
                         <td>{{ $user->job_title ?? 'N/A' }}</td>
                         <td>{{ $user->category->category_name ?? 'N/A' }}</td>
                         <td>{{ $user->country->name ?? 'N/A' }}</td>
@@ -47,6 +49,14 @@
                                 0
                             @else
                                 {{ $user->email_verified ?? 'N/A' }}
+                            @endif
+                        </td>
+                        <td>{{ $user->phone_number ?? 'N/A' }}</td>
+                        <td>
+                            @if($user->phone_verified === 0)
+                                0
+                            @else
+                                {{ $user->phone_verified ?? 'N/A' }}
                             @endif
                         </td>
                         <td>
