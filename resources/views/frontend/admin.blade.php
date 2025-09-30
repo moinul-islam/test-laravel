@@ -24,13 +24,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($users as $user)
+                @forelse($users as $user)
                     @php
-                    if ($user->email_verified === 0 || $user->phone_verified === 0) {
-                        $rowClass = '';
-                    } else {
-                        $rowClass = 'table-danger';
-                    }
+                        if ($user->email_verified == 0 || $user->phone_verified == 0) {
+                            $rowClass = ''; // যেকোনো একটার মান 0 হলে normal
+                        } else {
+                            $rowClass = 'table-danger'; // দুইটার কোনোটাই 0 না হলে danger
+                        }
                     @endphp
                     <tr class="{{ $rowClass }}">
                         <td>{{ ($users->total() - ($users->firstItem() - 1)) - $loop->index }}</td>
