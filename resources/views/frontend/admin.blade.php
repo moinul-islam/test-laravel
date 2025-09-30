@@ -26,7 +26,7 @@
                 <tbody>
                 @forelse($users as $user)
                     @php
-                        if ($user->email_verified === 0 || $user->phone_verified === 0) {
+                        if ($user->email_verified == 0 || $user->phone_verified == 0) {
                             $rowClass = ''; // strictly 0 হলে normal
                         } else {
                             $rowClass = 'table-danger'; // null, 1, 2, 3 সবক্ষেত্রে danger
