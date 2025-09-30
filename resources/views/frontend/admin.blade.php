@@ -26,10 +26,10 @@
                 <tbody>
                 @forelse($users as $user)
                     @php
-                        if ($user->email_verified == 0 || $user->phone_verified == 0) {
-                            $rowClass = ''; // যেকোনো একটার মান 0 হলে normal
+                        if ($user->email_verified === 0 || $user->phone_verified === 0) {
+                            $rowClass = ''; // strictly 0 হলে normal
                         } else {
-                            $rowClass = 'table-danger'; // দুইটার কোনোটাই 0 না হলে danger
+                            $rowClass = 'table-danger'; // null, 1, 2, 3 সবক্ষেত্রে danger
                         }
                     @endphp
                     <tr class="{{ $rowClass }}">
