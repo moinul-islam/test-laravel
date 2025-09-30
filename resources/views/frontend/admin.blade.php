@@ -25,7 +25,7 @@
                 </thead>
                 <tbody>
                 @forelse($users as $user)
-                    <tr class="{{ ($user->email_verified === 0 || $user->phone_verified == 0) ? '' : 'table-danger' }}">
+                    <tr class="{{ ($user->email_verified === 0 || (int)$user->phone_verified === 0) ? '' : 'table-danger' }}">
                         <td>{{ ($users->total() - ($users->firstItem() - 1)) - $loop->index }}</td>
                         <td>
                             <a href="/{{ $user->username }}">
