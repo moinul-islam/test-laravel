@@ -25,14 +25,7 @@
                 </thead>
                 <tbody>
                 @forelse($users as $user)
-                    @php
-                        if ((int)$user->email_verified === 0 || (int)$user->phone_verified === 0) {
-                            $rowClass = '';
-                        } else {
-                            $rowClass = 'table-danger';
-                        }
-                    @endphp
-                    <tr class="{{ $rowClass }}">
+                    <tr class="{{ ($user->email_verified === 0 || $user->phone_verified === 0) ? '' : 'table-danger' }}">
                         <td>{{ ($users->total() - ($users->firstItem() - 1)) - $loop->index }}</td>
                         <td>
                             <a href="/{{ $user->username }}">
