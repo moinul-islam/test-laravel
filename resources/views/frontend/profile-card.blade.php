@@ -37,12 +37,14 @@ if(is_array($todayData) && isset($todayData['open'], $todayData['close'])) {
 @endphp
 
 {{-- Top-right Open/Closed badge --}}
+@if($user->category_id)
 <span id="openStatusBadge" class="badge {{ $isOpen ? 'bg-success' : 'bg-danger' }} position-absolute top-0 end-0 m-2"
       data-bs-toggle="modal"
       data-bs-target="#hoursModal-{{ $user->id }}"
       style="cursor:pointer;">
     {{ $isOpen ? 'Open now' : 'Closed now' }}
 </span>
+@endif
 
 {{-- Modal --}}
 <div class="modal fade" id="hoursModal-{{ $user->id }}" tabindex="-1" aria-labelledby="hoursModalLabel-{{ $user->id }}" aria-hidden="true">
@@ -177,14 +179,16 @@ document.addEventListener('DOMContentLoaded', function () {
                   <h5 class="mb-0">{{ $posts->total() }}</h5>
                   <small class="text-muted">Posts</small>
                </div>
-               <div class="col border-end text-center">
+               <div class="col text-center{{ $user->category_id ? ' border-end' : '' }}">
                   <h5 class="mb-0" id="followersCount-{{ $user->id }}">{{ $user->followers()->count() ?? 0 }}</h5>
                   <small class="text-muted">Followers</small>
                </div>
+               @if($user->category_id)
                <div class="col">
                   <h5 class="mb-0">{{ $ratings ?? 0 }}/5</h5>
                   <small class="text-muted">Ratings</small>
                </div>
+               @endif
             </div>
             
             {{-- Action Buttons Based on User Type --}}
