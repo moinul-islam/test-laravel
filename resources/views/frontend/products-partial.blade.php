@@ -71,7 +71,7 @@
                     
                     <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
                            @if(!$isOwnPost)
-                              @if(auth()->check() && auth()->user()->phone_verified === 0)
+                              @if(auth()->check() && auth()->user()->phone_verified == '0')
                                  onclick="addToCart('{{ $item->id }}', '{{ $item->title }}', '{{ $item->price ?? 0 }}', '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', '{{ $categoryType }}')"
                                  style="cursor: pointer;"
                                  data-category-type="{{ $categoryType }}"
