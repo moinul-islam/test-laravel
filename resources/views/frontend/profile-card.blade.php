@@ -209,11 +209,13 @@ document.addEventListener('DOMContentLoaded', function () {
                @endauth
                
                {{-- Common Contact Buttons (Always Show) --}}
+               @if($user->category_id)
                <a href="tel:{{ $user->phone_number }}">
                     <button class="btn btn-outline-secondary btn-sm ms-2">
                         <i class="bi bi-telephone"></i>
                     </button>
                </a>
+               @endif
                <a href="mailto:{{ $user->email }}">
                 <button class="btn btn-outline-secondary btn-sm ms-2">
                     <i class="bi bi-envelope"></i>
