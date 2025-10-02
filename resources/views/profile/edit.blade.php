@@ -277,6 +277,23 @@
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
+
+.col-right .select2-container--bootstrap4 .select2-selection {
+    border-radius: 0 !important;
+    border-top-left-radius: 8px !important;
+    border-bottom: 0;
+    border-right: 0;
+}
+
+/* City select - remove left radius */
+.col-left .select2-container--bootstrap4 .select2-selection {
+    border-radius: 0 !important;
+    border-top-right-radius: 8px !important;
+    border-bottom: 0;
+}
+
+ 
 </style>
 
 <!-- Select2 with Bootstrap 5 theme -->
