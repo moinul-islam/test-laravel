@@ -32,31 +32,15 @@
             @endif
             <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                @csrf
-               <!-- Profile Image 
-                  <div class="mb-3">
-                      <label for="image" class="form-label">Profile Image</label>
-                      @if(auth()->user()->image)
-                          <div class="mb-3">
-                              <img src="{{ asset('profile-image/' . (Auth::user()->image ?? 'default.png')) }}" alt="Current Profile" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
-                              <p class="text-muted small mt-1">Current profile image</p>
-                          </div>
-                      @endif
-                      <input type="file" name="image" id="image" class="form-control" accept="image/*">
-                      <small class="text-muted">Upload a new profile image (optional)</small>
-                      @error('image')
-                          <div class="text-danger mt-1">{{ $message }}</div>
-                      @enderror
-                  </div>-->
+               
                <div class="mb-3">
-                  <label for="image" class="form-label">Profile Image</label>
                   <!-- Image Preview Container -->
-                  <div class="mb-3" id="imagePreviewContainer">
+                  <div class="mb-3 d-flex justify-content-center" id="imagePreviewContainer">
                      <img src="{{ asset('profile-image/' . (Auth::user()->image ?? 'default.png')) }}" 
                         alt="Current Profile" 
                         class="rounded-circle" 
                         id="profileImagePreview"
                         style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #dee2e6;">
-                     <p class="text-muted small mt-1" id="imageStatus">Current profile image</p>
                   </div>
                   <input type="file" 
                      name="image" 
@@ -64,7 +48,7 @@
                      class="form-control" 
                      accept="image/*"
                      onchange="previewImage(this)">
-                  <small class="text-muted">Upload a new profile image (optional)</small>
+                  
                   <!-- Error display -->
                   <div class="text-danger mt-1" id="imageError" style="display: none;"></div>
                </div>
@@ -167,6 +151,7 @@
                   <div class="text-danger mt-1">{{ $message }}</div>
                   @enderror
                </div>
+               
                <!-- Phone Number -->
                <div class="mb-3">
                   <label for="phone_number" class="form-label">Phone Number</label>
@@ -176,21 +161,7 @@
                   @enderror
                </div>
               
-               <!-- Username -->
-               <div class="mb-3">
-                  <label for="username" class="form-label">Username</label>
-                  <input type="text" 
-                     name="username" 
-                     id="username" 
-                     class="form-control @error('username') is-invalid @enderror" 
-                     value="{{ old('username', auth()->user()->username) }}" 
-                     placeholder="Enter your username (minimum 4 characters)"
-                     minlength="4">
-                  <!-- <small class="form-text text-muted">Username must be at least 4 characters long and can contain letters, numbers, dashes and underscores.</small> -->
-                  @error('username')
-                  <div class="text-danger mt-1">{{ $message }}</div>
-                  @enderror
-               </div>
+               
              
                <!-- Email -->
                <div class="mb-3">
@@ -218,46 +189,143 @@
                     </div>
                     @endif
                     </div>
-            <!-- Country Dropdown -->
-            <div class="mb-3">
-               <label for="country" class="form-label">Country</label>
-               <select id="country" name="country_id" class="form-select @error('country_id') is-invalid @enderror">
-                  <option value="">Select Country</option>
-                  @foreach($countries as $country)
-                  <option value="{{ $country->id }}" {{ old('country_id', auth()->user()->country_id) == $country->id ? 'selected' : '' }}>
-                  {{ $country->name }}
-                  </option>
-                  @endforeach
-               </select>
-               @error('country_id')
-               <div class="text-danger mt-1">{{ $message }}</div>
-               @enderror
-            </div>
-            <!-- City Dropdown -->
-            <div class="mb-3">
-               <label for="city" class="form-label">City</label>
-               <select id="city" name="city_id" class="form-select @error('city_id') is-invalid @enderror">
-                  <option value="">Select City</option>
-                  @if(auth()->user()->city_id && isset($cities))
-                  @foreach($cities as $city)
-                  <option value="{{ $city->id }}" {{ old('city_id', auth()->user()->city_id) == $city->id ? 'selected' : '' }}>
-                  {{ $city->name }}
-                  </option>
-                  @endforeach
-                  @endif
-               </select>
-               @error('city_id')
-               <div class="text-danger mt-1">{{ $message }}</div>
-               @enderror
-            </div>
-            <!-- Area -->
-            <div class="mb-3">
-               <label for="area" class="form-label">Address</label>
-               <input type="text" name="area" id="area" class="form-control @error('area') is-invalid @enderror" value="{{ old('area', auth()->user()->area) }}" placeholder="Enter your area/locality">
-               @error('area')
-               <div class="text-danger mt-1">{{ $message }}</div>
-               @enderror
-            </div>
+            
+
+
+<div class="mb-3">
+    <label class="form-label d-block">Address</label>
+    <div class="row">
+        <!-- Country -->
+        <div class="col-6 col-right">
+            <select id="country" name="country_id" class="form-select @error('country_id') is-invalid @enderror">
+                <option value="">Select Country</option>
+                @foreach($countries as $country)
+                    <option value="{{ $country->id }}" {{ old('country_id', auth()->user()->country_id) == $country->id ? 'selected' : '' }}>
+                        {{ $country->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('country_id')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- City -->
+        <div class="col-6 col-left">
+            <select id="city" name="city_id" class="form-select @error('city_id') is-invalid @enderror">
+                <option value="">Select City</option>
+                @if(auth()->user()->city_id && isset($cities))
+                    @foreach($cities as $city)
+                        <option value="{{ $city->id }}" {{ old('city_id', auth()->user()->city_id) == $city->id ? 'selected' : '' }}>
+                            {{ $city->name }}
+                        </option>
+                    @endforeach
+                @endif
+            </select>
+            @error('city_id')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- Area -->
+        <div class="col-12 col-area">
+            <input type="text" name="area" id="area" class="form-control @error('area') is-invalid @enderror"
+                   value="{{ old('area', auth()->user()->area) }}" placeholder="Enter area/locality">
+            @error('area')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Username -->
+<div class="mb-3">
+                  <label for="username" class="form-label">Username</label>
+                  <input type="text" 
+                     name="username" 
+                     id="username" 
+                     class="form-control @error('username') is-invalid @enderror" 
+                     value="{{ old('username', auth()->user()->username) }}" 
+                     placeholder="Enter your username (minimum 4 characters)"
+                     minlength="4">
+                  <!-- <small class="form-text text-muted">Username must be at least 4 characters long and can contain letters, numbers, dashes and underscores.</small> -->
+                  @error('username')
+                  <div class="text-danger mt-1">{{ $message }}</div>
+                  @enderror
+               </div>
+
+
+
+
+<style>
+
+.col-right {
+    padding-right: 0;
+}
+.col-right option {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+.col-left {
+    padding-left: 0;
+}
+
+.col-area input {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+</style>
+
+<!-- Select2 with Bootstrap 5 theme -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize select2 with Bootstrap theme
+        $('#country').select2({
+            placeholder: "Select Country",
+            allowClear: true,
+            width: '100%',
+            theme: 'bootstrap4'
+        });
+        $('#city').select2({
+            placeholder: "Select City",
+            allowClear: true,
+            width: '100%',
+            theme: 'bootstrap4'
+        });
+
+        // When country changes, fetch cities
+        $('#country').on('change', function() {
+            var country_id = $(this).val();
+            $('#city').html('<option value="">Select City</option>');
+            $('#city').val(null).trigger('change');
+            if(country_id) {
+                $.ajax({
+                    url: '/get-cities/' + country_id,
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data) {
+                        var cityOptions = '<option value="">Select City</option>';
+                        $.each(data, function(key, value) {
+                            cityOptions += '<option value="' + value.id + '">' + value.name + '</option>';
+                        });
+                        $('#city').html(cityOptions);
+                        $('#city').val(null).trigger('change');
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+
+
             <button type="submit" class="btn btn-primary">Update Profile</button>
             @if (session('status') === 'profile-updated')
             <span class="text-success ms-2">Profile updated successfully!</span>
