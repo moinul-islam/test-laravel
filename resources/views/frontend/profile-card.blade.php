@@ -297,7 +297,10 @@ document.addEventListener('DOMContentLoaded', function () {
 function copyProfileLink(e) {
     e.preventDefault();
     let profileLink = window.location.href;
-    
+
+    // www বাদ দেওয়া
+    profileLink = profileLink.replace("://www.", "://");
+
     navigator.clipboard.writeText(profileLink)
         .then(() => {
             let toast = document.getElementById('toast');
@@ -310,6 +313,7 @@ function copyProfileLink(e) {
             console.error("Failed to copy: ", err);
         });
 }
+
 
 @auth
     @if(Auth::id() === $user->id)
