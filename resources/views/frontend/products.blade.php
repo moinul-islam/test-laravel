@@ -106,7 +106,7 @@
         @if(isset($siblingCategories) && $siblingCategories->count() > 0)
             {{-- Show sibling categories --}}
             @foreach($siblingCategories as $siblingCat)
-                <a href="{{ route('products.category', $siblingCat->slug) }}" 
+                <a href="{{ route('products.category',[$visitorLocationPath, $siblingCat->slug]) }}" 
                    class="nav-item-custom {{ $category->id == $siblingCat->id ? 'active' : '' }}">
                     <span>{{ $siblingCat->category_name }}</span>
                 </a>
@@ -134,7 +134,7 @@
                         <ul class="dropdown-menu">
                             @foreach($subCategories as $subCat)
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('products.category', $subCat->slug) }}">
+                                    <a class="dropdown-item" href="{{ route('products.category', [$visitorLocationPath, $subCat->slug]) }}">
                                         {{ $subCat->category_name }}
                                     </a>
                                 </li>
@@ -158,7 +158,7 @@
                         <li class="breadcrumb-item active" aria-current="page">{{ $breadcrumb->category_name }}</li>
                     @else
                         <li class="breadcrumb-item">
-                            <a href="{{ route('products.category', $breadcrumb->slug) }}">
+                            <a href="{{ route('products.category', [$visitorLocationPath, $breadcrumb->slug]) }}">
                                 {{ $breadcrumb->category_name }}
                             </a>
                         </li>
@@ -176,7 +176,7 @@
             
             <!-- Back to parent button (if applicable) -->
             @if(isset($parentCategory))
-                <a href="{{ route('products.category', $parentCategory->slug) }}" 
+                <a href="{{ route('products.category', [$visitorLocationPath, $parentCategory->slug]) }}" 
                    class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
                    style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
                     <i class="bi bi-arrow-left"></i> Back to {{ $parentCategory->category_name }}
@@ -184,7 +184,7 @@
             @endif
             
             <!-- Current category (All items) -->
-            <a href="{{ route('products.category', $category->slug) }}" 
+            <a href="{{ route('products.category', [$visitorLocationPath, $category->slug]) }}" 
                class="badge rounded bg-primary text-white px-2 py-1 mb-1"
                style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
                 All {{ $category->category_name }}
@@ -192,7 +192,7 @@
             
             <!-- Child categories -->
             @foreach($childCategories as $childCat)
-                <a href="{{ route('products.category', $childCat->slug) }}" 
+                <a href="{{ route('products.category', [$visitorLocationPath,$childCat->slug]) }}" 
                    class="badge rounded bg-light text-dark border border-secondary px-2 py-1 mb-1"
                    style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
                     {{ $childCat->category_name }}

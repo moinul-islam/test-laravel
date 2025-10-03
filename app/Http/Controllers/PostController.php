@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\Comment;
+use App\Models\Country;
+use App\Models\City;
 use App\Models\Category;
 
 class PostController extends Controller
@@ -13,18 +15,14 @@ class PostController extends Controller
      * Display a listing of the resource with pagination.
      */
    public function index(Request $request)
-{
-    $posts = Post::with(['user', 'category', 'comments.user']) // comments সহ লোড হবে
-        ->latest()
-        ->paginate(3);
-    if ($request->ajax()) {
-        return response()->json([
-            'posts' => view('frontend.posts-partial', compact('posts'))->render(),
-            'hasMore' => $posts->hasMorePages()
-        ]);
-    }
-    return view("frontend.index", compact('posts'));
-}
+   {
+       $path = view()->shared('visitorLocationPath');
+       if ($path) {
+           return redirect('/' . $path);
+       }
+       // Fallback: if no location path, show default home page
+       return view('frontend.index');
+   }
 
     /**
      * Show the form for creating a new resource.
@@ -90,33 +88,81 @@ class PostController extends Controller
         return back()->with('success', 'Post created successfully!');
     }
 
-    public function showByCategory(Request $request, $slug)
+    public function showByCategory(Request $request, $username, $slug)
     {
+
+        $path = $username;
         // Find category by slug (any level)
         $category = Category::where('slug', $slug)->first();
-        
+       
         if (!$category) {
             abort(404, 'Category not found');
         }
-        
+       
         // Get all descendant category IDs (recursive)
         $categoryIds = $this->getAllDescendantCategoryIds($category->id);
         $categoryIds[] = $category->id; // Include the category itself
+       
+        // Initialize user IDs based on location
+        $userIds = [];
         
-        // Check if there are users with these category IDs (profile data)
-        $hasUsers = User::whereIn('category_id', $categoryIds)->exists();
         
+        if ($path == 'international') {
+            // Get users where phone_verified = 0 OR email_verified = 0
+            $userIds = User::where(function($query) {
+                $query->where('phone_verified', 0)
+                      ->orWhere('email_verified', 0);
+            })->pluck('id')->toArray();
+        } else {
+            // Check if path is a country username
+            $country = Country::where('username', $path)->first();
+            if ($country) {
+                $userIds = User::where('country_id', $country->id)
+                    ->where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                // Check if path is a city username
+                $city = City::where('username', $path)->first();
+                if ($city) {
+                    $userIds = User::where('city_id', $city->id)
+                        ->where(function($query) {
+                            $query->where('phone_verified', 0)
+                                  ->orWhere('email_verified', 0);
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                } else {
+                    // If no valid location found, use all users
+                    $userIds = User::where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })->pluck('id')->toArray();
+                }
+            }
+        }
+       
+        // Check if there are users with these category IDs (profile data) in this location
+        $hasUsers = User::whereIn('category_id', $categoryIds)
+            ->whereIn('id', $userIds)
+            ->exists();
+       
         if ($hasUsers) {
-            // Load users if they exist for this category
+            // Load users if they exist for this category and location
             $posts = User::whereIn('category_id', $categoryIds)
+                        ->whereIn('id', $userIds)
                         ->with('category');
         } else {
-            // Load regular posts for product/service categories
+            // Load regular posts for product/service categories with location filter
             $posts = Post::with(['user', 'category'])
                          ->whereIn('category_id', $categoryIds)
+                         ->whereIn('user_id', $userIds)
                          ->latest();
         }
-        
+       
         // Handle sorting
         if ($request->get('sort')) {
             switch ($request->get('sort')) {
@@ -135,31 +181,68 @@ class PostController extends Controller
         } else {
             $posts = $posts->latest();
         }
-        
+       
         $posts = $posts->paginate(12);
-        
+       
         // Get breadcrumb data
         $breadcrumbs = $this->getCategoryBreadcrumbs($category);
-        
+       
         // Get parent category (if exists)
         $parentCategory = null;
         if ($category->parent_cat_id) {
             $parentCategory = Category::find($category->parent_cat_id);
         }
-        
-        // Get sibling categories
+       
+        // Get sibling categories (filtered by location)
         $siblingCategories = [];
         if ($category->parent_cat_id) {
+            // Get categories that have posts/users in this location
+            $locationCategoryIds = [];
+            
+            // For users (profiles)
+            $userCategoryIds = User::whereIn('id', $userIds)
+                ->distinct()
+                ->pluck('category_id')
+                ->toArray();
+                
+            // For posts
+            $postCategoryIds = Post::whereIn('user_id', $userIds)
+                ->distinct()
+                ->pluck('category_id')
+                ->toArray();
+                
+            $locationCategoryIds = array_unique(array_merge($userCategoryIds, $postCategoryIds));
+            
             $siblingCategories = Category::where('parent_cat_id', $category->parent_cat_id)
                                         ->whereIn('cat_type', ['product', 'service', 'profile'])
+                                        ->whereIn('id', $locationCategoryIds)
                                         ->get();
         }
+       
+        // Get child categories (filtered by location)
+        $childCategories = [];
+        // Get categories that have posts/users in this location
+        $locationCategoryIds = [];
         
-        // Get child categories
+        // For users (profiles)
+        $userCategoryIds = User::whereIn('id', $userIds)
+            ->distinct()
+            ->pluck('category_id')
+            ->toArray();
+            
+        // For posts
+        $postCategoryIds = Post::whereIn('user_id', $userIds)
+            ->distinct()
+            ->pluck('category_id')
+            ->toArray();
+            
+        $locationCategoryIds = array_unique(array_merge($userCategoryIds, $postCategoryIds));
+        
         $childCategories = Category::where('parent_cat_id', $category->id)
                                   ->whereIn('cat_type', ['product', 'service', 'profile'])
+                                  ->whereIn('id', $locationCategoryIds)
                                   ->get();
-        
+       
         // AJAX request handling
         if ($request->ajax()) {
             return response()->json([
@@ -167,7 +250,7 @@ class PostController extends Controller
                 'hasMore' => $posts->hasMorePages()
             ]);
         }
-        
+       
         return view('frontend.products', [
             'posts' => $posts,
             'category' => $category,

@@ -16,6 +16,45 @@ class LocationController extends Controller
 {
 
 
+    public function usernameWiseHome($username)
+    {
+        $not_user = User::where('username',$username)->first();
+        if($not_user){
+                    // ইউজার খুঁজে বের করো
+            $user = User::where('username', $username)->first();
+            
+            // যদি ইউজার না পাওয়া যায় → redirect to /
+            if (!$user) {
+                return redirect('/');
+            }
+            
+            // ওই ইউজারের সব পোস্ট নাও - pagination সহ (category relationship সহ)
+            $posts = Post::with(['user', 'category'])
+                        ->where('user_id', $user->id)
+                        ->latest()
+                        ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
+            
+            // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
+            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service'])->get();
+            
+            // view এ পাঠাও
+            return view("dashboard", compact('posts', 'user', 'categories'));
+        }else{
+           
+            return view("frontend.index");
+        }
+       
+    }
+
+
+    public function getCities($countryId)
+    {
+        $cities = City::where('country_id', $countryId)
+                    ->orderBy('name', 'asc')
+                    ->get();
+        
+        return response()->json($cities);
+    }
 
     public function follow(User $user)
 {
@@ -200,11 +239,7 @@ public function unfollow(User $user)
         //
     }
     
-    public function getCities($country_id)
-    {
-        $cities = City::where('country_id', $country_id)->get();
-        return response()->json($cities);
-    }
+   
     
     public function edit(string $id)
     {

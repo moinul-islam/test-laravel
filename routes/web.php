@@ -3,6 +3,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\VisitorLocationController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Post;
@@ -112,7 +113,7 @@ Route::get('/products', function () {
 
 
 // Single route for all category levels
-Route::get('/products/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
+Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
 
 // Add this route for post deletion
 Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.destroy')->middleware('auth');
@@ -156,5 +157,9 @@ Route::get('/logout-success/{identifier}', function ($identifier) {
 })->name('logout.success');
 
 
+
+Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
+Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
+
 require __DIR__.'/auth.php';
-Route::get('/{username}', [LocationController::class, 'show'])->name('profile.show');
+Route::get('/{username}',  [LocationController::class, 'usernameWiseHome'])->name('profile.show');
