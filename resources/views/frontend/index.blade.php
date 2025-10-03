@@ -1,6 +1,6 @@
 @extends("frontend.master")
 @section('main-content')
-<h1>location : {{ $visitorLocationName }}</h1>
+<!-- <h1>location : {{ $visitorLocationName }}</h1> -->
 <style>
 /* প্রতিটি section এর উপরে offset */
 .grid-section {
@@ -31,7 +31,7 @@
 
 
 
-<!-- //////////////////////////////////for location start///////////////////////////////// -->
+<!-- //////////////////////////////////for location start///////////////////////////////// 
 <div class="mt-4">
     @php
         $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
@@ -102,7 +102,7 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- CSRF token for AJAX requests -->
+
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <script>
@@ -203,7 +203,7 @@
     }
 </script>
 </div>
-<!-- //////////////////////////////////for location end///////////////////////////////// -->
+ //////////////////////////////////for location end///////////////////////////////// -->
 
 
 
