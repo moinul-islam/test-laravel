@@ -39,19 +39,58 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $user_id = Auth::id(); // লগইন করা ইউজারের ID
-        
+       
         // Validation
         $request->validate([
             'category_name' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048|required_without:description',
-            'description' => 'nullable|string|max:1000|required_without:image',
+            'description' => 'nullable|string|max:1000|required_without:image_data',
         ]);
-
+        
+        $photo = null;
+       
+        // Check if we have base64 image data from frontend processing
+        if ($request->filled('image_data')) {
+            // Process base64 image
+            $imageData = $request->input('image_data');
+           
+            // Extract the base64 content
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $decodedImage = base64_decode($imageData);
+           
+            if ($decodedImage !== false) {
+                // Generate unique filename
+                $name_gen = hexdec(uniqid()) . '.jpg';
+                
+                // Ensure directory exists
+                if (!file_exists(public_path('uploads'))) {
+                    mkdir(public_path('uploads'), 0755, true);
+                }
+               
+                // Save the image inside uploads folder
+                file_put_contents(public_path('uploads/' . $name_gen), $decodedImage);
+                
+                // Save only the filename for database
+                $photo = $name_gen;
+            }
+        }
+        // Fallback to traditional file upload if no image_data present
+        elseif ($request->hasFile('image')) {
+            $photoFile = $request->file('image');
+            $name_gen = hexdec(uniqid()) . '.' . $photoFile->getClientOriginalExtension();
+           
+            // Move the file to uploads folder
+            $photoFile->move(public_path('uploads'), $name_gen);
+            
+            // Save only the filename for database
+            $photo = $name_gen;
+        }
+        
         $categoryId = null;
         $newCategory = null;
-
+        
         // Check if category_id is provided (existing category selected)
         if ($request->filled('category_id') && $request->category_id != '') {
             // Validate that the category exists
@@ -66,20 +105,13 @@ class PostController extends Controller
             // User typed a new category name
             $newCategory = $request->category_name;
         }
-
-        // Handle image upload
-        $imageName = null;
-        if($request->hasFile('image')){
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('uploads'), $imageName);
-        }
-       
+        
         // DB-এ সেভ করা
         Post::create([
             'title' => $request->title,
             'price' => $request->price,
             'highest_price' => $request->discount ?? null,
-            'image' => $imageName,
+            'image' => $photo,
             'description' => $request->description,
             'user_id' => $user_id,
             'category_id' => $categoryId, // Will be null if new category

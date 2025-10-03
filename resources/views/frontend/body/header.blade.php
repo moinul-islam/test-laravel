@@ -220,7 +220,7 @@
     $allSearchableCategories = [];
     foreach($universalCategories as $uCat) {
         $productCategories = \App\Models\Category::where('parent_cat_id', $uCat->id)
-            ->whereIn('cat_type', ['product', 'service'])
+            ->whereIn('cat_type', ['product', 'service','profile'])
             ->get();
         
         foreach($productCategories as $pCat) {
@@ -362,6 +362,7 @@ function handleSearch(event) {
 function handleSearchClick() {
     const query = document.getElementById('searchInput').value.trim();
     
+    
     console.log('Search icon clicked:', query); // Debug
     
     if (query) {
@@ -370,6 +371,8 @@ function handleSearchClick() {
     } else {
         alert('Please enter something to search');
     }
+
+    
 }
 
 // Close suggestions when clicking outside

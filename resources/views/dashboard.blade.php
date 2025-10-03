@@ -416,13 +416,284 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
                </div>
-               <div class="mb-3">
+               <!-- ///////////////////////////////////// image start ///////////////////////////////////////// -->
+               <!-- <div class="mb-3">
                   <label for="image" class="form-label">Choose Image</label>
                   <input class="form-control" type="file" id="image" name="image" accept="image/*">
                   @error('image')
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
-               </div>
+               </div> -->
+
+               <div class="row mb-4">
+                                            <div class="col-sm-3">
+                                                <h6 class="mb-0">Notice Image</h6>
+                                            </div>
+                                            <div class="col-sm-9 text-secondary">
+                                                <input type="file" name="photo" class="form-control" id="formFile">
+                                                <input type="hidden" name="image_data" id="imageData">
+                                                
+                                                @error('photo')
+                                                    <span class="text-danger">{{ $message }}</span>
+                                                @enderror
+                                                <div id="imageProcessingStatus" style="display: none;" class="mt-2">
+                                                    <div class="progress">
+                                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="imageProgress"></div>
+                                                    </div>
+                                                    <small id="imageStatusText">Image processing is going on....</small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<!-- Add jQuery Ajax code -->
+<script>
+// আপডেটেড ইমেজ রোটেশন ফিক্স কোড
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const MAX_WIDTH = 1800;
+    const MAX_HEIGHT = 1800;
+    const QUALITY = 0.7;
+    
+    // DOM Elements
+    const mainImageInput = document.getElementById('formFile');
+    const mainImagePreview = document.getElementById('mainThmb');
+    const imageDataInput = document.getElementById('imageData');
+    const imageProcessingStatus = document.getElementById('imageProcessingStatus');
+    const imageProgress = document.getElementById('imageProgress');
+    const imageStatusText = document.getElementById('imageStatusText');
+    const showImage = document.getElementById('showImage');
+    
+    // Ensure heic2any library is loaded
+    ensureHeicLibraryLoaded();
+    
+    // Form submission handler
+    const studentForm = document.getElementById('myForm');
+    if (studentForm) {
+        studentForm.addEventListener('submit', function(e) {
+            if (mainImageInput && mainImageInput.files.length > 0 && !imageDataInput.value) {
+                e.preventDefault();
+                alert('ইমেজ প্রসেসিং সম্পন্ন হওয়ার আগে অপেক্ষা করুন!');
+                return false;
+            }
+            
+            if (mainImageInput && mainImageInput.files.length > 0) {
+                mainImageInput.disabled = true;
+            }
+            
+            return true;
+        });
+    }
+    
+    // Main image upload event handler
+    if (mainImageInput) {
+        mainImageInput.addEventListener('change', function(e) {
+            const file = this.files[0];
+            if (!file) return;
+            
+            // Clear previous preview
+            if (mainImagePreview) mainImagePreview.src = '';
+            
+            // File type validation
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+            
+            if (!allowedExts.includes(fileExt)) {
+                alert('অনুগ্রহ করে শুধুমাত্র JPG, PNG, GIF, WEBP, HEIC বা HEIF ফাইল আপলোড করুন!');
+                this.value = '';
+                return;
+            }
+            
+            // Show processing status
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            imageProcessingStatus.style.display = 'block';
+            imageProgress.style.width = '10%';
+            
+            if (fileExt === 'heic' || fileExt === 'heif') {
+                imageStatusText.textContent = `HEIC/HEIF ইমেজ (${fileSizeMB} MB) কনভার্ট করা হচ্ছে...`;
+            } else {
+                imageStatusText.textContent = `ইমেজ (${fileSizeMB} MB) অপ্টিমাইজ করা হচ্ছে...`;
+            }
+            
+            // Process the image
+            processImage(file);
+        });
+    }
+    
+    // Main image processing function
+    function processImage(file) {
+        const originalSize = file.size;
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        
+        // For HEIC/HEIF files
+        if ((fileExt === 'heic' || fileExt === 'heif') && typeof heic2any !== 'undefined') {
+            convertHeicToJpeg(file, originalSize);
+        } else {
+            // For regular image files
+            loadImageWithOrientation(file, originalSize);
+        }
+    }
+    
+    // HEIC to JPEG conversion
+    function convertHeicToJpeg(file, originalSize) {
+        imageProgress.style.width = '20%';
+        
+        const fileReader = new FileReader();
+        fileReader.onload = function(event) {
+            const arrayBuffer = event.target.result;
+            
+            heic2any({
+                blob: new Blob([arrayBuffer]),
+                toType: 'image/jpeg',
+                quality: 0.8
+            }).then(function(jpegBlob) {
+                imageProgress.style.width = '40%';
+                imageStatusText.textContent = 'HEIC কনভার্ট সফল! এখন অপ্টিমাইজ করা হচ্ছে...';
+                
+                // Process the converted JPEG
+                loadImageWithOrientation(jpegBlob, originalSize);
+            }).catch(function(err) {
+                console.error('HEIC conversion error:', err);
+                imageStatusText.textContent = 'HEIC কনভার্ট করতে সমস্যা! সাধারণ পদ্ধতি চেষ্টা করা হচ্ছে...';
+                
+                // Fallback to regular processing
+                loadImageWithOrientation(file, originalSize);
+            });
+        };
+        
+        fileReader.readAsArrayBuffer(file);
+    }
+    
+    // Load image and fix orientation
+    function loadImageWithOrientation(file, originalSize) {
+        imageProgress.style.width = '50%';
+        
+        // Create a FileReader to read the file as DataURL
+        const urlReader = new FileReader();
+        urlReader.onload = function(event) {
+            // Create an Image element to load the image
+            const img = new Image();
+            
+            img.onload = function() {
+                imageProgress.style.width = '60%';
+                
+                // Get dimensions
+                let width = img.width;
+                let height = img.height;
+                let targetWidth = width;
+                let targetHeight = height;
+                
+                // Resize if needed
+                if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                    if (width > height) {
+                        targetHeight = Math.round(height * (MAX_WIDTH / width));
+                        targetWidth = MAX_WIDTH;
+                    } else {
+                        targetWidth = Math.round(width * (MAX_HEIGHT / height));
+                        targetHeight = MAX_HEIGHT;
+                    }
+                }
+                
+                // Create canvas for the output image
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // Fill with white background
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+                
+                // Draw the image with resizing
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                
+                // Get final image quality
+                let targetQuality = QUALITY;
+                let fileSizeMB = file.size / (1024 * 1024);
+                
+                if (fileSizeMB > 10) targetQuality = 0.5;
+                else if (fileSizeMB > 5) targetQuality = 0.6;
+                
+                imageProgress.style.width = '90%';
+                
+                // Convert to blob
+                canvas.toBlob(function(blob) {
+                    // Process the resized image
+                    finalizeImageProcessing(blob, originalSize);
+                }, 'image/jpeg', targetQuality);
+            };
+            
+            // Set src to the FileReader result (DataURL)
+            img.src = event.target.result;
+        };
+        
+        // Read the file as DataURL
+        urlReader.readAsDataURL(file);
+    }
+    
+    // Finalize image processing and update UI
+    function finalizeImageProcessing(blob, originalSize) {
+        // Convert to data URL for preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Update preview images
+            if (mainImagePreview) {
+                mainImagePreview.src = e.target.result;
+                mainImagePreview.style.display = 'block';
+                mainImagePreview.style.border = '3px solid #28a745';
+            }
+            
+            if (showImage) {
+                showImage.src = e.target.result;
+                showImage.style.border = '3px solid #28a745';
+            }
+            
+            // Update status
+            const compressedSize = blob.size;
+            const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
+            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced Success!)</span>`;
+            imageStatusText.style.color = '#28a745';
+            
+            // Hide progress bar
+            imageProcessingStatus.style.display = 'none';
+        };
+        reader.readAsDataURL(blob);
+        
+        // Save data URL to hidden input
+        const dataReader = new FileReader();
+        dataReader.onload = function(e) {
+            imageDataInput.value = e.target.result;
+        };
+        dataReader.readAsDataURL(blob);
+    }
+    
+    // Load heic2any library if needed
+    function ensureHeicLibraryLoaded() {
+        if (typeof heic2any === 'undefined') {
+            console.log('HEIC library not found, loading it now...');
+            
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+    }
+    
+    // Format file size helper
+    function formatFileSize(bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        } else if (bytes < 1048576) {
+            return (bytes / 1024).toFixed(1) + " KB";
+        } else {
+            return (bytes / 1048576).toFixed(2) + " MB";
+        }
+    }
+});
+</script>
+
+
+             <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
                   <label for="description" class="form-label">Product or Service Description</label>
                   <textarea class="form-control" id="description" name="description" rows="4" placeholder="Type your text here...">{{ old('description') }}</textarea>
