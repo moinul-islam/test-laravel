@@ -96,11 +96,10 @@
             <span><i class="bi bi-funnel"></i> Filter</span>
         </a>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" onclick="sortBy('price-low')">Price: Low to High</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('price-high')">Price: High to Low</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('best-selling')">Best Selling</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('newest')">Newest First</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('rating')">Highest Rated</a></li>
+            <li><a class="dropdown-item" href="#" onclick="sortBy('price-low'); return false;">Price: Low to High</a></li>
+            <li><a class="dropdown-item" href="#" onclick="sortBy('price-high'); return false;">Price: High to Low</a></li>
+            <li><a class="dropdown-item" href="#" onclick="sortBy('best-selling'); return false;">Best Selling</a></li>
+            <li><a class="dropdown-item" href="#" onclick="sortBy('newest'); return false;">Newest First</a></li>
         </ul>
         
         @if(isset($siblingCategories) && $siblingCategories->count() > 0)
@@ -378,6 +377,53 @@ function scrollToCenter(element, container) {
         left: scrollOffset,
         behavior: 'smooth'
     });
+}
+function sortBy(type) {
+    console.log('Sorting by:', type);
+    
+    // Show loading state
+    const postsContainer = document.getElementById('posts-container');
+    const loadingSpinner = document.getElementById('loading');
+    
+    loadingSpinner.style.display = 'block';
+    
+    // Get current URL
+    const currentUrl = window.location.pathname;
+    
+    // AJAX request
+    $.ajax({
+        url: currentUrl,
+        method: 'GET',
+        data: {
+            sort: type,
+            page: 1
+        },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+            loadingSpinner.style.display = 'none';
+            
+            // Replace posts container content
+            postsContainer.innerHTML = response.posts;
+            
+            // Update load more button
+            const loadMoreContainer = document.getElementById('load-more-container');
+            if (response.hasMore) {
+                if (loadMoreContainer) loadMoreContainer.style.display = 'block';
+            } else {
+                if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+            }
+        },
+        error: function(xhr, status, error) {
+            loadingSpinner.style.display = 'none';
+            console.error('Error sorting posts:', error);
+            alert('Error loading products. Please try again.');
+        }
+    });
+    
+    // Prevent default link behavior
+    event.preventDefault();
 }
 </script>
 

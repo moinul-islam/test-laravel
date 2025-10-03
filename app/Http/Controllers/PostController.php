@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\User;
@@ -90,31 +91,26 @@ class PostController extends Controller
 
     public function showByCategory(Request $request, $username, $slug)
     {
-
         $path = $username;
-        // Find category by slug (any level)
         $category = Category::where('slug', $slug)->first();
        
         if (!$category) {
             abort(404, 'Category not found');
         }
        
-        // Get all descendant category IDs (recursive)
+        // Get all descendant category IDs
         $categoryIds = $this->getAllDescendantCategoryIds($category->id);
-        $categoryIds[] = $category->id; // Include the category itself
+        $categoryIds[] = $category->id;
        
         // Initialize user IDs based on location
         $userIds = [];
         
-        
         if ($path == 'international') {
-            // Get users where phone_verified = 0 OR email_verified = 0
             $userIds = User::where(function($query) {
                 $query->where('phone_verified', 0)
                       ->orWhere('email_verified', 0);
             })->pluck('id')->toArray();
         } else {
-            // Check if path is a country username
             $country = Country::where('username', $path)->first();
             if ($country) {
                 $userIds = User::where('country_id', $country->id)
@@ -125,7 +121,6 @@ class PostController extends Controller
                     ->pluck('id')
                     ->toArray();
             } else {
-                // Check if path is a city username
                 $city = City::where('username', $path)->first();
                 if ($city) {
                     $userIds = User::where('city_id', $city->id)
@@ -136,7 +131,6 @@ class PostController extends Controller
                         ->pluck('id')
                         ->toArray();
                 } else {
-                    // If no valid location found, use all users
                     $userIds = User::where(function($query) {
                         $query->where('phone_verified', 0)
                               ->orWhere('email_verified', 0);
@@ -145,67 +139,101 @@ class PostController extends Controller
             }
         }
        
-        // Check if there are users with these category IDs (profile data) in this location
+        // Check if there are users with these category IDs
         $hasUsers = User::whereIn('category_id', $categoryIds)
             ->whereIn('id', $userIds)
             ->exists();
        
-        if ($hasUsers) {
-            // Load users if they exist for this category and location
-            $posts = User::whereIn('category_id', $categoryIds)
-                        ->whereIn('id', $userIds)
-                        ->with('category');
-        } else {
-            // Load regular posts for product/service categories with location filter
-            $posts = Post::with(['user', 'category'])
-                         ->whereIn('category_id', $categoryIds)
-                         ->whereIn('user_id', $userIds)
-                         ->latest();
-        }
-       
         // Handle sorting
-        if ($request->get('sort')) {
-            switch ($request->get('sort')) {
+        $sortType = $request->get('sort', 'newest');
+        
+        // ✅ Best Selling এর জন্য আলাদা query
+        if (!$hasUsers && $sortType === 'best-selling') {
+            $posts = Post::with(['user', 'category'])
+                ->whereIn('posts.category_id', $categoryIds)
+                ->whereIn('posts.user_id', $userIds)
+                ->leftJoin('orders', function($join) {
+                    $join->whereRaw("JSON_SEARCH(orders.post_ids, 'one', CAST(posts.id AS CHAR), NULL, '$[*].post_id') IS NOT NULL")
+                         ->whereIn('orders.status', ['delivered', 'shipped']);
+                })
+                ->select(
+                    'posts.id',
+                    'posts.category_id',
+                    'posts.new_category',
+                    'posts.image',
+                    'posts.title',
+                    'posts.description',
+                    'posts.price',
+                    'posts.user_id',
+                    'posts.created_at',
+                    'posts.updated_at',
+                    DB::raw('COUNT(orders.id) as order_count')
+                )
+                ->groupBy(
+                    'posts.id',
+                    'posts.category_id',
+                    'posts.new_category',
+                    'posts.image',
+                    'posts.title',
+                    'posts.description',
+                    'posts.price',
+                    'posts.user_id',
+                    'posts.created_at',
+                    'posts.updated_at'
+                )
+                ->orderByDesc('order_count')
+                ->orderByDesc('posts.created_at')
+                ->paginate(12);
+        } else {
+            // ✅ অন্যান্য sorting এর জন্য normal query
+            if ($hasUsers) {
+                $posts = User::whereIn('category_id', $categoryIds)
+                            ->whereIn('id', $userIds)
+                            ->with('category');
+            } else {
+                $posts = Post::with(['user', 'category'])
+                             ->whereIn('posts.category_id', $categoryIds)
+                             ->whereIn('posts.user_id', $userIds);
+            }
+            
+            // Apply other sorting
+            switch ($sortType) {
                 case 'price-low':
                     $posts = $posts->orderBy('price', 'asc');
                     break;
+                    
                 case 'price-high':
                     $posts = $posts->orderBy('price', 'desc');
                     break;
+                    
                 case 'newest':
+                default:
                     $posts = $posts->orderBy('created_at', 'desc');
                     break;
-                default:
-                    $posts = $posts->latest();
             }
-        } else {
-            $posts = $posts->latest();
+            
+            $posts = $posts->paginate(12);
         }
-       
-        $posts = $posts->paginate(12);
        
         // Get breadcrumb data
         $breadcrumbs = $this->getCategoryBreadcrumbs($category);
        
-        // Get parent category (if exists)
+        // Get parent category
         $parentCategory = null;
         if ($category->parent_cat_id) {
             $parentCategory = Category::find($category->parent_cat_id);
         }
        
-        // Get sibling categories (filtered by location)
+        // Get sibling categories
         $siblingCategories = [];
         if ($category->parent_cat_id) {
-            // Get categories that have posts/users in this location
             $locationCategoryIds = [];
             
-            // For users (profiles)
             $userCategoryIds = User::whereIn('id', $userIds)
                 ->distinct()
                 ->pluck('category_id')
                 ->toArray();
                 
-            // For posts
             $postCategoryIds = Post::whereIn('user_id', $userIds)
                 ->distinct()
                 ->pluck('category_id')
@@ -219,18 +247,15 @@ class PostController extends Controller
                                         ->get();
         }
        
-        // Get child categories (filtered by location)
+        // Get child categories
         $childCategories = [];
-        // Get categories that have posts/users in this location
         $locationCategoryIds = [];
         
-        // For users (profiles)
         $userCategoryIds = User::whereIn('id', $userIds)
             ->distinct()
             ->pluck('category_id')
             ->toArray();
             
-        // For posts
         $postCategoryIds = Post::whereIn('user_id', $userIds)
             ->distinct()
             ->pluck('category_id')
@@ -257,7 +282,8 @@ class PostController extends Controller
             'parentCategory' => $parentCategory,
             'siblingCategories' => $siblingCategories,
             'childCategories' => $childCategories,
-            'breadcrumbs' => $breadcrumbs
+            'breadcrumbs' => $breadcrumbs,
+            'visitorLocationPath' => $path
         ]);
     }
     
