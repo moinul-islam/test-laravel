@@ -633,9 +633,9 @@ public function cancelOrder(Request $request, $id)
                         $vendorId,
                         'New Order Received!',
                         "Order from {$customer->name}. Amount: {$vendorTotal}. Total items: " . count($postIds),
-                        $order->id,
-                        "https://einfo.site/sell#{$order->id}" // ⭐ 5th parameter হিসাবে custom link
+                        $order->id
                     );
+                    \Log::info('Browser notification sent to vendor', ['vendor_id' => $vendorId, 'order_id' => $order->id]);
                 }
 
                
@@ -721,103 +721,78 @@ public function cancelOrder(Request $request, $id)
 
 
 
-    private function sendBrowserNotification($userId, $title, $body, $orderId = null, $customLink = null)
-    {
-        try {
-            Log::info('Starting notification process', ['user_id' => $userId]);
-            
-            $user = \App\Models\User::with('fcmTokens')->find($userId);
-            
-            if (!$user || $user->fcmTokens->isEmpty()) {
-                Log::info('No FCM tokens found for user', [
-                    'user_id' => $userId,
-                    'user_exists' => !!$user
-                ]);
-                return false;
-            }
-    
-            Log::info('User and tokens found', [
+private function sendBrowserNotification($userId, $title, $body, $orderId = null)
+{
+    try {
+        Log::info('Starting notification process', ['user_id' => $userId]);
+        
+        // User সাথে FCM tokens লোড করো
+        $user = \App\Models\User::with('fcmTokens')->find($userId);
+        
+        if (!$user || $user->fcmTokens->isEmpty()) {
+            Log::info('No FCM tokens found for user', [
                 'user_id' => $userId,
-                'tokens_count' => $user->fcmTokens->count()
-            ]);
-    
-            $serviceAccountFile = base_path("einfo-e95ba-firebase-adminsdk-fbsvc-3566bbd9bf.json");
-            $factory = (new Factory)->withServiceAccount($serviceAccountFile);
-            
-            Log::info('Firebase factory created');
-            
-            $messaging = $factory->createMessaging();
-            
-            Log::info('Firebase messaging created');
-    
-            $order = $orderId ? Order::find($orderId) : null;
-            $timestamp = now()->timestamp;
-            $uniqueId = $orderId ? "order-notification-{$orderId}-{$timestamp}" : "notification-{$timestamp}";
-            
-            // ⭐ Custom link support
-            $webUrl = $customLink ?? ($orderId ? url("/order/{$orderId}") : url('/'));
-            $deepLink = $customLink ?? ($orderId ? "https://einfo.site/order-notification-list?nid={$uniqueId}#order-{$orderId}" : "https://einfo.site/");
-    
-            foreach ($user->fcmTokens as $tokenModel) {
-                $token = $tokenModel->fcm_token;
-    
-                try {
-                    $messageBuilder = CloudMessage::withTarget('token', $token)
-                        ->withNotification([
-                            'title' => $title,
-                            'body' => $body,
-                            'image' => $user->image ? url($user->image) : '',
-                        ])
-                        ->withData([
-                            'user_id' => (string)$userId,
-                            'source_id' => $orderId ? (string)$orderId : '',
-                            'type' => 'browser_notification',
-                            'seen' => 'true',
-                            'order_id' => $orderId ? (string)$orderId : '',
-                            'order_number' => $order ? $order->order_number : '',
-                            'user_image' => $user->image ? url($user->image) : '',
-                            'action' => 'open_order',
-                            'web_url' => $webUrl, // ⭐ Custom link
-                            'deep_link' => $deepLink, // ⭐ Custom link
-                            'screen_name' => 'orders',
-                            'timestamp' => date('Y-m-d H:i:s'),
-                            'notification_type' => 'browser_notification',
-                            'notification_id' => $uniqueId
-                        ]);
-    
-                    Log::info('Message created, attempting to send', [
-                        'user_id' => $userId,
-                        'token' => $token
-                    ]);
-    
-                    $result = $messaging->send($messageBuilder);
-    
-                    Log::info('Firebase messaging response', [
-                        'user_id' => $userId,
-                        'order_id' => $orderId,
-                        'firebase_response' => $result,
-                        'token_used' => $token
-                    ]);
-                } catch (\Exception $ex) {
-                    Log::warning('Failed to send notification to a token', [
-                        'user_id' => $userId,
-                        'token' => $token,
-                        'error' => $ex->getMessage()
-                    ]);
-                }
-            }
-            
-            return true;
-    
-        } catch (\Exception $e) {
-            Log::error('Firebase notification error', [
-                'user_id' => $userId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'user_exists' => !!$user
             ]);
             return false;
         }
+
+        Log::info('User and tokens found', [
+            'user_id' => $userId,
+            'tokens_count' => $user->fcmTokens->count()
+        ]);
+
+        // Initialize Firebase Admin SDK
+        $factory = (new Factory)
+            ->withServiceAccount(storage_path('app/' . env('FIREBASE_CREDENTIALS')));
+        
+        Log::info('Firebase factory created');
+        
+        $messaging = $factory->createMessaging();
+        
+        Log::info('Firebase messaging created');
+
+        // সব token এ notification পাঠানো
+        foreach ($user->fcmTokens as $tokenModel) {
+            $token = $tokenModel->fcm_token;
+
+            try {
+                $message = CloudMessage::withTarget('token', $token)
+                    ->withNotification(Notification::create($title, $body));
+
+                Log::info('Message created, attempting to send', [
+                    'user_id' => $userId,
+                    'token' => $token
+                ]);
+
+                $result = $messaging->send($message);
+
+                Log::info('Firebase messaging response', [
+                    'user_id' => $userId,
+                    'order_id' => $orderId,
+                    'firebase_response' => $result,
+                    'token_used' => $token
+                ]);
+            } catch (\Exception $ex) {
+                Log::warning('Failed to send notification to a token', [
+                    'user_id' => $userId,
+                    'token' => $token,
+                    'error' => $ex->getMessage()
+                ]);
+            }
+        }
+        
+        return true;
+
+    } catch (\Exception $e) {
+        Log::error('Firebase notification error', [
+            'user_id' => $userId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return false;
     }
+}
 
 
     
