@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SearchController;
 
 // Language switch route - সবার উপরে রাখুন
 Route::post('/set-locale', function (\Illuminate\Http\Request $request) {
@@ -156,7 +157,7 @@ Route::get('/logout-success/{identifier}', function ($identifier) {
      return redirect('/');
 })->name('logout.success');
 
-
+Route::get('/search', [SearchController::class, 'search'])->name('search');
 
 Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');

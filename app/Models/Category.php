@@ -24,8 +24,13 @@ class Category extends Model
     }
 
     // Category.php এ relationship add করুন  
-public function posts()
-{
-    return $this->hasMany(Post::class, 'category_id');
-}
+    public function posts()
+    {
+        return $this->hasMany(Post::class, 'category_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
