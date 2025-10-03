@@ -121,6 +121,116 @@ class PostController extends Controller
         return back()->with('success', 'Post created successfully!');
     }
 
+    public function edit($id)
+{
+    $post = Post::with('category')->findOrFail($id);
+    
+    // Check if user owns this post
+    if(Auth::id() !== $post->user_id) {
+        abort(403, 'Unauthorized action.');
+    }
+    
+    return response()->json($post);
+}
+
+public function update(Request $request, $id)
+{
+    $post = Post::findOrFail($id);
+    
+    // Check if user owns this post
+    if(Auth::id() !== $post->user_id) {
+        abort(403, 'Unauthorized action.');
+    }
+    
+    // Validation
+    $request->validate([
+        'category_name' => 'required|string|max:255',
+        'title' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0',
+        'description' => 'nullable|string|max:1000|required_without:image_data',
+    ]);
+    
+    $photo = $post->image; // Keep existing image by default
+    
+    // Check if we have base64 image data from frontend processing
+    if ($request->filled('image_data')) {
+        // Delete old image if exists
+        if($post->image && file_exists(public_path('uploads/' . $post->image))) {
+            unlink(public_path('uploads/' . $post->image));
+        }
+        
+        // Process base64 image
+        $imageData = $request->input('image_data');
+        
+        // Extract the base64 content
+        $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+        $imageData = str_replace(' ', '+', $imageData);
+        $decodedImage = base64_decode($imageData);
+        
+        if ($decodedImage !== false) {
+            // Generate unique filename
+            $name_gen = hexdec(uniqid()) . '.jpg';
+            
+            // Ensure directory exists
+            if (!file_exists(public_path('uploads'))) {
+                mkdir(public_path('uploads'), 0755, true);
+            }
+            
+            // Save the image inside uploads folder
+            file_put_contents(public_path('uploads/' . $name_gen), $decodedImage);
+            
+            // Save only the filename for database
+            $photo = $name_gen;
+        }
+    }
+    // Fallback to traditional file upload if no image_data present
+    elseif ($request->hasFile('photo')) {
+        // Delete old image if exists
+        if($post->image && file_exists(public_path('uploads/' . $post->image))) {
+            unlink(public_path('uploads/' . $post->image));
+        }
+        
+        $photoFile = $request->file('photo');
+        $name_gen = hexdec(uniqid()) . '.' . $photoFile->getClientOriginalExtension();
+        
+        // Move the file to uploads folder
+        $photoFile->move(public_path('uploads'), $name_gen);
+        
+        // Save only the filename for database
+        $photo = $name_gen;
+    }
+    
+    $categoryId = null;
+    $newCategory = null;
+    
+    // Check if category_id is provided (existing category selected)
+    if ($request->filled('category_id') && $request->category_id != '') {
+        // Validate that the category exists
+        $categoryExists = Category::where('id', $request->category_id)->exists();
+        if ($categoryExists) {
+            $categoryId = $request->category_id;
+        } else {
+            // If category_id doesn't exist, treat as new category
+            $newCategory = $request->category_name;
+        }
+    } else {
+        // User typed a new category name
+        $newCategory = $request->category_name;
+    }
+    
+    // Update post in DB
+    $post->update([
+        'title' => $request->title,
+        'price' => $request->price,
+        'highest_price' => $request->discount ?? null,
+        'image' => $photo,
+        'description' => $request->description,
+        'category_id' => $categoryId, // Will be null if new category
+        'new_category' => $newCategory, // Will be null if existing category
+    ]);
+    
+    return back()->with('success', 'Post updated successfully!');
+}
     public function showByCategory(Request $request, $username, $slug)
     {
         $path = $username;
@@ -363,21 +473,6 @@ class PostController extends Controller
         //
     }
    
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-   
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
    
     /**
      * Remove the specified resource from storage.

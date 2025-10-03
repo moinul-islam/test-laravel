@@ -289,7 +289,12 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                             @if($categoryType == 'service')
                             <i class="bi bi-calendar-check"></i>
                             @else
-                            <i class="bi bi-cart-plus"></i>
+                               
+                            @if($isOwnPost)
+                                <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                            @else
+                                <i class="bi bi-cart-plus"></i>
+                            @endif
                             @endif
                             </span>
                         </div>
@@ -301,6 +306,9 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
     </section>
     @endif
 @endforeach
+
+
+
 
 {{-- Others Section --}}
 @if($new_category_posts->count() > 0)
@@ -336,7 +344,11 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                         @if($categoryType == 'service')
                         <i class="bi bi-calendar-check"></i>
                         @else
-                        <i class="bi bi-cart-plus"></i>
+                            @if($isOwnPost)
+                                <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                            @else
+                                <i class="bi bi-cart-plus"></i>
+                            @endif
                         @endif
                         </span>
                     </div>
@@ -427,7 +439,7 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
 
                <div class="row mb-4">
                                             <div class="col-sm-3">
-                                                <h6 class="mb-0">Notice Image</h6>
+                                                <h6 class="mb-0">Image</h6>
                                             </div>
                                             <div class="col-sm-9 text-secondary">
                                                 <input type="file" name="photo" class="form-control" id="formFile">
@@ -445,98 +457,69 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                                             </div>
                                         </div>
 
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-<!-- Add jQuery Ajax code -->
-<script>
-// আপডেটেড ইমেজ রোটেশন ফিক্স কোড
-document.addEventListener('DOMContentLoaded', function() {
-    // Configuration
+            <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+            <!-- Add jQuery Ajax code -->
+            <script>
+// Reusable Image Processing Function
+function setupImageProcessing(inputId, dataInputId, statusId, progressId, statusTextId, previewId = null) {
     const MAX_WIDTH = 1800;
     const MAX_HEIGHT = 1800;
     const QUALITY = 0.7;
     
-    // DOM Elements
-    const mainImageInput = document.getElementById('formFile');
-    const mainImagePreview = document.getElementById('mainThmb');
-    const imageDataInput = document.getElementById('imageData');
-    const imageProcessingStatus = document.getElementById('imageProcessingStatus');
-    const imageProgress = document.getElementById('imageProgress');
-    const imageStatusText = document.getElementById('imageStatusText');
-    const showImage = document.getElementById('showImage');
+    const imageInput = document.getElementById(inputId);
+    const imageDataInput = document.getElementById(dataInputId);
+    const imageProcessingStatus = document.getElementById(statusId);
+    const imageProgress = document.getElementById(progressId);
+    const imageStatusText = document.getElementById(statusTextId);
+    const imagePreview = previewId ? document.getElementById(previewId) : null;
     
-    // Ensure heic2any library is loaded
-    ensureHeicLibraryLoaded();
+    if (!imageInput) return;
     
-    // Form submission handler
-    const studentForm = document.getElementById('myForm');
-    if (studentForm) {
-        studentForm.addEventListener('submit', function(e) {
-            if (mainImageInput && mainImageInput.files.length > 0 && !imageDataInput.value) {
-                e.preventDefault();
-                alert('ইমেজ প্রসেসিং সম্পন্ন হওয়ার আগে অপেক্ষা করুন!');
-                return false;
-            }
-            
-            if (mainImageInput && mainImageInput.files.length > 0) {
-                mainImageInput.disabled = true;
-            }
-            
-            return true;
-        });
-    }
+    imageInput.addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (!file) return;
+        
+        // Clear previous preview
+        if (imagePreview) imagePreview.src = '';
+        
+        // File type validation
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+        
+        if (!allowedExts.includes(fileExt)) {
+            alert('অনুগ্রহ করে শুধুমাত্র JPG, PNG, GIF, WEBP, HEIC বা HEIF ফাইল আপলোড করুন!');
+            this.value = '';
+            return;
+        }
+        
+        // Show processing status
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        imageProcessingStatus.style.display = 'block';
+        imageProgress.style.width = '10%';
+        
+        if (fileExt === 'heic' || fileExt === 'heif') {
+            imageStatusText.textContent = `HEIC/HEIF ইমেজ (${fileSizeMB} MB) কনভার্ট করা হচ্ছে...`;
+        } else {
+            imageStatusText.textContent = `ইমেজ (${fileSizeMB} MB) অপ্টিমাইজ করা হচ্ছে...`;
+        }
+        
+        // Process the image
+        processImage(file, imageDataInput, imageProgress, imageStatusText, imageProcessingStatus, imagePreview);
+    });
     
-    // Main image upload event handler
-    if (mainImageInput) {
-        mainImageInput.addEventListener('change', function(e) {
-            const file = this.files[0];
-            if (!file) return;
-            
-            // Clear previous preview
-            if (mainImagePreview) mainImagePreview.src = '';
-            
-            // File type validation
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-            
-            if (!allowedExts.includes(fileExt)) {
-                alert('অনুগ্রহ করে শুধুমাত্র JPG, PNG, GIF, WEBP, HEIC বা HEIF ফাইল আপলোড করুন!');
-                this.value = '';
-                return;
-            }
-            
-            // Show processing status
-            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            imageProcessingStatus.style.display = 'block';
-            imageProgress.style.width = '10%';
-            
-            if (fileExt === 'heic' || fileExt === 'heif') {
-                imageStatusText.textContent = `HEIC/HEIF ইমেজ (${fileSizeMB} MB) কনভার্ট করা হচ্ছে...`;
-            } else {
-                imageStatusText.textContent = `ইমেজ (${fileSizeMB} MB) অপ্টিমাইজ করা হচ্ছে...`;
-            }
-            
-            // Process the image
-            processImage(file);
-        });
-    }
-    
-    // Main image processing function
-    function processImage(file) {
+    function processImage(file, dataInput, progress, statusText, processingStatus, preview) {
         const originalSize = file.size;
         const fileExt = file.name.split('.').pop().toLowerCase();
         
-        // For HEIC/HEIF files
         if ((fileExt === 'heic' || fileExt === 'heif') && typeof heic2any !== 'undefined') {
-            convertHeicToJpeg(file, originalSize);
+            convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
         } else {
-            // For regular image files
-            loadImageWithOrientation(file, originalSize);
+            loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
         }
     }
     
-    // HEIC to JPEG conversion
-    function convertHeicToJpeg(file, originalSize) {
-        imageProgress.style.width = '20%';
+    function convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
+        progress.style.width = '20%';
         
         const fileReader = new FileReader();
         fileReader.onload = function(event) {
@@ -547,43 +530,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 toType: 'image/jpeg',
                 quality: 0.8
             }).then(function(jpegBlob) {
-                imageProgress.style.width = '40%';
-                imageStatusText.textContent = 'HEIC কনভার্ট সফল! এখন অপ্টিমাইজ করা হচ্ছে...';
-                
-                // Process the converted JPEG
-                loadImageWithOrientation(jpegBlob, originalSize);
+                progress.style.width = '40%';
+                statusText.textContent = 'HEIC কনভার্ট সফল! এখন অপ্টিমাইজ করা হচ্ছে...';
+                loadImageWithOrientation(jpegBlob, originalSize, dataInput, progress, statusText, processingStatus, preview);
             }).catch(function(err) {
                 console.error('HEIC conversion error:', err);
-                imageStatusText.textContent = 'HEIC কনভার্ট করতে সমস্যা! সাধারণ পদ্ধতি চেষ্টা করা হচ্ছে...';
-                
-                // Fallback to regular processing
-                loadImageWithOrientation(file, originalSize);
+                statusText.textContent = 'HEIC কনভার্ট করতে সমস্যা! সাধারণ পদ্ধতি চেষ্টা করা হচ্ছে...';
+                loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
             });
         };
         
         fileReader.readAsArrayBuffer(file);
     }
     
-    // Load image and fix orientation
-    function loadImageWithOrientation(file, originalSize) {
-        imageProgress.style.width = '50%';
+    function loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
+        progress.style.width = '50%';
         
-        // Create a FileReader to read the file as DataURL
         const urlReader = new FileReader();
         urlReader.onload = function(event) {
-            // Create an Image element to load the image
             const img = new Image();
             
             img.onload = function() {
-                imageProgress.style.width = '60%';
+                progress.style.width = '60%';
                 
-                // Get dimensions
                 let width = img.width;
                 let height = img.height;
                 let targetWidth = width;
                 let targetHeight = height;
                 
-                // Resize if needed
                 if (width > MAX_WIDTH || height > MAX_HEIGHT) {
                     if (width > height) {
                         targetHeight = Math.round(height * (MAX_WIDTH / width));
@@ -594,92 +568,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Create canvas for the output image
                 const canvas = document.createElement('canvas');
                 canvas.width = targetWidth;
                 canvas.height = targetHeight;
                 const ctx = canvas.getContext('2d');
                 
-                // Fill with white background
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, targetWidth, targetHeight);
-                
-                // Draw the image with resizing
                 ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
                 
-                // Get final image quality
                 let targetQuality = QUALITY;
                 let fileSizeMB = file.size / (1024 * 1024);
                 
                 if (fileSizeMB > 10) targetQuality = 0.5;
                 else if (fileSizeMB > 5) targetQuality = 0.6;
                 
-                imageProgress.style.width = '90%';
+                progress.style.width = '90%';
                 
-                // Convert to blob
                 canvas.toBlob(function(blob) {
-                    // Process the resized image
-                    finalizeImageProcessing(blob, originalSize);
+                    finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview);
                 }, 'image/jpeg', targetQuality);
             };
             
-            // Set src to the FileReader result (DataURL)
             img.src = event.target.result;
         };
         
-        // Read the file as DataURL
         urlReader.readAsDataURL(file);
     }
     
-    // Finalize image processing and update UI
-    function finalizeImageProcessing(blob, originalSize) {
-        // Convert to data URL for preview
+    function finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Update preview images
-            if (mainImagePreview) {
-                mainImagePreview.src = e.target.result;
-                mainImagePreview.style.display = 'block';
-                mainImagePreview.style.border = '3px solid #28a745';
+            if (preview) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                preview.style.border = '3px solid #28a745';
             }
             
-            if (showImage) {
-                showImage.src = e.target.result;
-                showImage.style.border = '3px solid #28a745';
-            }
-            
-            // Update status
             const compressedSize = blob.size;
             const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
-            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced Success!)</span>`;
-            imageStatusText.style.color = '#28a745';
-            
-            // Hide progress bar
-            imageProcessingStatus.style.display = 'none';
+            statusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced Success!)</span>`;
+            statusText.style.color = '#28a745';
+            processingStatus.style.display = 'none';
         };
         reader.readAsDataURL(blob);
         
-        // Save data URL to hidden input
         const dataReader = new FileReader();
         dataReader.onload = function(e) {
-            imageDataInput.value = e.target.result;
+            dataInput.value = e.target.result;
         };
         dataReader.readAsDataURL(blob);
     }
     
-    // Load heic2any library if needed
-    function ensureHeicLibraryLoaded() {
-        if (typeof heic2any === 'undefined') {
-            console.log('HEIC library not found, loading it now...');
-            
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
-            script.async = true;
-            document.head.appendChild(script);
-        }
-    }
-    
-    // Format file size helper
     function formatFileSize(bytes) {
         if (bytes < 1024) {
             return bytes + " B";
@@ -689,6 +629,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return (bytes / 1048576).toFixed(2) + " MB";
         }
     }
+}
+
+// Initialize for Create Post Modal
+document.addEventListener('DOMContentLoaded', function() {
+    setupImageProcessing('formFile', 'imageData', 'imageProcessingStatus', 'imageProgress', 'imageStatusText', 'mainThmb');
+    
+    // Initialize for Edit Post Modal
+    setupImageProcessing('editFormFile', 'editImageData', 'editImageProcessingStatus', 'editImageProgress', 'editImageStatusText', 'edit_current_image');
 });
 </script>
 
@@ -717,6 +665,198 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 @endif
 @endauth
+
+
+
+{{-- Edit Post Modal (Only for Own Profile) --}}
+@auth
+@if(Auth::id() === $user->id)
+<div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+   <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="editPostModalLabel">Edit Post</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+         </div>
+         <div class="modal-body">
+            <form action="" method="POST" enctype="multipart/form-data" id="editPostForm">
+               @csrf
+               @method('PUT')
+               
+               <input type="hidden" id="edit_post_id" name="post_id">
+               
+               {{-- Category Field --}}
+               <div class="mb-3">
+                  <label for="edit_category_name" class="form-label">Post Category <span class="text-danger">*</span></label>
+                  <div style="position: relative;">
+                     <input type="text" class="form-control" id="edit_category_name" name="category_name" placeholder="Type to search categories..." autocomplete="off" required>
+                     <input type="hidden" id="edit_category_id" name="category_id" value="">
+                     <div id="edit_suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
+                  </div>
+               </div>
+               
+               {{-- Title Field --}}
+               <div class="mb-3">
+                  <label for="edit_title" class="form-label">Title <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="edit_title" name="title" required>
+               </div>
+               
+               {{-- Price Field --}}
+               <div class="mb-3">
+                  <label for="edit_price" class="form-label">Price <span class="text-danger">*</span></label>
+                  <input type="number" class="form-control" id="edit_price" name="price" min="0" step="0.01" required>
+               </div>
+               
+               {{-- Current Image Display --}}
+               <div class="mb-3">
+                  <label class="form-label">Current Image</label>
+                  <div>
+                     <img id="edit_current_image" src="" alt="Current Image" style="max-width: 200px; max-height: 200px; border: 2px solid #ddd; border-radius: 8px;">
+                  </div>
+               </div>
+               
+               {{-- Image Upload --}}
+<div class="row mb-4">
+    <div class="col-sm-3">
+        <h6 class="mb-0">Change Image</h6>
+    </div>
+    <div class="col-sm-9 text-secondary">
+        <input type="file" name="photo" class="form-control" id="editFormFile">
+        <input type="hidden" name="image_data" id="editImageData">
+        
+        <div id="editImageProcessingStatus" style="display: none;" class="mt-2">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="editImageProgress"></div>
+            </div>
+            <small id="editImageStatusText">Image processing is going on....</small>
+        </div>
+    </div>
+</div>
+               
+               {{-- Description --}}
+               <div class="mb-3">
+                  <label for="edit_description" class="form-label">Description</label>
+                  <textarea class="form-control" id="edit_description" name="description" rows="4"></textarea>
+               </div>
+            </form>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" form="editPostForm" class="btn btn-primary">Update Post</button>
+         </div>
+      </div>
+   </div>
+</div>
+@endif
+@endauth
+
+<script>
+// Edit Post Function
+function editPost(postId) {
+    // Fetch post data via AJAX
+    fetch(`/post/${postId}/edit`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Populate form fields
+        document.getElementById('edit_post_id').value = data.id;
+        document.getElementById('edit_title').value = data.title;
+        document.getElementById('edit_price').value = data.price;
+        document.getElementById('edit_description').value = data.description || '';
+        
+        // Set category
+        if(data.category) {
+            document.getElementById('edit_category_name').value = data.category.category_name;
+            document.getElementById('edit_category_id').value = data.category.id;
+        } else if(data.new_category) {
+            document.getElementById('edit_category_name').value = data.new_category;
+            document.getElementById('edit_category_id').value = '';
+        }
+        
+        // Set current image
+        if(data.image) {
+            document.getElementById('edit_current_image').src = `/uploads/${data.image}`;
+        } else {
+            document.getElementById('edit_current_image').src = '/profile-image/no-image.jpeg';
+        }
+        
+        // Set form action
+        document.getElementById('editPostForm').action = `/post/${postId}/update`;
+        
+        // Show modal
+        const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
+        editModal.show();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load post data');
+    });
+}
+
+// Edit form এর জন্য category search functionality
+const editCategoryInput = document.getElementById('edit_category_name');
+const editCategoryIdInput = document.getElementById('edit_category_id');
+const editSuggestionsDiv = document.getElementById('edit_suggestions');
+
+if(editCategoryInput) {
+    editCategoryInput.addEventListener('input', function() {
+        const searchValue = this.value.trim();
+        
+        if (searchValue.length > 0) {
+            showEditSuggestions(searchValue);
+            
+            const exactMatch = categories.find(category => 
+                category.category_name.toLowerCase() === searchValue.toLowerCase()
+            );
+            
+            if (exactMatch) {
+                editCategoryIdInput.value = exactMatch.id;
+            } else {
+                editCategoryIdInput.value = '';
+            }
+        } else {
+            editSuggestionsDiv.style.display = 'none';
+            editCategoryIdInput.value = '';
+        }
+    });
+}
+
+function showEditSuggestions(searchTerm) {
+    const filteredCategories = categories.filter(category =>
+        category.category_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (filteredCategories.length === 0) {
+        editSuggestionsDiv.innerHTML = '<div style="padding: 10px 15px; color: #6c757d;">No matching categories found</div>';
+        editSuggestionsDiv.style.display = 'block';
+        return;
+    }
+
+    const suggestionsHtml = filteredCategories.map(category => `
+        <div style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+             onclick="selectEditCategory(${category.id}, '${category.category_name}')"
+             onmouseover="this.style.backgroundColor='#f8f9fa'"
+             onmouseout="this.style.backgroundColor='white'">
+            ${category.category_name} <small style="color: #6c757d;">(${category.cat_type})</small>
+        </div>
+    `).join('');
+
+    editSuggestionsDiv.innerHTML = suggestionsHtml;
+    editSuggestionsDiv.style.display = 'block';
+}
+
+function selectEditCategory(id, name) {
+    editCategoryInput.value = name;
+    editCategoryIdInput.value = id;
+    editSuggestionsDiv.style.display = 'none';
+}
+</script>
+
 {{-- Modal and Category JavaScript --}}
 <script>
    // Categories data from backend
