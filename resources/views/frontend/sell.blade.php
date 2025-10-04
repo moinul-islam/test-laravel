@@ -723,4 +723,22 @@
    confirmOrderWithDelivery('self');
    }
 </script>
+
+<script>
+window.addEventListener('load', function() {
+    const hash = window.location.hash;
+    if (hash) {
+        const element = document.querySelector(hash);
+        if (element && element.classList.contains('collapse')) {
+            // Bootstrap collapse open করুন
+            const collapse = new bootstrap.Collapse(element, { show: true });
+            
+            // Scroll করুন
+            setTimeout(() => {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+    }
+});
+</script>
 @endsection

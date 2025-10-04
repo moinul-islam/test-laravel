@@ -634,7 +634,7 @@ public function cancelOrder(Request $request, $id)
                         'New Order Received!',
                         "Order from {$customer->name}. Amount: {$vendorTotal}. Total items: " . count($postIds),
                         $order->id,
-                        url('/sell#orderHeader' . $order->id) // Correct dynamic link
+                        url('/sell#orderBody' . $order->id) // Correct dynamic link
                     );
                     \Log::info('Browser notification sent to vendor', ['vendor_id' => $vendorId, 'order_id' => $order->id]);
                 }
