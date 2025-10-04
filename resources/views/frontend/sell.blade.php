@@ -28,7 +28,7 @@
          </div>
          <div class="row">
             @foreach($orders as $order)
-            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}">
+            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}" id="order{{ $order->id }}">
                <div class="card shadow-sm border-0">
                   <div class="card-header bg-light d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#orderBody{{ $order->id }}" id="orderHeader{{ $order->id }}">
                      <div>
@@ -725,19 +725,34 @@
 </script>
 
 <script>
-window.addEventListener('load', function() {
+document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash;
-    if (hash) {
-        const element = document.querySelector(hash);
-        if (element && element.classList.contains('collapse')) {
-            // Bootstrap collapse open করুন
-            const collapse = new bootstrap.Collapse(element, { show: true });
+    
+    if (hash && hash.startsWith('#orderBody')) {
+        setTimeout(() => {
+            const collapseElement = document.querySelector(hash);
             
-            // Scroll করুন
-            setTimeout(() => {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 300);
-        }
+            if (collapseElement) {
+                // Bootstrap collapse open করুন
+                const bsCollapse = new bootstrap.Collapse(collapseElement, {
+                    show: true
+                });
+                
+                // Order card খুঁজে বের করুন এবং scroll করুন
+                const orderId = hash.replace('#orderBody', '');
+                const orderCard = document.getElementById('order' + orderId);
+                
+                if (orderCard) {
+                    // একটু delay দিয়ে scroll করুন যাতে collapse animation শেষ হয়
+                    setTimeout(() => {
+                        orderCard.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                    }, 350);
+                }
+            }
+        }, 100);
     }
 });
 </script>
