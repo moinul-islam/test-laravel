@@ -113,8 +113,7 @@ Route::get('/products', function () {
 // Route::get('/products/{category}', [PostController::class, 'showByCategory'])->name('products.category');
 
 
-// Single route for all category levels
-Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
+
 
 // Add this route for post deletion
 Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.destroy')->middleware('auth');
@@ -167,6 +166,9 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
+
+// Single route for all category levels
+Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
 
 require __DIR__.'/auth.php';
 Route::get('/{username}',  [LocationController::class, 'usernameWiseHome'])->name('profile.show');
