@@ -126,7 +126,7 @@ class PostController extends Controller
     $post = Post::with('category')->findOrFail($id);
     
     // Check if user owns this post
-    if(Auth::id() !== $post->user_id) {
+    if(Auth::id() != $post->user_id) {
         abort(403, 'Unauthorized action.');
     }
     

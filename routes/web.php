@@ -159,8 +159,11 @@ Route::get('/logout-success/{identifier}', function ($identifier) {
 
 Route::get('/search', [SearchController::class, 'search'])->name('search');
 
-Route::get('/post/{id}/edit', [PostController::class, 'edit'])->name('post.edit');
-Route::put('/post/{id}/update', [PostController::class, 'update'])->name('post.update');
+Route::middleware('auth')->group(function () {
+    Route::get('/post/{id}/edit', [PostController::class, 'edit'])->name('post.edit');
+    Route::put('/post/{id}/update', [PostController::class, 'update'])->name('post.update');
+});
+
 
 Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
