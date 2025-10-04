@@ -28,7 +28,7 @@
          </div>
          <div class="row">
             @foreach($orders as $order)
-            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}" id="#{{ $order->id }}">
+            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}" id="{{ $order->id }}">
                <div class="card shadow-sm border-0">
                   <div class="card-header bg-light d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#orderBody{{ $order->id }}">
                      <div>
