@@ -138,7 +138,7 @@ public function update(Request $request, $id)
     $post = Post::findOrFail($id);
     
     // Check if user owns this post
-    if(Auth::id() !== $post->user_id) {
+    if(Auth::id() != $post->user_id) {
         abort(403, 'Unauthorized action.');
     }
     
