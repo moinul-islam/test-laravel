@@ -28,9 +28,9 @@
          </div>
          <div class="row">
             @foreach($orders as $order)
-            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}" id="{{ $order->id }}">
+            <div class="col-12 mb-4 order-card" data-status="{{ $order->status }}">
                <div class="card shadow-sm border-0">
-                  <div class="card-header bg-light d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#orderBody{{ $order->id }}">
+                  <div class="card-header bg-light d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#orderBody{{ $order->id }}" id="orderHeader{{ $order->id }}">
                      <div>
                         <h6 class="mb-0">Order #{{ $order->id }}</h6>
                         <small class="text-muted">{{ $order->created_at->timezone('Asia/Dhaka')->format('d M Y - h:i A') }}</small>
