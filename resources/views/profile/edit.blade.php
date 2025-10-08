@@ -293,6 +293,58 @@
     border-bottom: 0;
 }
 
+
+/* ============ Dark Mode Styles ============ */
+[data-bs-theme="dark"] .form-label {
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .form-control {
+    background-color: #2b3035;
+    border-color: #495057;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-select option {
+    background-color: #2b3035;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #6c757d;
+}
+
+[data-bs-theme="dark"] .form-select:focus,
+[data-bs-theme="dark"] .form-control:focus {
+    background-color: #2b3035;
+    border-color: #6c757d;
+    color: #dee2e6;
+}
+
+/* Select2 dark mode support */
+[data-bs-theme="dark"] .select2-container--bootstrap4 .select2-selection {
+    background-color: #2b3035;
+    border-color: #495057;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .select2-container--bootstrap4 .select2-selection__rendered {
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .select2-container--bootstrap4 .select2-dropdown {
+    background-color: #2b3035;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .select2-container--bootstrap4 .select2-results__option {
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .select2-container--bootstrap4 .select2-results__option--highlighted {
+    background-color: #495057;
+}
  
 </style>
 
