@@ -12,6 +12,60 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    
+<style>
+/* Dark mode styles */
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-body-color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .navbar {
+    background-color: #1a1d20 !important;
+    border-bottom: 1px solid #495057;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #2b3035;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .nav-item-custom {
+    background: #2b3035;
+    border-color: #495057;
+    color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .nav-item-custom.active {
+    background: #1e3a5f;
+    color: #4da3ff;
+    border-color: #4da3ff;
+}
+
+[data-bs-theme="dark"] .modal-content {
+    background-color: #2b3035;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #1a1d20;
+    border-color: #495057;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .btn-light {
+    background-color: #495057;
+    border-color: #495057;
+    color: #fff;
+}
+
+[data-bs-theme="dark"] input::placeholder {
+    color: #6c757d;
+}
+</style>
+
+
     <style>
         @media (max-width: 331px) {
             .ms-2 {
@@ -965,6 +1019,34 @@ document.addEventListener('DOMContentLoaded', function() {
         user: @json(auth()->user())
     };
 </script>
+
+<script>
+// System theme detection - No button needed
+(function() {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    function applyTheme(e) {
+        if (e.matches) {
+            // Dark mode
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            document.body.style.backgroundColor = '#212529';
+            document.body.style.color = '#dee2e6';
+        } else {
+            // Light mode
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            document.body.style.backgroundColor = '#ffffff';
+            document.body.style.color = '#212529';
+        }
+    }
+    
+    // Initial theme apply
+    applyTheme(prefersDark);
+    
+    // Listen for system theme changes
+    prefersDark.addEventListener('change', applyTheme);
+})();
+</script>
+
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
