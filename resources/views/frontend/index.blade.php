@@ -26,6 +26,70 @@
     display: flex;
     flex-wrap: wrap;
 }
+
+
+
+/* Section titles */
+[data-bs-theme="dark"] .section-title {
+    color: #dee2e6 !important;
+}
+
+/* Category card text */
+[data-bs-theme="dark"] .text-center span {
+    color: #dee2e6 !important;
+}
+
+[data-bs-theme="dark"] .text-decoration-none span {
+    color: #dee2e6 !important;
+}
+
+/* See More/Less buttons background */
+[data-bs-theme="dark"] .mx-auto {
+    background: #343a40 !important;
+}
+
+/* See More/Less text */
+[data-bs-theme="dark"] #toggleTextSm,
+[data-bs-theme="dark"] #toggleTextLg,
+[data-bs-theme="dark"] span[id^="prodToggleTextSm"],
+[data-bs-theme="dark"] span[id^="prodToggleTextLg"] {
+    color: #adb5bd !important;
+}
+
+/* Profile tags (badges) */
+[data-bs-theme="dark"] .badge.bg-light {
+    background-color: #495057 !important;
+    color: #dee2e6 !important;
+    border-color: #6c757d !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+/* Links - prevent turning white */
+[data-bs-theme="dark"] a.text-decoration-none {
+    color: inherit;
+}
+
+/* Image containers in dark mode */
+[data-bs-theme="dark"] .mx-auto.mb-2 {
+    background: #343a40 !important;
+    border-radius: 8px;
+}
+
+/* Select dropdowns (if location section is enabled) */
+[data-bs-theme="dark"] .form-select {
+    background-color: #2b3035;
+    border-color: #495057;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-select option {
+    background-color: #2b3035;
+    color: #dee2e6;
+}
 </style>
 
 
