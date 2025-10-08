@@ -3,9 +3,10 @@
         <!-- Left: Logo -->
         <a class="navbar-brand" href="/">
             <img src="{{ asset('logo.png') }}"
-                 class="rounded-circle"
-                 alt="User"
-                 style="width:32px; height:32px; object-fit:cover;">
+                id="site-logo"
+                class="rounded-circle"
+                alt="Logo"
+                style="width:32px; height:32px; object-fit:cover;">
         </a>
         
         <!-- Center: Search -->

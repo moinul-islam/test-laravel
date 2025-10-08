@@ -1021,21 +1021,33 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// System theme detection - No button needed
+// System theme detection with logo change - No button needed
 (function() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     
     function applyTheme(e) {
+        const logo = document.getElementById('site-logo');
+        
         if (e.matches) {
             // Dark mode
             document.documentElement.setAttribute('data-bs-theme', 'dark');
             document.body.style.backgroundColor = '#212529';
             document.body.style.color = '#dee2e6';
+            
+            // Change logo for dark mode
+            if (logo) {
+                logo.src = "{{ asset('white-logo.png') }}";
+            }
         } else {
             // Light mode
             document.documentElement.setAttribute('data-bs-theme', 'light');
             document.body.style.backgroundColor = '#ffffff';
             document.body.style.color = '#212529';
+            
+            // Change logo for light mode
+            if (logo) {
+                logo.src = "{{ asset('logo.png') }}";
+            }
         }
     }
     
