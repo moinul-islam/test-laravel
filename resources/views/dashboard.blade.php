@@ -118,6 +118,10 @@
          background: #fff;
          /* border-bottom: 1px solid #e0e0e0; */
          }
+         /* Dark mode background */
+        [data-bs-theme="dark"] .scroll-container {
+            background: #212529;
+        }
          .scroll-content {
          display: flex;
          overflow-x: auto;
