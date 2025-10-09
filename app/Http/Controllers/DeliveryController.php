@@ -22,6 +22,7 @@ class DeliveryController extends Controller
                       ->orWhere('email', 'LIKE', "%{$search}%")
                       ->orWhere('phone_number', 'LIKE', "%{$search}%")
                       ->orWhere('job_title', 'LIKE', "%{$search}%")
+                      ->orWhere('category', 'LIKE', "%{$search}%")
                       ->orWhere('username', 'LIKE', "%{$search}%")
                       ->orWhere('area', 'LIKE', "%{$search}%");
                 });
