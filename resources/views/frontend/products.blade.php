@@ -106,7 +106,7 @@
         
         @php
             // Determine which cat_types to show based on current category
-            if(isset($category) && $category->cat_type === 'profile') {
+            if(isset($category) && $category->cat_type == 'profile') {
                 // If current is profile, show only profiles
                 $allowedCatTypes = ['profile'];
             } else {
