@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Category;
 
 class DeliveryController extends Controller
 {
@@ -14,7 +15,7 @@ class DeliveryController extends Controller
     public function adminIndex(Request $request)
     {
         $search = $request->get('search');
-    
+   
         $users = User::query()
             ->when($search, function($query, $search) {
                 return $query->where(function($q) use ($search) {
@@ -24,16 +25,16 @@ class DeliveryController extends Controller
                     ->orWhere('job_title', 'LIKE', "%{$search}%")
                     ->orWhere('username', 'LIKE', "%{$search}%")
                     ->orWhere('area', 'LIKE', "%{$search}%")
-                    // Category name দিয়ে search করার জন্য whereHas ব্যবহার করুন
+                    // Category name দিয়ে search - column name 'category_name'
                     ->orWhereHas('category', function($categoryQuery) use ($search) {
-                        $categoryQuery->where('name', 'LIKE', "%{$search}%");
+                        $categoryQuery->where('category_name', 'LIKE', "%{$search}%");
                     });
                 });
             })
             ->with(['category', 'country', 'city'])
             ->latest()
             ->paginate(100);
-    
+   
         return view('frontend.admin', compact('users'));
     }
 }
