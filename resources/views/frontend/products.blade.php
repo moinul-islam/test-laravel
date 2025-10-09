@@ -109,11 +109,22 @@
             $navCategories = collect();
             
             if(isset($category)) {
+                // Determine if current category is profile or product/service
+                $isProfile = ($category->cat_type == 'profile');
+                
                 // If category is a child (has parent), show siblings
                 if($category->parent_cat_id) {
-                    $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
-                        ->whereIn('cat_type', ['product', 'service', 'profile'])
-                        ->get();
+                    if($isProfile) {
+                        // Show only profile siblings
+                        $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
+                            ->where('cat_type', 'profile')
+                            ->get();
+                    } else {
+                        // Show both product AND service siblings
+                        $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
+                            ->whereIn('cat_type', ['product', 'service'])
+                            ->get();
+                    }
                 } 
                 // If category is parent (universal), show its children
                 else if($category->cat_type == 'universal') {
