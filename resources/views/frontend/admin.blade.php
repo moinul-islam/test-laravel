@@ -1,9 +1,31 @@
 @extends('frontend.master')
 @section('main-content')
 <div class="py-4 ms-3 me-3">
-    <div class="mb-4">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
         <a href="/categories" class="btn btn-outline-success">Categories</a>
+        
+        <!-- Search Form -->
+        <form method="GET" action="{{ request()->url() }}" class="d-flex" style="width: 400px;">
+            <input type="text" 
+                   name="search" 
+                   class="form-control me-2" 
+                   placeholder="Search by name, email, phone, job title..." 
+                   value="{{ request('search') }}"
+                   autocomplete="off">
+            <button type="submit" class="btn btn-primary">Search</button>
+            @if(request('search'))
+                <a href="{{ request()->url() }}" class="btn btn-secondary ms-2">Clear</a>
+            @endif
+        </form>
     </div>
+
+    @if(request('search'))
+        <div class="alert alert-info">
+            Showing results for: <strong>{{ request('search') }}</strong> 
+            ({{ $users->total() }} {{ $users->total() == 1 ? 'result' : 'results' }} found)
+        </div>
+    @endif
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered table-striped">
@@ -72,7 +94,7 @@
        
         <!-- Pagination Links -->
         <div class="d-flex justify-content-center mt-3">
-            {{ $users->links('pagination::bootstrap-4') }}
+            {{ $users->appends(['search' => request('search')])->links('pagination::bootstrap-4') }}
         </div>
     </div>
 </div>
