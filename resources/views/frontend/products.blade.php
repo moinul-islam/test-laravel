@@ -104,13 +104,26 @@
             </ul>
         @endif
         
+        @php
+            // Determine which cat_types to show based on current category
+            if(isset($category) && $category->cat_type === 'profile') {
+                // If current is profile, show only profiles
+                $allowedCatTypes = ['profile'];
+            } else {
+                // If current is product/service (or home), show both product & service
+                $allowedCatTypes = ['product', 'service'];
+            }
+        @endphp
+        
         @if(isset($siblingCategories) && $siblingCategories->count() > 0)
-            {{-- Show sibling categories --}}
+            {{-- Show sibling categories (filtered by cat_type) --}}
             @foreach($siblingCategories as $siblingCat)
-                <a href="{{ route('products.category',[$visitorLocationPath, $siblingCat->slug]) }}" 
-                   class="nav-item-custom {{ $category->id == $siblingCat->id ? 'active' : '' }}">
-                    <span>{{ $siblingCat->category_name }}</span>
-                </a>
+                @if(in_array($siblingCat->cat_type, $allowedCatTypes))
+                    <a href="{{ route('products.category',[$visitorLocationPath, $siblingCat->slug]) }}" 
+                       class="nav-item-custom {{ isset($category) && $category->id == $siblingCat->id ? 'active' : '' }}">
+                        <span>{{ $siblingCat->category_name }}</span>
+                    </a>
+                @endif
             @endforeach
         @else
             {{-- Show main parent categories --}}
@@ -123,7 +136,7 @@
             @foreach($parentCategories as $parentCat)
                 @php
                     $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
-                                                       ->whereIn('cat_type', ['product', 'service', 'profile'])
+                                                       ->whereIn('cat_type', $allowedCatTypes)
                                                        ->get();
                 @endphp
                 
