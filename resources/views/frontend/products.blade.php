@@ -104,16 +104,36 @@
             </ul>
         @endif
         
-        @if(isset($siblingCategories) && $siblingCategories->count() > 0)
-            {{-- Show sibling categories --}}
-            @foreach($siblingCategories as $siblingCat)
-                <a href="{{ route('products.category',[$visitorLocationPath, $siblingCat->slug]) }}" 
-                   class="nav-item-custom {{ $category->id == $siblingCat->id ? 'active' : '' }}">
-                    <span>{{ $siblingCat->category_name }}</span>
+        @php
+            // Determine which categories to show in navigation
+            $navCategories = collect();
+            
+            if(isset($category)) {
+                // If category is a child (has parent), show siblings
+                if($category->parent_cat_id) {
+                    $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
+                        ->whereIn('cat_type', ['product', 'service', 'profile'])
+                        ->get();
+                } 
+                // If category is parent (universal), show its children
+                else if($category->cat_type == 'universal') {
+                    $navCategories = \App\Models\Category::where('parent_cat_id', $category->id)
+                        ->whereIn('cat_type', ['product', 'service', 'profile'])
+                        ->get();
+                }
+            }
+        @endphp
+        
+        @if($navCategories->count() > 0)
+            {{-- Show determined categories --}}
+            @foreach($navCategories as $navCat)
+                <a href="{{ route('products.category',[$visitorLocationPath, $navCat->slug]) }}" 
+                   class="nav-item-custom {{ isset($category) && $category->id == $navCat->id ? 'active' : '' }}">
+                    <span>{{ $navCat->category_name }}</span>
                 </a>
             @endforeach
         @else
-            {{-- Show main parent categories --}}
+            {{-- Show main parent categories as dropdown --}}
             @php
                 $parentCategories = \App\Models\Category::where('cat_type', 'universal')
                                                        ->whereNull('parent_cat_id')
