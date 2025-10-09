@@ -12,6 +12,7 @@ use App\Http\Controllers\SmsController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\AdminPostController;
 
 // Language switch route - সবার উপরে রাখুন
 Route::post('/set-locale', function (\Illuminate\Http\Request $request) {
@@ -42,6 +43,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories');
 });
 
+
+// Admin Routes
+Route::middleware(['auth'])->group(function() {
+    Route::get('/admin/create-post', [AdminPostController::class, 'showCreateForm'])->name('admin.post.create');
+    Route::post('/admin/create-post', [AdminPostController::class, 'store'])->name('admin.post.store');
+});
 
 // web.php এ
 Route::middleware(['auth', 'role:admin'])->group(function () {

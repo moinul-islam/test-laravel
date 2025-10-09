@@ -1,21 +1,23 @@
 @extends('frontend.master')
 @section('main-content')
 <div class="py-4 ms-3 me-3">
-    <div class="mb-4 d-flex justify-content-between align-items-center">
-        <a href="/categories" class="btn btn-outline-success">Categories</a>
+    <div class="mb-4 d-flex">
+        <a href="/categories" class="btn btn-outline-success me-2">Categories</a>
+        <a href="/admin/create-post" class="btn btn-outline-primary me-2">Add Post</a>
         
         <!-- Search Form -->
         <form method="GET" action="{{ request()->url() }}" class="d-flex" style="width: 400px;">
-            <input type="text" 
-                   name="search" 
-                   class="form-control me-2" 
-                   placeholder="Search by name, email, phone, job title..." 
-                   value="{{ request('search') }}"
-                   autocomplete="off">
-            <button type="submit" class="btn btn-primary">Search</button>
-            @if(request('search'))
-                <a href="{{ request()->url() }}" class="btn btn-secondary ms-2">Clear</a>
-            @endif
+            <div class="input-group">
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Search by name, email, phone, job title..." 
+                       value="{{ request('search') }}"
+                       autocomplete="off">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
         </form>
     </div>
 
