@@ -92,15 +92,17 @@
             <span><i class="bi bi-house"></i></span>
         </a>
         
-        <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <span><i class="bi bi-funnel"></i> Filter</span>
-        </a>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" onclick="sortBy('price-low'); return false;">Price: Low to High</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('price-high'); return false;">Price: High to Low</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('best-selling'); return false;">Best Selling</a></li>
-            <li><a class="dropdown-item" href="#" onclick="sortBy('newest'); return false;">Newest First</a></li>
-        </ul>
+        @if(!isset($category) || $category->cat_type !== 'profile')
+            <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <span><i class="bi bi-funnel"></i> Filter</span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="sortBy('price-low'); return false;">Price: Low to High</a></li>
+                <li><a class="dropdown-item" href="#" onclick="sortBy('price-high'); return false;">Price: High to Low</a></li>
+                <li><a class="dropdown-item" href="#" onclick="sortBy('best-selling'); return false;">Best Selling</a></li>
+                <li><a class="dropdown-item" href="#" onclick="sortBy('newest'); return false;">Newest First</a></li>
+            </ul>
+        @endif
         
         @if(isset($siblingCategories) && $siblingCategories->count() > 0)
             {{-- Show sibling categories --}}
@@ -146,7 +148,7 @@
     </div>
 </div>
 
-<!-- Breadcrumb Navigation -->
+<!-- Breadcrumb Navigation 
 @if(isset($breadcrumbs) && count($breadcrumbs) > 0)
     <div class="container mt-3">
         <nav aria-label="breadcrumb">
@@ -166,21 +168,21 @@
             </ol>
         </nav>
     </div>
-@endif
+@endif -->
 
 <!-- Child Categories Tags -->
 @if(isset($childCategories) && $childCategories->count() > 0)
     <div class="col-12 text-center mt-3">
         <div class="d-flex flex-wrap justify-content-center gap-1" id="childCategoriesTags">
             
-            <!-- Back to parent button (if applicable) -->
+            <!-- Back to parent button (if applicable) 
             @if(isset($parentCategory))
                 <a href="{{ route('products.category', [$visitorLocationPath, $parentCategory->slug]) }}" 
                    class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
                    style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
                     <i class="bi bi-arrow-left"></i> Back to {{ $parentCategory->category_name }}
                 </a>
-            @endif
+            @endif -->
             
             <!-- Current category (All items) -->
             <a href="{{ route('products.category', [$visitorLocationPath, $category->slug]) }}" 
