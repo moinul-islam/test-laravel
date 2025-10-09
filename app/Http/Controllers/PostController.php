@@ -231,31 +231,41 @@ public function update(Request $request, $id)
     
     return back()->with('success', 'Post updated successfully!');
 }
-    public function showByCategory(Request $request, $username, $slug)
-    {
-        $path = $username;
-        $category = Category::where('slug', $slug)->first();
-       
-        if (!$category) {
-            abort(404, 'Category not found');
-        }
-       
-        // Get all descendant category IDs
-        $categoryIds = $this->getAllDescendantCategoryIds($category->id);
-        $categoryIds[] = $category->id;
-       
-        // Initialize user IDs based on location
-        $userIds = [];
-        
-        if ($path == 'international') {
-            $userIds = User::where(function($query) {
-                $query->where('phone_verified', 0)
-                      ->orWhere('email_verified', 0);
-            })->pluck('id')->toArray();
+public function showByCategory(Request $request, $username, $slug)
+{
+    $path = $username;
+    $category = Category::where('slug', $slug)->first();
+   
+    if (!$category) {
+        abort(404, 'Category not found');
+    }
+   
+    // Get all descendant category IDs
+    $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+    $categoryIds[] = $category->id;
+   
+    // Initialize user IDs based on location
+    $userIds = [];
+    
+    if ($path == 'international') {
+        $userIds = User::where(function($query) {
+            $query->where('phone_verified', 0)
+                  ->orWhere('email_verified', 0);
+        })->pluck('id')->toArray();
+    } else {
+        $country = Country::where('username', $path)->first();
+        if ($country) {
+            $userIds = User::where('country_id', $country->id)
+                ->where(function($query) {
+                    $query->where('phone_verified', 0)
+                          ->orWhere('email_verified', 0);
+                })
+                ->pluck('id')
+                ->toArray();
         } else {
-            $country = Country::where('username', $path)->first();
-            if ($country) {
-                $userIds = User::where('country_id', $country->id)
+            $city = City::where('username', $path)->first();
+            if ($city) {
+                $userIds = User::where('city_id', $city->id)
                     ->where(function($query) {
                         $query->where('phone_verified', 0)
                               ->orWhere('email_verified', 0);
@@ -263,34 +273,31 @@ public function update(Request $request, $id)
                     ->pluck('id')
                     ->toArray();
             } else {
-                $city = City::where('username', $path)->first();
-                if ($city) {
-                    $userIds = User::where('city_id', $city->id)
-                        ->where(function($query) {
-                            $query->where('phone_verified', 0)
-                                  ->orWhere('email_verified', 0);
-                        })
-                        ->pluck('id')
-                        ->toArray();
-                } else {
-                    $userIds = User::where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })->pluck('id')->toArray();
-                }
+                $userIds = User::where(function($query) {
+                    $query->where('phone_verified', 0)
+                          ->orWhere('email_verified', 0);
+                })->pluck('id')->toArray();
             }
         }
-       
-        // Check if there are users with these category IDs
-        $hasUsers = User::whereIn('category_id', $categoryIds)
+    }
+   
+    // Handle sorting
+    $sortType = $request->get('sort', 'newest');
+    
+    // ✅ Check category type - Profile vs Product/Service
+    if ($category->cat_type == 'profile') {
+        // Show Users for Profile categories
+        $posts = User::whereIn('category_id', $categoryIds)
             ->whereIn('id', $userIds)
-            ->exists();
-       
-        // Handle sorting
-        $sortType = $request->get('sort', 'newest');
+            ->with('category')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+            
+    } else {
+        // Show Posts for Product/Service categories
         
         // ✅ Best Selling এর জন্য আলাদা query
-        if (!$hasUsers && $sortType === 'best-selling') {
+        if ($sortType == 'best-selling') {
             $posts = Post::with(['user', 'category'])
                 ->whereIn('posts.category_id', $categoryIds)
                 ->whereIn('posts.user_id', $userIds)
@@ -328,17 +335,11 @@ public function update(Request $request, $id)
                 ->paginate(12);
         } else {
             // ✅ অন্যান্য sorting এর জন্য normal query
-            if ($hasUsers) {
-                $posts = User::whereIn('category_id', $categoryIds)
-                            ->whereIn('id', $userIds)
-                            ->with('category');
-            } else {
-                $posts = Post::with(['user', 'category'])
-                             ->whereIn('posts.category_id', $categoryIds)
-                             ->whereIn('posts.user_id', $userIds);
-            }
+            $posts = Post::with(['user', 'category'])
+                         ->whereIn('posts.category_id', $categoryIds)
+                         ->whereIn('posts.user_id', $userIds);
             
-            // Apply other sorting
+            // Apply sorting
             switch ($sortType) {
                 case 'price-low':
                     $posts = $posts->orderBy('price', 'asc');
@@ -356,78 +357,83 @@ public function update(Request $request, $id)
             
             $posts = $posts->paginate(12);
         }
-       
-        // Get breadcrumb data
-        $breadcrumbs = $this->getCategoryBreadcrumbs($category);
-       
-        // Get parent category
-        $parentCategory = null;
-        if ($category->parent_cat_id) {
-            $parentCategory = Category::find($category->parent_cat_id);
-        }
-       
-        // Get sibling categories
-        $siblingCategories = [];
-        if ($category->parent_cat_id) {
-            $locationCategoryIds = [];
-            
-            $userCategoryIds = User::whereIn('id', $userIds)
-                ->distinct()
-                ->pluck('category_id')
-                ->toArray();
-                
-            $postCategoryIds = Post::whereIn('user_id', $userIds)
-                ->distinct()
-                ->pluck('category_id')
-                ->toArray();
-                
-            $locationCategoryIds = array_unique(array_merge($userCategoryIds, $postCategoryIds));
-            
-            $siblingCategories = Category::where('parent_cat_id', $category->parent_cat_id)
-                                        ->whereIn('cat_type', ['product', 'service', 'profile'])
-                                        ->whereIn('id', $locationCategoryIds)
-                                        ->get();
-        }
-       
-        // Get child categories
-        $childCategories = [];
+    }
+   
+    // Get breadcrumb data
+    $breadcrumbs = $this->getCategoryBreadcrumbs($category);
+   
+    // Get parent category
+    $parentCategory = null;
+    if ($category->parent_cat_id) {
+        $parentCategory = Category::find($category->parent_cat_id);
+    }
+   
+    // Get sibling categories
+    $siblingCategories = [];
+    if ($category->parent_cat_id) {
         $locationCategoryIds = [];
         
-        $userCategoryIds = User::whereIn('id', $userIds)
-            ->distinct()
-            ->pluck('category_id')
-            ->toArray();
-            
-        $postCategoryIds = Post::whereIn('user_id', $userIds)
-            ->distinct()
-            ->pluck('category_id')
-            ->toArray();
-            
-        $locationCategoryIds = array_unique(array_merge($userCategoryIds, $postCategoryIds));
-        
-        $childCategories = Category::where('parent_cat_id', $category->id)
-                                  ->whereIn('cat_type', ['product', 'service', 'profile'])
-                                  ->whereIn('id', $locationCategoryIds)
-                                  ->get();
-       
-        // AJAX request handling
-        if ($request->ajax()) {
-            return response()->json([
-                'posts' => view('frontend.products-partial', compact('posts'))->render(),
-                'hasMore' => $posts->hasMorePages()
-            ]);
+        if ($category->cat_type == 'profile') {
+            // Profile category - check users only
+            $locationCategoryIds = User::whereIn('id', $userIds)
+                ->distinct()
+                ->pluck('category_id')
+                ->toArray();
+        } else {
+            // Product/Service category - check posts only
+            $locationCategoryIds = Post::whereIn('user_id', $userIds)
+                ->distinct()
+                ->pluck('category_id')
+                ->toArray();
         }
-       
-        return view('frontend.products', [
-            'posts' => $posts,
-            'category' => $category,
-            'parentCategory' => $parentCategory,
-            'siblingCategories' => $siblingCategories,
-            'childCategories' => $childCategories,
-            'breadcrumbs' => $breadcrumbs,
-            'visitorLocationPath' => $path
+        
+        $siblingCategories = Category::where('parent_cat_id', $category->parent_cat_id)
+                                    ->where('cat_type', $category->cat_type) // Same type only
+                                    ->whereIn('id', $locationCategoryIds)
+                                    ->get();
+    }
+   
+    // Get child categories
+    $childCategories = [];
+    $locationCategoryIds = [];
+    
+    if ($category->cat_type == 'profile') {
+        // Profile category - check users only
+        $locationCategoryIds = User::whereIn('id', $userIds)
+            ->distinct()
+            ->pluck('category_id')
+            ->toArray();
+    } else {
+        // Product/Service category - check posts only
+        $locationCategoryIds = Post::whereIn('user_id', $userIds)
+            ->distinct()
+            ->pluck('category_id')
+            ->toArray();
+    }
+    
+    $childCategories = Category::where('parent_cat_id', $category->id)
+                              ->where('cat_type', $category->cat_type) // Same type only
+                              ->whereIn('id', $locationCategoryIds)
+                              ->get();
+   
+    // AJAX request handling
+    if ($request->ajax()) {
+        return response()->json([
+            'posts' => view('frontend.products-partial', compact('posts'))->render(),
+            'hasMore' => $posts->hasMorePages()
         ]);
     }
+   
+    return view('frontend.products', [
+        'posts' => $posts,
+        'category' => $category,
+        'parentCategory' => $parentCategory,
+        'siblingCategories' => $siblingCategories,
+        'childCategories' => $childCategories,
+        'breadcrumbs' => $breadcrumbs,
+        'visitorLocationPath' => $path
+    ]);
+}
     
     /**
      * Get all descendant category IDs recursively
