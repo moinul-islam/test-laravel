@@ -34,12 +34,13 @@ class AdminPostController extends Controller implements HasMiddleware
      */
     public function showCreateForm()
     {
-        $users = User::where('role', '!=', 'admin')
-                     ->orderBy('name', 'asc')
-                     ->get();
-        
+        // Get all users except current admin
+        $users = User::where('id', '!=', Auth::id())
+                    ->orderBy('name', 'asc')
+                    ->get();
+    
         $categories = Category::orderBy('category_name', 'asc')->get();
-        
+    
         return view('admin.create-post', compact('users', 'categories'));
     }
 
