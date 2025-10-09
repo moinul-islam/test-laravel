@@ -92,7 +92,7 @@
             <span><i class="bi bi-house"></i></span>
         </a>
         
-        @if(!isset($category) || $category->cat_type !== 'profile')
+        @if(!isset($category) || $category->cat_type != 'profile')
             <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                 <span><i class="bi bi-funnel"></i> Filter</span>
             </a>
