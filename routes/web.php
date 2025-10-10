@@ -176,8 +176,8 @@ Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
 Route::get('/contribute', [ProfileController::class, 'ContributeCreate'])->name('contribute');
 
-// Single route for all category levels
-Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
 
 require __DIR__.'/auth.php';
+// agula sob somoy niche thakbe
+Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
 Route::get('/{username}',  [LocationController::class, 'usernameWiseHome'])->name('profile.show');
