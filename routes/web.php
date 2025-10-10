@@ -96,6 +96,7 @@ Route::get('/dashboard', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/contribute/store', [ProfileController::class, 'contributeStore'])->name('contribute.store');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Buy and Sell routes
@@ -173,6 +174,7 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
+Route::get('/contribute', [ProfileController::class, 'ContributeCreate'])->name('contribute');
 
 // Single route for all category levels
 Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');

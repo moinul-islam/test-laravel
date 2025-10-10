@@ -13,6 +13,8 @@ use App\Models\User;  // ⬅️ এই line টা add করো
 use App\Models\Country;
 use App\Models\City;
 use App\Models\Category;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 class ProfileController extends Controller
 {
@@ -199,23 +201,167 @@ public function checkCompleteness(Request $request)
      * Update the user's profile information.
      */
     public function update(Request $request, SmsService $smsService): RedirectResponse
-{
-    $user = $request->user();
-    
-    // Check which form was submitted
-    $isBusinessUpdate = $request->has('update_business');
-    
-    if ($isBusinessUpdate) {
-        // ============================================
-        // BUSINESS PROFILE UPDATE
-        // ============================================
+    {
+        $user = $request->user();
         
+        // Check which form was submitted
+        $isBusinessUpdate = $request->has('update_business');
+        
+        if ($isBusinessUpdate) {
+            // ============================================
+            // BUSINESS PROFILE UPDATE
+            // ============================================
+            
+            $validated = $request->validate([
+                'job_title' => ['nullable', 'string', 'max:255'],
+                'service_hr' => ['nullable', 'array'],
+            ]);
+            
+            // Service hours processing
+            if ($request->has('service_hr')) {
+                $serviceHours = [];
+                foreach ($request->service_hr as $day => $data) {
+                    if ($data['status'] === 'closed') {
+                        $serviceHours[$day] = 'closed';
+                    } else {
+                        $serviceHours[$day] = [
+                            'open' => $data['open'],
+                            'close' => $data['close']
+                        ];
+                    }
+                }
+                $validated['service_hr'] = json_encode($serviceHours);
+            }
+            
+            // Handle job title and category
+            $categoryId = null;
+            $jobTitle = null;
+            
+            if ($request->filled('category_id') && $request->category_id != '') {
+                $categoryExists = Category::where('id', $request->category_id)
+                                        ->where('cat_type', 'profile')
+                                        ->exists();
+                if ($categoryExists) {
+                    $categoryId = $request->category_id;
+                    $jobTitle = null;
+                } else {
+                    $jobTitle = $request->job_title;
+                    $categoryId = null;
+                }
+            } else {
+                $jobTitle = $request->job_title;
+                $categoryId = null;
+            }
+            
+            $validated['category_id'] = $categoryId;
+            $validated['job_title'] = $jobTitle;
+            
+            $user->update($validated);
+            
+            return redirect()->back()->with('success', 'Business profile updated successfully.');
+            
+        } else {
+            // ============================================
+            // PERSONAL PROFILE UPDATE
+            // ============================================
+            
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $user->id],
+                'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+                'phone_number' => ['nullable', 'string', 'max:25', 'unique:users,phone_number,' . $user->id],
+                'country_id' => ['required', 'exists:countries,id'],
+                'city_id' => ['required', 'exists:cities,id'],
+                'area' => ['nullable', 'string', 'max:255'],
+                'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            ]);
+        
+            $emailChanged = isset($validated['email']) && $validated['email'] !== $user->email;
+            $phoneChanged = isset($validated['phone_number']) && $validated['phone_number'] !== $user->phone_number;
+            
+            if ($emailChanged && $phoneChanged) {
+                return redirect()->back()->withErrors(['error' => 'You cannot update both email and phone number at the same time.']);
+            }
+            
+            if ($request->hasFile('image')) {
+                if ($user->image) {
+                    $oldImagePath = public_path('profile-image/' . $user->image);
+                    $newImagePath = storage_path('app/public/profile-images/' . $user->image);
+                
+                    if (file_exists($oldImagePath)) {
+                        unlink($oldImagePath);
+                    }
+                    if (file_exists($newImagePath)) {
+                        unlink($newImagePath);
+                    }
+                }
+            
+                $imageName = time() . '.' . $request->image->extension();
+                $request->image->move(public_path('profile-image'), $imageName);
+                $validated['image'] = $imageName;
+            }
+        
+            if ($emailChanged) {
+                $newEmail = $validated['email'];
+                $otp = rand(100000, 999999);
+                $validated['otp'] = $otp;
+                $validated['email_verified'] = null;
+            
+                Mail::raw("Your OTP code for email verification is: $otp", function($message) use ($newEmail) {
+                    $message->to($newEmail)->subject('Email Update Verification - eINFO');
+                });
+            }
+            
+            if ($phoneChanged) {
+                $newPhone = $validated['phone_number'];
+                $otp = rand(100000, 999999);
+                $validated['otp'] = $otp;
+                $validated['phone_verified'] = null;
+                
+                $smsService->sendSms($newPhone, "Your OTP code for phone verification is: $otp");
+            }
+            
+            $user->update($validated);
+            
+            if ($emailChanged) {
+                return redirect()->back()->with('success', 'Profile updated successfully. Please check your email for OTP verification.');
+            } elseif ($phoneChanged) {
+                return redirect()->back()->with('success', 'Profile updated successfully. Please check your phone for OTP verification.');
+            } else {
+                return redirect()->back()->with('success', 'Profile updated successfully.');
+            }
+        }
+    }
+
+
+    public function contributeStore(Request $request, SmsService $smsService): RedirectResponse
+    {
+        // Validate all required fields
         $validated = $request->validate([
+            'contributor' => ['required', 'exists:users,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:25', 'unique:users,phone_number'],
+            'country_id' => ['required', 'exists:countries,id'],
+            'city_id' => ['required', 'exists:cities,id'],
+            'area' => ['nullable', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'job_title' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'service_hr' => ['nullable', 'array'],
         ]);
-        
-        // Service hours processing
+    
+        // Generate unique username from name
+        $registeredController = new RegisteredUserController();
+        $validated['username'] = $registeredController->generateUniqueUsername($validated['name']);
+    
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->extension();
+            $request->image->move(public_path('profile-image'), $imageName);
+            $validated['image'] = $imageName;
+        }
+    
+        // Process service hours
         if ($request->has('service_hr')) {
             $serviceHours = [];
             foreach ($request->service_hr as $day => $data) {
@@ -230,7 +376,7 @@ public function checkCompleteness(Request $request)
             }
             $validated['service_hr'] = json_encode($serviceHours);
         }
-        
+    
         // Handle job title and category
         $categoryId = null;
         $jobTitle = null;
@@ -253,83 +399,19 @@ public function checkCompleteness(Request $request)
         
         $validated['category_id'] = $categoryId;
         $validated['job_title'] = $jobTitle;
-        
-        $user->update($validated);
-        
-        return redirect()->back()->with('success', 'Business profile updated successfully.');
-        
-    } else {
-        // ============================================
-        // PERSONAL PROFILE UPDATE
-        // ============================================
-        
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $user->id],
-            'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'phone_number' => ['nullable', 'string', 'max:25', 'unique:users,phone_number,' . $user->id],
-            'country_id' => ['required', 'exists:countries,id'],
-            'city_id' => ['required', 'exists:cities,id'],
-            'area' => ['nullable', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
-        ]);
     
-        $emailChanged = isset($validated['email']) && $validated['email'] !== $user->email;
-        $phoneChanged = isset($validated['phone_number']) && $validated['phone_number'] !== $user->phone_number;
-        
-        if ($emailChanged && $phoneChanged) {
-            return redirect()->back()->withErrors(['error' => 'You cannot update both email and phone number at the same time.']);
-        }
-        
-        if ($request->hasFile('image')) {
-            if ($user->image) {
-                $oldImagePath = public_path('profile-image/' . $user->image);
-                $newImagePath = storage_path('app/public/profile-images/' . $user->image);
-               
-                if (file_exists($oldImagePath)) {
-                    unlink($oldImagePath);
-                }
-                if (file_exists($newImagePath)) {
-                    unlink($newImagePath);
-                }
-            }
-           
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('profile-image'), $imageName);
-            $validated['image'] = $imageName;
-        }
-       
-        if ($emailChanged) {
-            $newEmail = $validated['email'];
-            $otp = rand(100000, 999999);
-            $validated['otp'] = $otp;
-            $validated['email_verified'] = null;
-           
-            Mail::raw("Your OTP code for email verification is: $otp", function($message) use ($newEmail) {
-                $message->to($newEmail)->subject('Email Update Verification - eINFO');
-            });
-        }
-        
-        if ($phoneChanged) {
-            $newPhone = $validated['phone_number'];
-            $otp = rand(100000, 999999);
-            $validated['otp'] = $otp;
-            $validated['phone_verified'] = null;
+        // Create the new user
+        try {
+            $newUser = User::create($validated);
             
-            $smsService->sendSms($newPhone, "Your OTP code for phone verification is: $otp");
-        }
-        
-        $user->update($validated);
-        
-        if ($emailChanged) {
-            return redirect()->back()->with('success', 'Profile updated successfully. Please check your email for OTP verification.');
-        } elseif ($phoneChanged) {
-            return redirect()->back()->with('success', 'Profile updated successfully. Please check your phone for OTP verification.');
-        } else {
-            return redirect()->back()->with('success', 'Profile updated successfully.');
+            return redirect()->back()->with('success', 'User account created successfully!');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to create user account. Please try again. Error: ' . $e->getMessage()])
+                ->withInput();
         }
     }
-}
 
     /**
      * Delete the user's account.
@@ -352,5 +434,16 @@ public function checkCompleteness(Request $request)
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return Redirect::to('/');
+    }
+
+    // for user entry contribute 
+
+    public function ContributeCreate(){
+        $countries = Country::all();
+       
+
+        // Get only profile type categories for job title suggestions
+        $categories = Category::where('cat_type', 'profile')->get();
+        return view("frontend.contribute_create",compact("countries","categories"));
     }
 }

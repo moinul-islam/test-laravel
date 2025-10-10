@@ -35,6 +35,7 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request, SmsService $smsService): RedirectResponse
     {
+        
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'job_title' => ['nullable', 'string', 'max:255'],
@@ -133,7 +134,7 @@ class RegisteredUserController extends Controller
     /**
      * Generate a unique random username - FINAL VERSION
      */
-    private function generateUniqueUsername($baseName = null)
+    public function generateUniqueUsername($baseName = null)
     {
         if ($baseName) {
             // Try transliteration first
@@ -142,12 +143,12 @@ class RegisteredUserController extends Controller
             // Generate random username
             $username = 'user' . Str::random(6) . rand(100, 999);
         }
-
+    
         // Ensure username is valid
         if (empty($username) || strlen($username) < 3) {
             $username = 'user' . Str::random(6) . rand(100, 999);
         }
-
+    
         // Make unique
         $originalUsername = $username;
         $counter = 1;
@@ -156,14 +157,11 @@ class RegisteredUserController extends Controller
             $username = $originalUsername . $counter;
             $counter++;
         }
-
+    
         return $username;
     }
-
-    /**
-     * Transliterate name to English username - FINAL VERSION
-     */
-    private function transliterateName($name)
+    
+    public function transliterateName($name)
     {
         $name = trim(strtolower($name));
         
@@ -177,7 +175,7 @@ class RegisteredUserController extends Controller
                 }
             }
         }
-
+    
         // Manual transliteration for unsupported languages
         $result = $this->manualTransliterate($name);
         $cleaned = preg_replace('/[^a-zA-Z0-9]/', '', $result);
@@ -186,7 +184,7 @@ class RegisteredUserController extends Controller
         if (strlen($cleaned) >= 3) {
             return $cleaned;
         }
-
+    
         // Fallback to random username
         return 'user' . Str::random(6) . rand(100, 999);
     }

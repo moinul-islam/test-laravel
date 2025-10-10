@@ -180,6 +180,7 @@
                     
                     @if(auth()->check() && auth()->user()->role === 'admin')
                         <li><a class="dropdown-item" href="{{ route('delivery.page') }}">Delivery</a></li>
+                        <li><a class="dropdown-item" href="{{ route('contribute') }}">Contribute</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.page') }}">Admin</a></li>
                     @endif
                     
