@@ -4,7 +4,7 @@
 <x-guest-layout>
     <!-- Success Message -->
     @if(session('status'))
-        <div class="mb-4 font-medium text-sm text-green-600">
+        <div class="font-medium text-sm text-green-600">
             {{ session('status') }}
         </div>
     @endif
@@ -58,13 +58,13 @@
         </div>
         
         <div class="flex items-center justify-between mt-6">
-            <!-- Resend OTP Link -->
+            <!-- Resend OTP Link 
             <a href="{{ route('password.request') }}" class="text-sm text-gray-600 hover:text-gray-900">
                 {{ __('Resend OTP?') }}
-            </a>
+            </a>-->
             
             <x-primary-button>
-                {{ __('Reset Password') }}
+                {{ __('Set Password') }}
             </x-primary-button>
         </div>
     </form>
