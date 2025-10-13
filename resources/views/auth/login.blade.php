@@ -25,7 +25,7 @@
                         <label for="email" class="form-label">Email or Phone Number</label>
                         <input id="email" type="text"
                                class="form-control @error('email') is-invalid @enderror"
-                               name="email" value="{{ old('email') }}" required autofocus
+                               name="email" value="{{ request()->cookie('email') ?? request()->cookie('phone') ?? old('email') }}" required autofocus
                                pattern="(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)|(^\+?\d{10,15}$)"
                                title="Please enter a valid email address or phone number"
                                oninput="

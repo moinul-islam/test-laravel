@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/get-cities/{countryId}', [LocationController::class, 'getCities']);
 Route::post('/save-location', [VisitorLocationController::class, 'saveLocation'])->name('save.location');
 Route::get('/contribute', [ProfileController::class, 'ContributeCreate'])->name('contribute');
+Route::post('/account-check', [ProfileController::class, 'accountCheck'])->name('account.check');
 
 
 require __DIR__.'/auth.php';

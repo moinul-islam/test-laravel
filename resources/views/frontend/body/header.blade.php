@@ -197,7 +197,7 @@
 
             @guest
                 <li class="nav-item dropdown">
-                    <a class="nav-link" href="javascript:void(0)" id="guestDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link" href="javascript:void(0)" id="guestDropdown" role="button" data-bs-toggle="modal" data-bs-target="#userNavagateModal">
                         <img src="{{ asset('profile-image/default.png') }}"
                              class="rounded-circle"
                              alt="User"

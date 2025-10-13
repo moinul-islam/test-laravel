@@ -23,6 +23,10 @@ class NewPasswordController extends Controller
     {
         return view('auth.reset-password', ['request' => $request]);
     }
+    public function setPassword(Request $request): View
+    {
+        return view('auth.set-password', ['request' => $request]);
+    }
 
     /**
      * Handle an incoming new password request.
@@ -49,6 +53,49 @@ class NewPasswordController extends Controller
             return back()->withErrors(['otp' => 'User not found.']);
         }
        
+        // Verify OTP
+        if ($user->otp != $request->otp) {
+            return back()->withErrors(['otp' => 'Invalid OTP code.']);
+        }
+       
+        // Reset password
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'remember_token' => Str::random(60),
+            'otp' => null, // Clear OTP
+            'otp_verified' => 0, // Reset password reset attempts counter
+        ])->save();
+       
+        // Fire password reset event (optional)
+        event(new PasswordReset($user));
+       
+        // Automatically login the user
+        Auth::login($user);
+       
+        // Redirect to dashboard or intended page
+        return redirect()->intended(route('dashboard'))->with('status', 'Password has been reset successfully and you are now logged in!');
+    }
+    public function setPasswordStore(Request $request): RedirectResponse
+    {
+      
+        $loginInput = $request->email;
+
+        // চেক করব email না phone
+        if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            // Email দিয়ে check
+            $user = \App\Models\User::where('email', $loginInput)->first();
+            $inputType = 'email';
+        } else {
+            // Phone দিয়ে check
+            $user = \App\Models\User::where('phone_number', $loginInput)->first();
+            $inputType = 'phone';
+        }
+       
+       
+       
+       
+
+
         // Verify OTP
         if ($user->otp != $request->otp) {
             return back()->withErrors(['otp' => 'Invalid OTP code.']);

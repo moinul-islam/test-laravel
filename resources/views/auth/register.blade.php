@@ -31,7 +31,7 @@
                         <label for="login_id" class="form-label">Email or Phone Number</label>
                         <input id="login_id" type="text"
                             class="form-control @error('login_id') is-invalid @enderror"
-                            name="login_id" value="{{ old('login_id') }}" required autocomplete="username"
+                            name="login_id" value="{{ request()->cookie('email') ?? request()->cookie('phone') ?? old('email') }}" required autocomplete="username"
                             pattern="(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)|(^\+?\d{10,15}$)"
                             title="Please enter a valid email address or phone number"
                             oninput="

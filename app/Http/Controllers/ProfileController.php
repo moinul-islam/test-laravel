@@ -14,6 +14,7 @@ use App\Models\Country;
 use App\Models\City;
 use App\Models\Category;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cookie;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 class ProfileController extends Controller
@@ -413,6 +414,109 @@ public function checkCompleteness(Request $request)
         }
     }
 
+
+
+    public function accountCheck(Request $request)
+    {
+        // Validation
+        $request->validate([
+            'email' => ['required', 'string'],
+        ], [
+            'email.required' => 'The email or phone field is required.',
+        ]);
+
+        $loginInput = $request->email;
+
+        // চেক করব email না phone
+        if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            // Email দিয়ে check
+            $user = \App\Models\User::where('email', $loginInput)->first();
+            $inputType = 'email';
+        } else {
+            // Phone দিয়ে check
+            $user = \App\Models\User::where('phone_number', $loginInput)->first();
+            $inputType = 'phone';
+        }
+
+        // যদি user না থাকে তাহলে register route এ redirect with cookie
+        if (!$user) {
+            return redirect()->route('register')->withCookie(cookie('email', $loginInput, 60, '/'));
+        }
+
+        // যদি user থাকে কিন্তু password null থাকে তাহলে password reset route এ redirect with cookie
+        if (is_null($user->password)) {
+            if ($inputType === 'email') {
+                // যদি ইতিমধ্যেই otp_verified 9 হয়, আর OTP পাঠানো যাবে না
+                if ($user->otp_verified == 9) {
+                    return back()->with('error', 'You have reached the maximum OTP requests.');
+                }
+
+                // Current otp_verified count check করুন
+                $currentCount = $user->otp_verified ?? 0;
+                
+                // যদি 9 বার হয়ে গেছে তাহলে 9 set করুন এবং OTP পাঠানো বন্ধ করুন
+                if ($currentCount >= 9) {
+                    $user->otp_verified = 9;
+                    $user->save();
+                    return back()->with('error', 'Maximum OTP attempts reached. Your account is suspended.');
+                }
+
+                // OTP Generate & Save
+                $otp = rand(100000, 999999);
+                $user->otp = $otp;
+            
+                // otp_verified count বৃদ্ধি করুন
+                $user->otp_verified = $currentCount + 1;
+                $user->save();
+        
+                // Mail send
+                \Mail::raw("Your OTP code is: $otp", function($message) use ($loginInput) {
+                    $message->to($loginInput)
+                            ->subject('Email Verification - eINFO');
+                });
+    
+                return redirect()->route('set-password', ['token' => 'otp-reset'])
+                ->withCookie(cookie('email', $loginInput, 60))
+                ->with('status', 'OTP sent to your email.');
+            } else {
+
+   
+                // যদি ইতিমধ্যেই otp_verified 9 হয়, আর OTP পাঠানো যাবে না
+                if ($user->otp_verified == 9) {
+                    return back()->with('error', 'You have reached the maximum OTP requests.');
+                }
+
+            
+                // Current otp_verified count check করুন
+                $currentCount = $user->otp_verified ?? 0;
+                
+                // যদি 9 বার হয়ে গেছে তাহলে 9 set করুন এবং OTP পাঠানো বন্ধ করুন
+                if ($currentCount >= 9) {
+                    $user->otp_verified = 9;
+                    $user->save();
+                    return back()->with('error', 'Maximum OTP attempts reached. Your account is suspended.');
+                }
+
+                // OTP Generate & Save
+                $otp = rand(100000, 999999);
+                $user->otp = $otp;
+            
+                // otp_verified count বৃদ্ধি করুন
+                $user->otp_verified = $currentCount + 1;
+                $user->save();
+
+                // SMS send
+                app(\App\Services\SmsService::class)->sendSms($loginInput, "Your eINFO OTP is: " . $otp);
+
+                return redirect()->route('set-password', ['token' => 'otp-reset'])
+                ->withCookie(cookie('email', $loginInput, 60))
+                ->with('status', 'OTP sent to your email.');
+            }
+        }
+        
+        // যদি user থাকে এবং password ও থাকে তাহলে login route এ redirect with cookie
+        return redirect()->route('login')->withCookie(cookie('email', $loginInput, 60, '/'));
+    }
     /**
      * Delete the user's account.
      */
