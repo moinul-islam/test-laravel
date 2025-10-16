@@ -290,8 +290,12 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                             style="cursor: pointer;"
                             data-category-type="{{ $categoryType }}"
                             @endif>
-                            @if($categoryType == 'service')
-                            <i class="bi bi-calendar-check"></i>
+                            @if($categoryType == 'service')                            
+                                @if($isOwnPost)
+                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                @else
+                                    <i class="bi bi-calendar-check"></i>
+                                @endif
                             @else
                                
                             @if($isOwnPost)
