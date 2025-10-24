@@ -8,7 +8,7 @@ class Review extends Model
 {
 
 
-    protected $fillable = ['user_id', 'business_user_id', 'product_id', 'rating', 'comment'];
+    protected $fillable = ['user_id', 'product_id', 'rating', 'comment'];
   
     public function user()
     {
@@ -33,9 +33,5 @@ class Review extends Model
         return $query->orderBy('created_at', 'desc')->limit($limit);
     }
 
-    public function businessUser()
-    {
-        return $this->belongsTo(User::class, 'business_user_id');
-    }
 
 }
