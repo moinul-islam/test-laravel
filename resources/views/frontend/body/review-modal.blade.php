@@ -9,26 +9,7 @@
                               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                           </div>
                           <div class="modal-body">
-                              {{-- Review Summary --}}
-                              <!-- <div class="review-summary mb-4 p-3 bg-light rounded">
-                                  <div class="d-flex align-items-center gap-3">
-                                      <div class="text-center">
-                                          <h2 class="mb-0">{{ number_format($item->averageRating(), 1) }}</h2>
-                                          <div class="text-warning">
-                                              @for($i = 1; $i <= 5; $i++)
-                                                  @if($i <= floor($item->averageRating()))
-                                                      <i class="bi bi-star-fill"></i>
-                                                  @elseif($i - 0.5 <= $item->averageRating())
-                                                      <i class="bi bi-star-half"></i>
-                                                  @else
-                                                      <i class="bi bi-star"></i>
-                                                  @endif
-                                              @endfor
-                                          </div>
-                                          <small class="text-muted">{{ $item->reviewCount() }} reviews</small>
-                                      </div>
-                                  </div>
-                              </div> -->
+                           
 
                              
                               {{-- Reviews List --}}
