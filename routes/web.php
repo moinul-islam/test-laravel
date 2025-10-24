@@ -94,6 +94,10 @@ Route::get('/posts/load-more', [PostController::class, 'index'])->name('posts.lo
 Route::get('/posts/load-more/{userId}', [LocationController::class, 'loadMoreUserPosts'])->name('posts.loadmore.user');
 Route::post('/store', [PostController::class, 'store'])->name('post.store');
 
+
+
+Route::get('/post/{slug}', [PostController::class, 'postDetails'])->name('post.details');
+
 Route::get('/dashboard', function () {
     $user = Auth::user();
     return redirect('/'.$user->username);

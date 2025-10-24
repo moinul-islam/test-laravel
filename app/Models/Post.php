@@ -15,15 +15,16 @@ class Post extends Model
     'image',
     'description',
     'user_id',
+    'slug',
     'category_id',
     'new_category', // এই লাইনটি add করুন
 ];
 
-// Post.php এ relationship add করুন
-public function category()
-{
-    return $this->belongsTo(Category::class, 'category_id');
-}
+    // Post.php এ relationship add করুন
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
 
     public function user()
     {

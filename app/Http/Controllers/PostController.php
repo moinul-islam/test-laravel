@@ -109,6 +109,14 @@ class PostController extends Controller
             // User typed a new category name
             $newCategory = $request->category_name;
         }
+
+        do {
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $slug = '';
+            for ($i = 0; $i < 11; $i++) {
+                $slug .= $characters[rand(0, strlen($characters) - 1)];
+            }
+        } while (Post::where('slug', $slug)->exists());
        
         // DB-এ সেভ করা
         $post = Post::create([
@@ -120,6 +128,7 @@ class PostController extends Controller
             'user_id' => $user_id,
             'category_id' => $categoryId,
             'new_category' => $newCategory,
+            'slug' => $slug
         ]);
     
         // নতুন যোগ: পোস্ট creator এর সব followers দের notification পাঠানো
@@ -136,14 +145,16 @@ class PostController extends Controller
             ]);
     
             foreach ($followers as $follower) {
-                $this->sendBrowserNotification(
+               $this->sendBrowserNotification(
                     $follower->id,
                     'New Post from ' . $postCreator->name,
                     "{$postCreator->name} posted: {$post->title}. Price: {$post->price}",
                     $post->id,
-                    url('/post/' . $post->id) // পোস্ট দেখার লিংক
+                    url('/post/' . $post->slug), // custom link
+                    'post', // notification type
+                    $post->slug // slug পাঠান
                 );
-                
+                                
                 \Log::info('Notification sent to follower', [
                     'follower_id' => $follower->id,
                     'post_id' => $post->id
@@ -161,116 +172,101 @@ class PostController extends Controller
     }
 
 
-    private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'order')
-{
-    try {
-        Log::info('Starting notification process', ['user_id' => $userId]);
-       
-        $user = \App\Models\User::with('fcmTokens')->find($userId);
-       
-        if (!$user || $user->fcmTokens->isEmpty()) {
-            Log::info('No FCM tokens found for user', [
+    private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'order', $slug = null)
+    {
+        try {
+            Log::info('Starting notification process', ['user_id' => $userId]);
+           
+            $user = \App\Models\User::with('fcmTokens')->find($userId);
+           
+            if (!$user || $user->fcmTokens->isEmpty()) {
+                Log::info('No FCM tokens found for user', [
+                    'user_id' => $userId,
+                    'user_exists' => !!$user
+                ]);
+                return false;
+            }
+            
+            $serviceAccountFile = storage_path('app/' . env('FIREBASE_CREDENTIALS'));
+            $factory = (new Factory)->withServiceAccount($serviceAccountFile);
+            $messaging = $factory->createMessaging();
+            
+            $timestamp = now()->timestamp;
+            
+            // Dynamic notification ID based on type
+            if ($notificationType === 'post') {
+                $uniqueId = $sourceId ? "post-notification-{$sourceId}-{$timestamp}" : "notification-{$timestamp}";
+                // এখানে পরিবর্তন - সরাসরি slug দিয়ে URL তৈরি
+                $webUrl = $slug ? url("/post/{$slug}") : url('/');
+                $deepLink = $slug ? url("/post/{$slug}") : url('/');
+                $action = 'open_post';
+                $screenName = 'post_detail';
+            } else {
+                // Order notification (existing logic)
+                $uniqueId = $sourceId ? "order-notification-{$sourceId}-{$timestamp}" : "notification-{$timestamp}";
+                $webUrl = $customLink ?? ($sourceId ? url("/order/{$sourceId}") : url('/'));
+                $deepLink = $customLink ?? ($sourceId ? url("/order/{$sourceId}") : url('/'));
+                $action = 'open_order';
+                $screenName = 'orders';
+            }
+            
+            $sender = Auth::user();
+            
+            foreach ($user->fcmTokens as $tokenModel) {
+                $token = $tokenModel->fcm_token;
+                try {
+                    $messageBuilder = CloudMessage::withTarget('token', $token)
+                        ->withNotification([
+                            'title' => $title,
+                            'body' => $body,
+                            'image' => $sender && $sender->image ? url($sender->image) : '',
+                        ])
+                        ->withData([
+                            'user_id' => (string)$userId,
+                            'source_id' => $sourceId ? (string)$sourceId : '',
+                            'slug' => $slug ?? '',
+                            'type' => 'browser_notification',
+                            'seen' => 'false',
+                            'notification_type' => $notificationType,
+                            'sender_id' => $sender ? (string)$sender->id : '',
+                            'sender_name' => $sender ? $sender->name : '',
+                            'sender_image' => $sender && $sender->image ? url($sender->image) : '',
+                            'action' => $action,
+                            'web_url' => $webUrl,
+                            'deep_link' => $deepLink,
+                            'click_action' => $webUrl, // এটা যোগ করুন
+                            'screen_name' => $screenName,
+                            'timestamp' => date('Y-m-d H:i:s'),
+                            'notification_id' => $uniqueId
+                        ]);
+                    
+                    $result = $messaging->send($messageBuilder);
+                    
+                    Log::info('Firebase messaging response', [
+                        'user_id' => $userId,
+                        'source_id' => $sourceId,
+                        'slug' => $slug,
+                        'notification_type' => $notificationType,
+                        'web_url' => $webUrl,
+                        'firebase_response' => $result
+                    ]);
+                } catch (\Exception $ex) {
+                    Log::warning('Failed to send notification to a token', [
+                        'user_id' => $userId,
+                        'error' => $ex->getMessage()
+                    ]);
+                }
+            }
+           
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Firebase notification error', [
                 'user_id' => $userId,
-                'user_exists' => !!$user
+                'error' => $e->getMessage()
             ]);
             return false;
         }
-        
-        Log::info('User and tokens found', [
-            'user_id' => $userId,
-            'tokens_count' => $user->fcmTokens->count()
-        ]);
-        
-        $serviceAccountFile = storage_path('app/' . env('FIREBASE_CREDENTIALS'));
-        $factory = (new Factory)->withServiceAccount($serviceAccountFile);
-       
-        Log::info('Firebase factory created');
-       
-        $messaging = $factory->createMessaging();
-       
-        Log::info('Firebase messaging created');
-        
-        $timestamp = now()->timestamp;
-        
-        // Dynamic notification ID based on type
-        if ($notificationType === 'post') {
-            $uniqueId = $sourceId ? "post-notification-{$sourceId}-{$timestamp}" : "notification-{$timestamp}";
-            $webUrl = $customLink ?? ($sourceId ? url("/post/{$sourceId}") : url('/'));
-            $deepLink = $customLink ?? ($sourceId ? "https://einfo.site/post-notification-list?nid={$uniqueId}#post-{$sourceId}" : "https://einfo.site/");
-            $action = 'open_post';
-            $screenName = 'post_detail';
-        } else {
-            // Order notification (existing logic)
-            $order = $sourceId ? \App\Models\Order::find($sourceId) : null;
-            $uniqueId = $sourceId ? "order-notification-{$sourceId}-{$timestamp}" : "notification-{$timestamp}";
-            $webUrl = $customLink ?? ($sourceId ? url("/order/{$sourceId}") : url('/'));
-            $deepLink = $customLink ?? ($sourceId ? "https://einfo.site/order-notification-list?nid={$uniqueId}#order-{$sourceId}" : "https://einfo.site/");
-            $action = 'open_order';
-            $screenName = 'orders';
-        }
-        
-        // Get sender's info (post creator or order customer)
-        $sender = Auth::user();
-        
-        foreach ($user->fcmTokens as $tokenModel) {
-            $token = $tokenModel->fcm_token;
-            try {
-                $messageBuilder = CloudMessage::withTarget('token', $token)
-                    ->withNotification([
-                        'title' => $title,
-                        'body' => $body,
-                        'image' => $sender && $sender->image ? url($sender->image) : '',
-                    ])
-                    ->withData([
-                        'user_id' => (string)$userId,
-                        'source_id' => $sourceId ? (string)$sourceId : '',
-                        'type' => 'browser_notification',
-                        'seen' => 'false',
-                        'notification_type' => $notificationType,
-                        'sender_id' => $sender ? (string)$sender->id : '',
-                        'sender_name' => $sender ? $sender->name : '',
-                        'sender_image' => $sender && $sender->image ? url($sender->image) : '',
-                        'action' => $action,
-                        'web_url' => $webUrl,
-                        'deep_link' => $deepLink,
-                        'screen_name' => $screenName,
-                        'timestamp' => date('Y-m-d H:i:s'),
-                        'notification_id' => $uniqueId
-                    ]);
-                
-                Log::info('Message created, attempting to send', [
-                    'user_id' => $userId,
-                    'token' => substr($token, 0, 20) . '...'
-                ]);
-                
-                $result = $messaging->send($messageBuilder);
-                
-                Log::info('Firebase messaging response', [
-                    'user_id' => $userId,
-                    'source_id' => $sourceId,
-                    'notification_type' => $notificationType,
-                    'firebase_response' => $result,
-                    'token_used' => substr($token, 0, 20) . '...'
-                ]);
-            } catch (\Exception $ex) {
-                Log::warning('Failed to send notification to a token', [
-                    'user_id' => $userId,
-                    'token' => substr($token, 0, 20) . '...',
-                    'error' => $ex->getMessage()
-                ]);
-            }
-        }
-       
-        return true;
-    } catch (\Exception $e) {
-        Log::error('Firebase notification error', [
-            'user_id' => $userId,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        return false;
     }
-}
 
     public function edit($id)
 {
@@ -661,5 +657,18 @@ public function showByCategory(Request $request, $username, $slug)
             'success' => true,
             'message' => 'Post deleted successfully!'
         ]);
+    }
+
+    public function postDetails($slug)
+    {
+        // Find the post by title/slug
+        $post = Post::where('slug', $slug)->first();
+        // If not found, redirect to home
+        if (!$post) {
+            return redirect('/');
+        }
+
+        // Show the post details view
+        return view('frontend.post-details', compact('post'));
     }
 }

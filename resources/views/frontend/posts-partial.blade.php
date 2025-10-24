@@ -1,4 +1,4 @@
-@foreach($posts as $post)
+
 <div class="mb-4 post-item" data-post-id="{{ $post->id }}">
         <div class="card">
             {{-- Card Body: User + Description --}}
@@ -16,11 +16,13 @@
                                 </a>
                             </h6>
                             @if($post->category)
-                            <small class="text-muted"><i class="bi bi-grid"></i> {{ $post->category->name }}</small>
+                            <small class="text-muted"><i class="bi bi-grid"></i> {{ $post->category->category_name }}</small>
                             @endif
                             <small class="text-muted"><i class="bi bi-clock"></i> {{ $post->created_at->diffForHumans() }}</small>
                         </div>
                     </div>
+
+                    
                    
                     <div class="dropdown">
                         <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -45,6 +47,9 @@
                         </ul>
                     </div>
                 </div>
+                <h2>
+                    {{ $post->title }}
+                </h2>
                 {{-- Post Description with Read More --}}
                 @if($post->description)
                     <p class="card-text post-description" style="max-height:75px; overflow:hidden;">
@@ -59,20 +64,6 @@
             @if($post->image)
                 <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
             @endif
-            {{-- Card Footer: Social Actions --}}
-            <div class="card-footer bg-white">
-                <div class="d-flex justify-content-around text-muted">
-                    <a href="#" class="text-decoration-none d-flex align-items-center">
-                        <i class="bi bi-hand-thumbs-up me-1"></i> 0
-                    </a>
-                    <a href="#" class="text-decoration-none d-flex align-items-center">
-                        <i class="bi bi-chat-left-text me-1"></i> 0
-                    </a>
-                    <a href="#" class="text-decoration-none d-flex align-items-center">
-                        <i class="bi bi-share me-1"></i> 0
-                    </a>
-                </div>
-            </div>
+            
         </div>
     </div>
-@endforeach
