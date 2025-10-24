@@ -180,4 +180,9 @@ class User extends Authenticatable
             $query->where('user_id', $this->id);
         })->count();
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'product_id', 'id')->latest();
+    }
 }
