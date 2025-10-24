@@ -270,13 +270,38 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
             <!-- Posts Section -->
             <div class="row g-3 g-md-4 mb-4" id="posts-container-{{ $category->id }}">
                 @foreach($posts as $item)
+                
                 @php
                 $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
+                $isUserProfile = !isset($item->title);
                 $categoryType = $item->category->cat_type ?? 'product';
                 @endphp
                 <div class="col-4">
                     <div class="card shadow-sm border-0">
-                        @if($item->image)
+           
+                        @php
+                            $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                ->where('user_id', Auth::id())
+                                ->exists();
+                        @endphp
+                        @if($hasAlreadyReviewed)
+                        {{-- Rating Badge --}}
+                        <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#reviewModal{{ $item->id }}" 
+                            style="cursor: pointer; z-index: 10; font-size:10px;">
+                            <div class="user-rating">
+                                <div class="stars">
+                                    <span class="rating-text">
+                                        <i class="bi bi-star-fill"></i> 
+                                        {{ number_format($item->averageRating(), 1) }}
+                                        ({{ $item->reviewCount() }})
+                                    </span>
+                                </div>
+                            </div>
+                        </span>
+                        @endif
+                                                @if($item->image)
                         <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
                         @else
                         <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
@@ -308,6 +333,8 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                         </div>
                     </div>
                 </div>
+                @include('frontend.body.review-modal')
+
                 @endforeach
             </div>
         </div>
@@ -321,7 +348,7 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
 {{-- Others Section --}}
 @if($new_category_posts->count() > 0)
 <section class="grid-section mb-4">
-    <div class="container">
+    <div class="">
         <div class="row mb-4">
             <div class="col-12">
                 <h4 class="fw-bold text-dark mb-0">Others</h4>
@@ -332,9 +359,31 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
             @php
             $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
             $categoryType = $item->category->cat_type ?? 'product';
+            $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                ->where('user_id', Auth::id())
+                                ->exists();
             @endphp
             <div class="col-4">
                 <div class="card shadow-sm border-0">
+
+                    @if($hasAlreadyReviewed)
+                        {{-- Rating Badge --}}
+                        <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#reviewModal{{ $item->id }}" 
+                            style="cursor: pointer; z-index: 10; font-size:10px;">
+                            <div class="user-rating">
+                                <div class="stars">
+                                    <span class="rating-text">
+                                        <i class="bi bi-star-fill"></i> 
+                                        {{ number_format($item->averageRating(), 1) }}
+                                        ({{ $item->reviewCount() }})
+                                    </span>
+                                </div>
+                            </div>
+                        </span>
+                        @endif
+
                     @if($item->image)
                     <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
                     @else
@@ -362,6 +411,7 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                     </div>
                 </div>
             </div>
+            @include('frontend.body.review-modal')
             @endforeach
         </div>
     </div>
@@ -1086,4 +1136,6 @@ function selectEditCategory(id, name) {
        initReadMore();
    });
 </script>
+@include('frontend.body.review-cdn')
+
 @endsection

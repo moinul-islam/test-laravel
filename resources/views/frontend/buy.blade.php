@@ -1,5 +1,8 @@
 @extends('frontend.master')
 @section('main-content')
+@php
+    $visibleItemsCount = 0;
+@endphp
 <div class="container container-fluid px-2 py-4">
    <div class="row">
       <div class="col-12">
@@ -76,6 +79,7 @@
                                  @php
                                  $images = $post->images ? json_decode($post->images, true) : [];
                                  $postImage = $post->image ?? ($images[0] ?? null);
+                                 $isUserProfile = !isset($post->title);
                                  @endphp
                                  @if($postImage)
                                  <img src="{{ asset('uploads/' . $postImage) }}" 
@@ -95,11 +99,224 @@
                                     | Service: {{ $post->service_time }}
                                     @endif
                                     </small>
+                                    <br>
+                                    <small>
+
+                                    @if(Auth::id() != $post->user_id && Auth::id() != $post->id)
+                                      @php
+                                          $hasAlreadyReviewed = \App\Models\Review::where('product_id', $post->id)
+                                              ->where('user_id', Auth::id())
+                                              ->exists();
+                                      @endphp
+                                    @if(!$hasAlreadyReviewed && $order->status == 'delivered')  
+                                      <a href="#" 
+                                       class=""
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#reviewModal{{ $post->id }}"
+                                       >
+                                       <i class="bi bi-plus-circle"></i> Add Review
+                                    </a>
+                                    @else
+                                    <span  
+                                          data-bs-toggle="modal" 
+                                          data-bs-target="#reviewModal{{ $post->id }}" >
+                                          <div class="user-rating">
+                                             <div class="stars">
+                                                <span class="rating-text">
+                                                      <i class="bi bi-star-fill text-warning"></i> 
+                                                      {{ number_format($post->averageRating(), 1) }}
+                                                      ({{ $post->reviewCount() }})
+                                                </span>
+                                             </div>
+                                          </div>
+                                    </span>
+                                    @endif
+                                    @endif
+
+
+                                    </small>
                                  </div>
                                  <div class="text-end">
                                     <strong>{{ $post->price * $post->ordered_quantity }}</strong>
                                  </div>
                               </div>
+                              {{-- Review Modal for each item --}}
+<div class="modal fade" id="reviewModal{{ $post->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ $isUserProfile ? 'Reviews for ' . $post->name : 'Reviews for ' . $post->title }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{-- Review Summary --}}
+                <!-- <div class="review-summary mb-4 p-3 bg-light rounded">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-center">
+                            <h2 class="mb-0">{{ number_format($post->averageRating(), 1) }}</h2>
+                            <div class="text-warning">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @if($i <= floor($post->averageRating()))
+                                        <i class="bi bi-star-fill"></i>
+                                    @elseif($i - 0.5 <= $post->averageRating())
+                                        <i class="bi bi-star-half"></i>
+                                    @else
+                                        <i class="bi bi-star"></i>
+                                    @endif
+                                @endfor
+                            </div>
+                            <small class="text-muted">{{ $post->reviewCount() }} reviews</small>
+                        </div>
+                    </div>
+                </div> -->
+
+                {{-- Write Review Button --}}
+                @auth
+                    @if(Auth::id() != $post->user_id && Auth::id() != $post->id)
+                        @php
+                            $hasAlreadyReviewed = \App\Models\Review::where('product_id', $post->id)
+                                ->where('user_id', Auth::id())
+                                ->exists();
+                        @endphp
+                        
+                        @if(!$hasAlreadyReviewed)
+                             @if($order->status == 'delivered')
+                               <button class="btn btn-primary btn-sm mb-3 w-100" onclick="showReviewForm('{{ $post->id }}')">
+                                <i class="bi bi-pencil"></i> Write a Review
+                               </button>
+                             @endif
+                            
+                            {{-- Review Form --}}
+                            <div id="review-form-{{ $post->id }}" class="review-form mb-3" style="display: none;">
+                                <form action="{{ route('review.store') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $post->id }}">
+                                    
+                                    <div class="rating-selector mb-2">
+                                        <div class="rating-stars">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <span class="rate-star" data-rating="{{ $i }}" data-product="{{ $post->id }}" style="cursor: pointer; font-size: 24px;">
+                                                    <i class="bi bi-star"></i>
+                                                </span>
+                                            @endfor
+                                        </div>
+                                        <input type="hidden" name="rating" id="selected-rating-{{ $post->id }}" value="0" required>
+                                    </div>
+                                    
+                                    <textarea name="comment" class="form-control mb-2" rows="3" placeholder="Share your experience..." required></textarea>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="hideReviewForm('{{ $post->id }}')">Cancel</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                                    </div>
+                                </form>
+                            </div>
+                        @else
+                            <div class="alert alert-info text-center mb-3">
+                                You've already reviewed this {{ $isUserProfile ? 'profile' : 'item' }}
+                            </div>
+                        @endif
+                    @endif
+                @else
+                    <a href="/account" class="btn btn-primary btn-sm mb-3 w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Login to Write a Review
+                    </a>
+                @endauth
+
+                {{-- Reviews List --}}
+                <div class="reviews-list">
+                                       @if($post->reviews->isEmpty())
+                                             <div class="text-center py-4 text-muted">
+                                                <i class="bi bi-chat-quote" style="font-size: 3rem;"></i>
+                                                <p class="mt-2">No reviews yet. Be the first to leave a review!</p>
+                                             </div>
+                                       @else
+                                             @foreach($post->reviews as $review)
+                                                <div class="review-item border-bottom pb-3 mb-3">
+                                                   <div class="d-flex gap-2 mb-2">
+                                                   <img src="{{ asset('profile-image/' . $review->user->image) }}"
+                                                   class="rounded-circle"
+                                                   style="width: 40px; height: 40px; object-fit: cover;">
+                                                         <div class="flex-grow-1">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                               <div>
+                                                                     <h6 class="mb-0">{{ $review->user ? $review->user->name : 'Anonymous' }}</h6>
+                                                                     <div class="text-warning small">
+                                                                        @for($i = 1; $i <= 5; $i++)
+                                                                           @if($i <= $review->rating)
+                                                                                 <i class="bi bi-star-fill"></i>
+                                                                           @else
+                                                                                 <i class="bi bi-star"></i>
+                                                                           @endif
+                                                                        @endfor
+                                                                     </div>
+                                                                     <small class="text-muted">{{ $review->created_at->format('M d, Y') }}</small>
+                                                               </div>
+                                                               
+                                                               @auth
+                                                                     @if(Auth::id() == $review->user_id)
+                                                                        <div class="dropdown">
+                                                                           <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                                                                 <i class="bi bi-three-dots-vertical"></i>
+                                                                           </button>
+                                                                           <ul class="dropdown-menu">
+                                                                                 <li>
+                                                                                    <a class="dropdown-item" href="#" onclick="editReview('{{ $review->id }}', '{{ $review->rating }}', '{{ addslashes($review->comment) }}', '{{ $post->id }}')">
+                                                                                       <i class="bi bi-pencil"></i> Edit
+                                                                                    </a>
+                                                                                 </li>
+                                                                                 <li>
+                                                                                    <a class="dropdown-item text-danger" href="#" onclick="confirmDeleteReview('{{ $review->id }}')">
+                                                                                       <i class="bi bi-trash"></i> Delete
+                                                                                    </a>
+                                                                                 </li>
+                                                                           </ul>
+                                                                        </div>
+                                                                     @endif
+                                                               @endauth
+                                                            </div>
+                                                            
+                                                            <div id="review-content-{{ $review->id }}" class="mt-2">
+                                                               {{ $review->comment }}
+                                                            </div>
+                                                            
+                                                            {{-- Edit Review Form --}}
+                                                            @auth
+                                                               @if(Auth::id() == $review->user_id)
+                                                                     <div id="edit-review-form-{{ $review->id }}" style="display: none;">
+                                                                        <form action="{{ route('review.update', $review->id) }}" method="POST">
+                                                                           @csrf
+                                                                           <div class="rating-selector mb-2">
+                                                                                 <div class="rating-stars">
+                                                                                    @for($i = 1; $i <= 5; $i++)
+                                                                                       <span class="edit-star" data-rating="{{ $i }}" data-review="{{ $review->id }}" style="cursor: pointer; font-size: 24px;">
+                                                                                             <i class="bi bi-star{{ $i <= $review->rating ? '-fill' : '' }}"></i>
+                                                                                       </span>
+                                                                                    @endfor
+                                                                                 </div>
+                                                                                 <input type="hidden" name="rating" id="edit-rating-{{ $review->id }}" value="{{ $review->rating }}">
+                                                                           </div>
+                                                                           <textarea name="comment" class="form-control mb-2" rows="3" id="edit-comment-{{ $review->id }}">{{ $review->comment }}</textarea>
+                                                                           <div class="d-flex gap-2">
+                                                                                 <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditReview('{{ $review->id }}')">Cancel</button>
+                                                                                 <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                                                           </div>
+                                                                        </form>
+                                                                     </div>
+                                                               @endif
+                                                            @endauth
+                                                         </div>
+                                                   </div>
+                                                </div>
+                                             @endforeach
+                                       @endif
+                                    </div>
+                                 </div>
+                           </div>
+                        </div>
+                     </div>
                               @endforeach
                            </div>
                            <!-- Show cancellation reason if order is cancelled -->
@@ -140,6 +357,7 @@
                   </div>
                </div>
             </div>
+ 
             @endforeach
          </div>
          <!-- Pagination -->
@@ -291,4 +509,5 @@
        }
    });
 </script>
+@include('frontend.body.review-cdn')
 @endsection

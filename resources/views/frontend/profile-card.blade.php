@@ -184,11 +184,16 @@ document.addEventListener('DOMContentLoaded', function () {
                   <small class="text-muted">Followers</small>
                </div>
                @if($user->category_id)
-               <div class="col">
-                  <h5 class="mb-0">{{ $ratings ?? 0 }}/5</h5>
-                  <small class="text-muted">Ratings</small>
-               </div>
-               @endif
+   <div class="col">
+      <h5 class="mb-0">
+         <!-- <i class="bi bi-star-fill text-warning"></i> -->
+         {{ number_format($user->getAverageRating(), 1) }} ({{ $user->getTotalReviews() }})
+      </h5>
+      <small class="text-muted">
+          Reviews
+      </small>
+   </div>
+@endif
             </div>
             
             {{-- Action Buttons Based on User Type --}}

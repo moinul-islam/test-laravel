@@ -38,5 +38,19 @@ public function category()
                     ->latest();               // সর্বশেষ আগে আসবে
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'product_id', 'id')->latest();
+    }
+    public function averageRating()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
+
+    public function reviewCount()
+    {
+        return $this->reviews()->count();
+    }
+
 
 }

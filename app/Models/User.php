@@ -72,6 +72,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Post::class);
     }
+    public function product()
+    {
+        return $this->hasMany(Post::class);
+    }
     // Country relationship
     public function country()
     {
@@ -159,5 +163,21 @@ class User extends Authenticatable
         }
         
         return $this->email_verified;
+    }
+
+    // User.php Model এ
+    public function getAverageRating()
+    {
+        return \App\Models\Review::whereHas('product', function($query) {
+            $query->where('user_id', $this->id);
+        })->avg('rating') ?? 0;
+    }
+
+    public function getTotalReviews()
+    {
+        // User এর সব posts এ মোট কয়টা review দেওয়া হয়েছে
+        return \App\Models\Review::whereHas('product', function($query) {
+            $query->where('user_id', $this->id);
+        })->count();
     }
 }

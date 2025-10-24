@@ -13,6 +13,12 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\AdminPostController;
+use App\Http\Controllers\ReviewController;
+
+Route::post('/review/store',  [ReviewController::class, 'store'])->name('review.store');
+
+Route::post('/review/update/{id}',  [ReviewController::class, 'update'])->name('review.update')->middleware('auth');
+Route::delete('/review/delete/{id}',  [ReviewController::class, 'destroy'])->name('review.delete')->middleware('auth');
 
 // Language switch route - সবার উপরে রাখুন
 Route::post('/set-locale', function (\Illuminate\Http\Request $request) {
