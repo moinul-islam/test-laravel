@@ -36,13 +36,6 @@ class ReviewController extends Controller
             }
         }
 
-
-
-
-        if ($existingReview) {
-            return back()->with('error', 'You have already reviewed this ' . ($request->product_id ? 'product.' : 'profile.'));
-        }
-
         // Create new review
         Review::create([
             'user_id' => Auth::id(),
