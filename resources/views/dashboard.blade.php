@@ -273,7 +273,7 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                 
                 @php
                 $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
-                $isUserProfile = !isset($item->title);
+                $isUserProfile = "ashraful";
                 $categoryType = $item->category->cat_type ?? 'product';
                 @endphp
                 <div class="col-4">
