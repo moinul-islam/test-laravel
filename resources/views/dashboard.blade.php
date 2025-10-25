@@ -301,14 +301,21 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
                             </div>
                         </span>
                         @endif
-                                                @if($item->image)
+                        @if($item->image)
                         <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
                         @else
                         <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
                         @endif
                         <div class="card-body p-2">
                             <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
-                            <small class="price-tag text-success">{{ $item->price ? number_format($item->price, 2) : 'No price' }}</small>
+                            @if($item->price && $item->discount_price)
+                                <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                            @elseif($item->price)
+                                <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                            @else
+                                <small class="price-tag text-success">No price</small>
+                            @endif
                             <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
                             @if(!$isOwnPost)
                             onclick="addToCart('{{ $item->id }}', '{{ $item->title }}', '{{ $item->price ?? 0 }}', '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', '{{ $categoryType }}')"
@@ -765,6 +772,75 @@ document.addEventListener('DOMContentLoaded', function() {
                   <input type="number" class="form-control" id="edit_price" name="price" min="0" step="0.01" required>
                </div>
                
+               <div class="mb-3">
+                <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
+                
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <!-- Discount Price -->
+                    <input type="number" 
+                        class="form-control" 
+                        id="discount_price" 
+                        name="discount_price" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="Discount Price">
+
+                    <!-- Discount Duration -->
+                    <input type="number" 
+                        class="form-control d-none" 
+                        id="discount_days" 
+                        name="discount_days" 
+                        min="1" 
+                        placeholder="Duration (days)">
+
+                    <!-- Discount End Datetime -->
+                    <input type="datetime-local" 
+                        class="form-control d-none" 
+                        id="discount_until" 
+                        name="discount_until" 
+                        placeholder="Valid Until">
+                </div>
+                </div>
+
+                <script>
+                const priceInput = document.getElementById('discount_price');
+                const daysInput = document.getElementById('discount_days');
+                const untilInput = document.getElementById('discount_until');
+
+                // যখন discount price দেওয়া হবে
+                priceInput.addEventListener('input', function() {
+                if (this.value && parseFloat(this.value) > 0) {
+                    daysInput.classList.remove('d-none');
+                    untilInput.classList.remove('d-none');
+                    daysInput.required = true;
+                    untilInput.required = true;
+                } else {
+                    daysInput.classList.add('d-none');
+                    untilInput.classList.add('d-none');
+                    daysInput.required = false;
+                    untilInput.required = false;
+                    daysInput.value = '';
+                    untilInput.value = '';
+                }
+                });
+
+                // Duration দিলে → Dhaka timezone অনুযায়ী End Datetime সেট হবে
+                daysInput.addEventListener('input', function() {
+                if (this.value && untilInput) {
+                    const nowUTC = new Date();
+                    const dhakaOffsetMs = 6 * 60 * 60 * 1000; // Dhaka timezone = UTC+6
+                    const nowDhaka = new Date(nowUTC.getTime() + dhakaOffsetMs);
+
+                    const endDate = new Date(nowDhaka.getTime() + this.value * 24 * 60 * 60 * 1000);
+                    const formatted = endDate.toISOString().slice(0, 16);
+                    untilInput.value = formatted;
+                }
+                });
+                </script>
+
+
+
+               
                {{-- Current Image Display --}}
                <div class="mb-3">
                   <label class="form-label">Current Image</label>
@@ -774,22 +850,22 @@ document.addEventListener('DOMContentLoaded', function() {
                </div>
                
                {{-- Image Upload --}}
-<div class="row mb-4">
-    <div class="col-sm-3">
-        <h6 class="mb-0">Change Image</h6>
-    </div>
-    <div class="col-sm-9 text-secondary">
-        <input type="file" name="photo" class="form-control" id="editFormFile">
-        <input type="hidden" name="image_data" id="editImageData">
-        
-        <div id="editImageProcessingStatus" style="display: none;" class="mt-2">
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="editImageProgress"></div>
-            </div>
-            <small id="editImageStatusText">Image processing is going on....</small>
-        </div>
-    </div>
-</div>
+                <div class="row mb-4">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Change Image</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        <input type="file" name="photo" class="form-control" id="editFormFile">
+                        <input type="hidden" name="image_data" id="editImageData">
+                        
+                        <div id="editImageProcessingStatus" style="display: none;" class="mt-2">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="editImageProgress"></div>
+                            </div>
+                            <small id="editImageStatusText">Image processing is going on....</small>
+                        </div>
+                    </div>
+                </div>
                
                {{-- Description --}}
                <div class="mb-3">
@@ -825,6 +901,8 @@ function editPost(postId) {
         document.getElementById('edit_post_id').value = data.id;
         document.getElementById('edit_title').value = data.title;
         document.getElementById('edit_price').value = data.price;
+        document.getElementById('discount_price').value = data.discount_price;
+        document.getElementById('discount_until').value = data.discount_until;
         document.getElementById('edit_description').value = data.description || '';
         
         // Set category

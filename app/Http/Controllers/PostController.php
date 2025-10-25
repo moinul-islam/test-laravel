@@ -282,6 +282,7 @@ class PostController extends Controller
 
 public function update(Request $request, $id)
 {
+ 
     $post = Post::findOrFail($id);
     
     // Check if user owns this post
@@ -369,7 +370,8 @@ public function update(Request $request, $id)
     $post->update([
         'title' => $request->title,
         'price' => $request->price,
-        'highest_price' => $request->discount ?? null,
+        'discount_price' => $request->discount_price ?? null,
+        'discount_until' => $request->discount_until ?? null,
         'image' => $photo,
         'description' => $request->description,
         'category_id' => $categoryId, // Will be null if new category

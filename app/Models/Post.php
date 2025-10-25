@@ -8,17 +8,8 @@ class Post extends Model
 {
     use HasFactory;
     
-    protected $fillable = [
-    'title',
-    'price', 
-    'highest_price',
-    'image',
-    'description',
-    'user_id',
-    'slug',
-    'category_id',
-    'new_category', // এই লাইনটি add করুন
-];
+    protected $guarded = [];
+
 
     // Post.php এ relationship add করুন
     public function category()
