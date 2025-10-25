@@ -64,8 +64,53 @@
                         @endphp
         
         @if($shouldShowCard)
-      
-           @include('frontend.body.product-card')
+        <div class="col-4" style="{{ !$isOpen ? 'opacity: 0.6;' : '' }}">
+           <div class="card shadow-sm border-0 position-relative">
+              {{-- Service Hours Badge --}}
+              @if(!$isOpen)
+              <span class="badge bg-danger position-absolute top-0 end-0 m-2" style="z-index: 10; font-size:10px;">
+                  Closed now
+              </span>
+              @elseif($hasAlreadyReviewed)
+              {{-- Rating Badge --}}
+              <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#reviewModal{{ $item->id }}" 
+                    style="cursor: pointer; z-index: 10; font-size:10px;">
+                  <div class="user-rating">
+                      <div class="stars">
+                          <span class="rating-text">
+                              <i class="bi bi-star-fill"></i> 
+                              {{ number_format($item->averageRating(), 1) }}
+                              ({{ $item->reviewCount() }})
+                          </span>
+                      </div>
+                  </div>
+              </span>
+            @endif
+             
+
+              {{-- Card Image --}}
+              @if(isset($item->title))
+                 {{-- This is a Post --}}
+                 @if($item->image)
+                    <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image" style="height: 100px; object-fit: cover;">
+                 @else
+                    <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image" style="height: 100px; object-fit: cover;">
+                 @endif
+              @else
+                 {{-- This is a User (Profile) --}}
+                 @if($item->image)
+                    <img src="{{ asset('profile-image/'.$item->image) }}" class="card-img-top" alt="Profile Image" style="height: 100px; object-fit: cover;">
+                 @else
+                    <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image" style="height: 100px; object-fit: cover;">
+                 @endif
+              @endif
+             
+              {{-- Card Body --}}
+              @include('frontend.body.product-card')
+           </div>
+        </div>
            @include('frontend.body.review-modal')
         @endif
     @empty
@@ -84,5 +129,17 @@
     </div>
     @endif
 </div>
+
+{{-- Cart JavaScript --}}
+   <script>
+      function addToCart(id, title, price, image, categoryType, discountPrice = 0) {
+          console.log('Adding to cart:', {id, title, price, image, categoryType, discountPrice});
+          if (window.cartManager) {
+              window.cartManager.addToCart(id, title, price, image, categoryType, discountPrice);
+          } else {
+              alert('Cart system not available');
+          }
+      }
+   </script>
 
 @include('frontend.body.review-cdn')
