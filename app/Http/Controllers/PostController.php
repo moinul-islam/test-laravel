@@ -122,7 +122,6 @@ class PostController extends Controller
         $post = Post::create([
             'title' => $request->title,
             'price' => $request->price,
-            'highest_price' => $request->discount ?? null,
             'image' => $photo,
             'description' => $request->description,
             'user_id' => $user_id,
