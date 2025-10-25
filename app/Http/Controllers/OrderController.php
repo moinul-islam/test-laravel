@@ -549,6 +549,8 @@ public function cancelOrder(Request $request, $id)
 
     public function store(Request $request)
     {
+
+  
         // Debug: Log incoming request
         \Log::info('Order Request Data:', $request->all());
         
@@ -617,7 +619,7 @@ public function cancelOrder(Request $request, $id)
                     'vendor_id' => $vendorId,
                     'phone' => $request->phone,
                     'shipping_address' => $request->shipping_address,
-                    'total_amount' => $vendorTotal,
+                    'total_amount' => $request->total_amount,
                     'status' => 'pending',
                     'post_ids' => $postIds
                 ]);

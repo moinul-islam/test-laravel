@@ -242,188 +242,214 @@
              // Add your sorting logic here
          }
       </script>
-     @php
-$new_category_posts = \App\Models\Post::where('user_id', $user->id)
-   ->whereNotNull('new_category')
-   ->latest()
-   ->get();
-@endphp
-
-@foreach($userPostCategories as $category)
     @php
-    $posts = \App\Models\Post::where('user_id', $user->id)
-        ->where('category_id', $category->id)
-        ->with(['user', 'category'])
+        $new_category_posts = \App\Models\Post::where('user_id', $user->id)
+        ->whereNotNull('new_category')
         ->latest()
         ->get();
     @endphp
 
-    @if($posts->count() > 0)
-    <section class="grid-section mb-4" id="category-{{ $category->id }}">
-        <div class="">
-            <!-- Category Title -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h4 class="fw-bold text-dark mb-0">{{ $category->category_name }}</h4>
+    @foreach($userPostCategories as $category)
+        @php
+        $posts = \App\Models\Post::where('user_id', $user->id)
+            ->where('category_id', $category->id)
+            ->with(['user', 'category'])
+            ->latest()
+            ->get();
+        @endphp
+
+        @if($posts->count() > 0)
+        <section class="grid-section mb-4" id="category-{{ $category->id }}">
+            <div class="">
+                <!-- Category Title -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4 class="fw-bold text-dark mb-0">{{ $category->category_name }}</h4>
+                    </div>
+                </div>
+                <!-- Posts Section -->
+                <div class="row g-3 g-md-4 mb-4" id="posts-container-{{ $category->id }}">
+                    @foreach($posts as $item)
+                    
+                    @php
+                    $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
+                    $isUserProfile = !isset($item->title);
+                    $categoryType = $item->category->cat_type ?? 'product';
+                    @endphp
+                    <div class="col-4">
+                        <div class="card shadow-sm border-0">
+            
+                            @php
+                                $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                    ->where('user_id', Auth::id())
+                                    ->exists();
+                            @endphp
+                            @if($hasAlreadyReviewed)
+                            {{-- Rating Badge --}}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#reviewModal{{ $item->id }}" 
+                                style="cursor: pointer; z-index: 10; font-size:10px;">
+                                <div class="user-rating">
+                                    <div class="stars">
+                                        <span class="rating-text">
+                                            <i class="bi bi-star-fill"></i> 
+                                            {{ number_format($item->averageRating(), 1) }}
+                                            ({{ $item->reviewCount() }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </span>
+                            @endif
+                            @if($item->image)
+                            <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
+                            @else
+                            <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
+                            @endif
+                            <div class="card-body p-2">
+                                <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
+                                @if($item->price && $item->discount_price)
+                                    <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                    <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                                @elseif($item->price)
+                                    <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                                @else
+                                    <small class="price-tag text-success">No price</small>
+                                @endif
+                                <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
+                                @if(!$isOwnPost)
+                                onclick="addToCart(
+                                    '{{ $item->id }}', 
+                                    '{{ $item->title }}', 
+                                    '{{ $item->price ?? 0 }}', 
+                                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', 
+                                    '{{ $categoryType }}',
+                                    '{{ $item->discount_price ?? 0 }}'
+                                )"
+                                style="cursor: pointer;"
+                                data-category-type="{{ $categoryType }}"
+                                @endif>
+                                @if($categoryType == 'service')                            
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-calendar-check"></i>
+                                    @endif
+                                @else
+                                
+                                @if($isOwnPost)
+                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                @else
+                                    <i class="bi bi-cart-plus"></i>
+                                @endif
+                                @endif
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    @include('frontend.body.review-modal')
+
+                    @endforeach
                 </div>
             </div>
-            <!-- Posts Section -->
-            <div class="row g-3 g-md-4 mb-4" id="posts-container-{{ $category->id }}">
-                @foreach($posts as $item)
-                
+        </section>
+        @endif
+    @endforeach
+
+
+
+
+    {{-- Others Section --}}
+    @if($new_category_posts->count() > 0)
+    <section class="grid-section mb-4">
+        <div class="">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4 class="fw-bold text-dark mb-0">Others</h4>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4 mb-4">
+                @foreach($new_category_posts as $item)
                 @php
                 $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
-                $isUserProfile = !isset($item->title);
                 $categoryType = $item->category->cat_type ?? 'product';
+                $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                    ->where('user_id', Auth::id())
+                                    ->exists();
                 @endphp
                 <div class="col-4">
                     <div class="card shadow-sm border-0">
-           
-                        @php
-                            $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
-                                ->where('user_id', Auth::id())
-                                ->exists();
-                        @endphp
+
                         @if($hasAlreadyReviewed)
-                        {{-- Rating Badge --}}
-                        <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#reviewModal{{ $item->id }}" 
-                            style="cursor: pointer; z-index: 10; font-size:10px;">
-                            <div class="user-rating">
-                                <div class="stars">
-                                    <span class="rating-text">
-                                        <i class="bi bi-star-fill"></i> 
-                                        {{ number_format($item->averageRating(), 1) }}
-                                        ({{ $item->reviewCount() }})
-                                    </span>
+                            {{-- Rating Badge --}}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#reviewModal{{ $item->id }}" 
+                                style="cursor: pointer; z-index: 10; font-size:10px;">
+                                <div class="user-rating">
+                                    <div class="stars">
+                                        <span class="rating-text">
+                                            <i class="bi bi-star-fill"></i> 
+                                            {{ number_format($item->averageRating(), 1) }}
+                                            ({{ $item->reviewCount() }})
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </span>
-                        @endif
+                            </span>
+                            @endif
+
                         @if($item->image)
                         <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
                         @else
                         <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
                         @endif
                         <div class="card-body p-2">
-                            <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
-                            @if($item->price && $item->discount_price)
-                                <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
-                                <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
-                            @elseif($item->price)
-                                <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
-                            @else
-                                <small class="price-tag text-success">No price</small>
-                            @endif
-                            <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
-                            @if(!$isOwnPost)
-                            onclick="addToCart('{{ $item->id }}', '{{ $item->title }}', '{{ $item->price ?? 0 }}', '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', '{{ $categoryType }}')"
-                            style="cursor: pointer;"
-                            data-category-type="{{ $categoryType }}"
-                            @endif>
-                            @if($categoryType == 'service')                            
+                                <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
+                                @if($item->price && $item->discount_price)
+                                    <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                    <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                                @elseif($item->price)
+                                    <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                                @else
+                                    <small class="price-tag text-success">No price</small>
+                                @endif
+                                <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
+                                @if(!$isOwnPost)
+                                onclick="addToCart(
+                                    '{{ $item->id }}', 
+                                    '{{ $item->title }}', 
+                                    '{{ $item->price ?? 0 }}', 
+                                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', 
+                                    '{{ $categoryType }}',
+                                    '{{ $item->discount_price ?? 0 }}'
+                                )"
+                                style="cursor: pointer;"
+                                data-category-type="{{ $categoryType }}"
+                                @endif>
+                                @if($categoryType == 'service')                            
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-calendar-check"></i>
+                                    @endif
+                                @else
+                                
                                 @if($isOwnPost)
                                     <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
                                 @else
-                                    <i class="bi bi-calendar-check"></i>
+                                    <i class="bi bi-cart-plus"></i>
                                 @endif
-                            @else
-                               
-                            @if($isOwnPost)
-                                <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                            @else
-                                <i class="bi bi-cart-plus"></i>
-                            @endif
-                            @endif
-                            </span>
-                        </div>
+                                @endif
+                                </span>
+                            </div>
                     </div>
                 </div>
                 @include('frontend.body.review-modal')
-
                 @endforeach
             </div>
         </div>
     </section>
     @endif
-@endforeach
-
-
-
-
-{{-- Others Section --}}
-@if($new_category_posts->count() > 0)
-<section class="grid-section mb-4">
-    <div class="">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h4 class="fw-bold text-dark mb-0">Others</h4>
-            </div>
-        </div>
-        <div class="row g-3 g-md-4 mb-4">
-            @foreach($new_category_posts as $item)
-            @php
-            $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
-            $categoryType = $item->category->cat_type ?? 'product';
-            $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
-                                ->where('user_id', Auth::id())
-                                ->exists();
-            @endphp
-            <div class="col-4">
-                <div class="card shadow-sm border-0">
-
-                    @if($hasAlreadyReviewed)
-                        {{-- Rating Badge --}}
-                        <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#reviewModal{{ $item->id }}" 
-                            style="cursor: pointer; z-index: 10; font-size:10px;">
-                            <div class="user-rating">
-                                <div class="stars">
-                                    <span class="rating-text">
-                                        <i class="bi bi-star-fill"></i> 
-                                        {{ number_format($item->averageRating(), 1) }}
-                                        ({{ $item->reviewCount() }})
-                                    </span>
-                                </div>
-                            </div>
-                        </span>
-                        @endif
-
-                    @if($item->image)
-                    <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
-                    @else
-                    <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
-                    @endif
-                    <div class="card-body p-2">
-                        <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
-                        <small class="price-tag text-success">{{ $item->price ? number_format($item->price, 2) : 'No price' }}</small>
-                        <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
-                        @if(!$isOwnPost)
-                        onclick="addToCart('{{ $item->id }}', '{{ $item->title }}', '{{ $item->price ?? 0 }}', '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', '{{ $categoryType }}')"
-                        style="cursor: pointer;"
-                        data-category-type="{{ $categoryType }}"
-                        @endif>
-                        @if($categoryType == 'service')
-                        <i class="bi bi-calendar-check"></i>
-                        @else
-                            @if($isOwnPost)
-                                <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                            @else
-                                <i class="bi bi-cart-plus"></i>
-                            @endif
-                        @endif
-                        </span>
-                    </div>
-                </div>
-            </div>
-            @include('frontend.body.review-modal')
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
 
       {{-- If user has no posts --}}
       @if($userPostCategories->count() == 0)
@@ -440,9 +466,13 @@ $new_category_posts = \App\Models\Post::where('user_id', $user->id)
    </div>
    {{-- Cart JavaScript --}}
    <script>
-      function addToCart(id, title, price, image, categoryType) {
-          console.log('Adding to cart:', {id, title, price, image, categoryType});
-          alert('Added to cart: ' + title);
+      function addToCart(id, title, price, image, categoryType, discountPrice = 0) {
+          console.log('Adding to cart:', {id, title, price, image, categoryType, discountPrice});
+          if (window.cartManager) {
+              window.cartManager.addToCart(id, title, price, image, categoryType, discountPrice);
+          } else {
+              alert('Cart system not available');
+          }
       }
    </script>
 </div>

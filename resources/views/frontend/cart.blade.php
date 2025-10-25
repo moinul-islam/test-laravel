@@ -457,7 +457,7 @@ class CompletCartSystem {
         return false;
     }
 
-    addToCart(productId, productName, productPrice, productImage, categoryType = 'product') {
+    addToCart(productId, productName, productPrice, productImage, categoryType = 'product', discountPrice = 0) {
         if (this.isProcessing) return;
         this.isProcessing = true;
         
@@ -469,17 +469,18 @@ class CompletCartSystem {
                 productName,
                 productPrice: parseFloat(productPrice) || 0,
                 productImage,
-                categoryType
+                categoryType,
+                discountPrice: parseFloat(discountPrice) || 0
             };
             
             this.showServiceBookingModal(productName);
             return;
         }
 
-        this.addItemToCart(productId, productName, productPrice, productImage, categoryType);
+        this.addItemToCart(productId, productName, productPrice, productImage, categoryType, null, discountPrice);
     }
 
-    addItemToCart(productId, productName, productPrice, productImage, categoryType, serviceDateTime = null) {
+    addItemToCart(productId, productName, productPrice, productImage, categoryType, serviceDateTime = null, discountPrice = 0) {
         let existingItem = null;
         
         if (categoryType === 'product') {
@@ -498,7 +499,8 @@ class CompletCartSystem {
                 price: parseFloat(productPrice) || 0, // Laravel expects 'price'
                 image: productImage,     // Laravel expects 'image'
                 quantity: 1,            // Laravel expects 'quantity'
-                type: categoryType      // Laravel expects 'type'
+                type: categoryType,      // Laravel expects 'type'
+                discount_price: parseFloat(discountPrice) || 0 // Add discount price
             };
 
             if (serviceDateTime) {
@@ -619,7 +621,9 @@ class CompletCartSystem {
         let total = 0;
 
         this.cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
+            // Calculate final price (original price - discount)
+            const finalPrice = item.discount_price > 0 ? (item.price - item.discount_price) : item.price;
+            const itemTotal = finalPrice * item.quantity;
             total += itemTotal;
 
             const serviceTimeDisplay = item.service_time ? 
@@ -636,12 +640,26 @@ class CompletCartSystem {
                     <button class="quantity-control-btn" data-increase-qty="${item.id}" type="button">+</button>
                 </div>`;
 
+            // Price display with discount
+            let priceDisplay = '';
+            if (item.discount_price > 0) {
+                priceDisplay = `
+                    <div class="cart-item-price">
+                        <span class="text-decoration-line-through text-muted">${item.price.toFixed(2)}</span>
+                        <span class="text-success fw-bold">${finalPrice.toFixed(2)} each</span>
+                        <small class="text-danger">(-${item.discount_price.toFixed(2)} discount)</small>
+                    </div>
+                `;
+            } else {
+                priceDisplay = `<div class="cart-item-price">${item.price.toFixed(2)} each</div>`;
+            }
+
             cartHTML += `
                 <div class="cart-item-row" data-cart-item-id="${item.id}">
                     <img src="${item.image}" alt="${item.name}" class="cart-item-image">
                     <div class="cart-item-details">
                         <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">${item.price.toFixed(2)} each</div>
+                        ${priceDisplay}
                         ${serviceTimeDisplay}
                         ${quantityControls}
                     </div>
@@ -709,7 +727,8 @@ class CompletCartSystem {
                 this.currentServiceData.productPrice,
                 this.currentServiceData.productImage,
                 'service',
-                serviceDateTime
+                serviceDateTime,
+                this.currentServiceData.discountPrice
             );
             
             // RESTORED: Proper modal closing
@@ -769,15 +788,20 @@ class CompletCartSystem {
         let total = 0;
 
         this.cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
+            // Calculate final price (original price - discount)
+            const finalPrice = item.discount_price > 0 ? (item.price - item.discount_price) : item.price;
+            const itemTotal = finalPrice * item.quantity;
             total += itemTotal;
 
             const serviceInfo = item.service_time ? 
                 `<small class="text-muted"> (${new Date(item.service_time).toLocaleString()})</small>` : '';
 
+            const discountInfo = item.discount_price > 0 ? 
+                `<small class="text-success"> (Discounted from ${item.price.toFixed(2)})</small>` : '';
+
             summaryHTML += `
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>${item.name} × ${item.quantity}${serviceInfo}</span>
+                    <span>${item.name} × ${item.quantity}${serviceInfo}${discountInfo}</span>
                     <span class="fw-bold">${itemTotal.toFixed(2)}</span>
                 </div>
             `;
@@ -816,8 +840,11 @@ class CompletCartSystem {
             const orderData = {
                 phone: phone,
                 shipping_address: address,
-                total_amount: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-                cart_items: this.cart // Contains: id, name, price, image, quantity, type, service_time
+                total_amount: this.cart.reduce((sum, item) => {
+                    const finalPrice = item.discount_price > 0 ? (item.price - item.discount_price) : item.price;
+                    return sum + (finalPrice * item.quantity);
+                }, 0),
+                cart_items: this.cart // Contains: id, name, price, image, quantity, type, service_time, discount_price
             };
 
             console.log('Sending to Laravel:', orderData); // Debug
@@ -912,9 +939,9 @@ class CompletCartSystem {
 }
 
 // Global functions
-function addToCart(productId, productName, productPrice, productImage, categoryType = 'product') {
+function addToCart(productId, productName, productPrice, productImage, categoryType = 'product', discountPrice = 0) {
     if (window.cartManager) {
-        window.cartManager.addToCart(productId, productName, productPrice, productImage, categoryType);
+        window.cartManager.addToCart(productId, productName, productPrice, productImage, categoryType, discountPrice);
     }
 }
 
