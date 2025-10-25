@@ -284,6 +284,9 @@
                 </div>
             </div>
             
+            <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">Discount & Offers</a> 
+          
+            
             <div class="row g-3 g-md-4">
                 @php
                     $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();

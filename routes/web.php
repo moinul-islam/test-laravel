@@ -14,8 +14,10 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\AdminPostController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ProductController;
 
 Route::post('/review/store',  [ReviewController::class, 'store'])->name('review.store');
+Route::get('/{username}/discount-wise-product',  [ProductController::class, 'discount_wise_product'])->name('discount_wise_product');
 
 Route::post('/review/update/{id}',  [ReviewController::class, 'update'])->name('review.update')->middleware('auth');
 Route::delete('/review/delete/{id}',  [ReviewController::class, 'destroy'])->name('review.delete')->middleware('auth');
