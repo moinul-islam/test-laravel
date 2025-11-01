@@ -35,7 +35,7 @@ class LocationController extends Controller
                         ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
             
             // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
-            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service'])->get();
+            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
             
             // view এ পাঠাও
             return view("dashboard", compact('posts', 'user', 'categories'));
@@ -45,7 +45,6 @@ class LocationController extends Controller
         }
        
     }
-
 
     public function getCities($countryId)
     {

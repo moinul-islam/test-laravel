@@ -48,7 +48,7 @@ class PostController extends Controller
         $request->validate([
             'category_name' => 'required|string|max:255',
             'title' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:1000|required_without:image_data',
         ]);
        
@@ -118,17 +118,32 @@ class PostController extends Controller
             }
         } while (Post::where('slug', $slug)->exists());
        
-        // DB-এ সেভ করা
-        $post = Post::create([
+        // Build data array with only fields that have values
+        $postData = [
             'title' => $request->title,
-            'price' => $request->price,
-            'image' => $photo,
-            'description' => $request->description,
             'user_id' => $user_id,
             'category_id' => $categoryId,
             'new_category' => $newCategory,
             'slug' => $slug
-        ]);
+        ];
+        
+        // Only add price if it's provided and not empty
+        if ($request->filled('price') && $request->price != '') {
+            $postData['price'] = $request->price;
+        }
+        
+        // Only add image if it exists
+        if ($photo) {
+            $postData['image'] = $photo;
+        }
+        
+        // Only add description if it's provided
+        if ($request->filled('description')) {
+            $postData['description'] = $request->description;
+        }
+       
+        // DB-এ সেভ করা - শুধুমাত্র যেসব field এ data আছে
+        $post = Post::create($postData);
     
         // নতুন যোগ: পোস্ট creator এর সব followers দের notification পাঠানো
         try {
@@ -144,10 +159,11 @@ class PostController extends Controller
             ]);
     
             foreach ($followers as $follower) {
+                $priceText = $post->price ? "Price: {$post->price}" : "No price specified";
                $this->sendBrowserNotification(
                     $follower->id,
                     'New Post from ' . $postCreator->name,
-                    "{$postCreator->name} posted: {$post->title}. Price: {$post->price}",
+                    "{$postCreator->name} posted: {$post->title}. {$priceText}",
                     $post->id,
                     url('/post/' . $post->slug), // custom link
                     'post', // notification type
@@ -292,7 +308,7 @@ public function update(Request $request, $id)
     $request->validate([
         'category_name' => 'required|string|max:255',
         'title' => 'required|string|max:255',
-        'price' => 'required|numeric|min:0',
+        'price' => 'nullable|numeric|min:0',
         'description' => 'nullable|string|max:1000|required_without:image_data',
     ]);
     
@@ -377,17 +393,42 @@ public function update(Request $request, $id)
         $isNewDiscount = true;
     }
     
-    // Update post in DB
-    $post->update([
+    // Build update data array with only fields that have values
+    $updateData = [
         'title' => $request->title,
-        'price' => $request->price,
-        'discount_price' => $request->discount_price ?? null,
-        'discount_until' => $request->discount_until ?? null,
-        'image' => $photo,
-        'description' => $request->description,
         'category_id' => $categoryId,
         'new_category' => $newCategory,
-    ]);
+    ];
+    
+    // Only add price if it's provided
+    if ($request->filled('price') && $request->price != '') {
+        $updateData['price'] = $request->price;
+    } else {
+        // If price is empty, set it to null
+        $updateData['price'] = null;
+    }
+    
+    // Add discount fields if provided
+    if ($request->filled('discount_price')) {
+        $updateData['discount_price'] = $request->discount_price;
+        $updateData['discount_until'] = $request->discount_until ?? null;
+    } else {
+        $updateData['discount_price'] = null;
+        $updateData['discount_until'] = null;
+    }
+    
+    // Only add image if it exists
+    if ($photo) {
+        $updateData['image'] = $photo;
+    }
+    
+    // Only add description if it's provided
+    if ($request->filled('description')) {
+        $updateData['description'] = $request->description;
+    }
+    
+    // Update post in DB - only fields with data
+    $post->update($updateData);
     
     // ✅ শুধুমাত্র নতুন discount যোগ হলে notification পাঠান
    // ✅ শুধুমাত্র নতুন discount যোগ হলে notification পাঠান

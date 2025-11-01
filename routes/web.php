@@ -17,6 +17,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductController;
 
 Route::post('/review/store',  [ReviewController::class, 'store'])->name('review.store');
+Route::get('/{username}/notice',  [ProductController::class, 'notice'])->name('notice');
 Route::get('/{username}/discount-wise-product',  [ProductController::class, 'discount_wise_product'])->name('discount_wise_product');
 
 Route::post('/review/update/{id}',  [ReviewController::class, 'update'])->name('review.update')->middleware('auth');

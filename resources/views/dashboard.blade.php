@@ -604,14 +604,14 @@
                </div>
                {{-- Title Field --}}
                <div class="mb-3">
-                  <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                  <label for="title" class="form-label" id="title_label">Title <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" id="title" name="title" placeholder="Enter product/service title..." value="{{ old('title') }}" required>
                   @error('title')
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
                </div>
                {{-- Price Field --}}
-               <div class="mb-3">
+               <div class="mb-3" id="price_field_container">
                   <label for="price" class="form-label">Price <span class="text-danger">*</span></label>
                   <input type="number" class="form-control" id="price" name="price" placeholder="Enter price..." value="{{ old('price') }}" min="0" step="0.01" required>
                   @error('price')
@@ -833,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
              <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
-                  <label for="description" class="form-label">Product or Service Description</label>
+                  <label for="description" class="form-label" id="description_label">Product or Service Description</label>
                   <textarea class="form-control" id="description" name="description" rows="4" placeholder="Type your text here...">{{ old('description') }}</textarea>
                   @error('description')
                   <div class="text-danger">{{ $message }}</div>
@@ -887,17 +887,17 @@ document.addEventListener('DOMContentLoaded', function() {
                
                {{-- Title Field --}}
                <div class="mb-3">
-                  <label for="edit_title" class="form-label">Title <span class="text-danger">*</span></label>
+                  <label for="edit_title" class="form-label" id="edit_title_label">Title <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" id="edit_title" name="title" required>
                </div>
                
                {{-- Price Field --}}
-               <div class="mb-3">
+               <div class="mb-3" id="edit_price_field_container">
                   <label for="edit_price" class="form-label">Price <span class="text-danger">*</span></label>
                   <input type="number" class="form-control" id="edit_price" name="price" min="0" step="0.01" required>
                </div>
                
-               <div class="mb-3">
+               <div class="mb-3" id="edit_discount_field_container">
                 <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                 
                 <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -994,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
                
                {{-- Description --}}
                <div class="mb-3">
-                  <label for="edit_description" class="form-label">Description</label>
+                  <label for="edit_description" class="form-label" id="edit_description_label">Description</label>
                   <textarea class="form-control" id="edit_description" name="description" rows="4"></textarea>
                </div>
             </form>
@@ -1034,9 +1034,16 @@ function editPost(postId) {
         if(data.category) {
             document.getElementById('edit_category_name').value = data.category.category_name;
             document.getElementById('edit_category_id').value = data.category.id;
+            
+            // Update form based on category type
+            if(data.category.cat_type) {
+                updateFormBasedOnCategoryType(data.category.cat_type, 'edit');
+            }
         } else if(data.new_category) {
             document.getElementById('edit_category_name').value = data.new_category;
             document.getElementById('edit_category_id').value = '';
+            // Reset to default for new category
+            updateFormBasedOnCategoryType('product', 'edit');
         }
         
         // Set current image
@@ -1077,12 +1084,18 @@ if(editCategoryInput) {
             
             if (exactMatch) {
                 editCategoryIdInput.value = exactMatch.id;
+                // Update form based on category type
+                updateFormBasedOnCategoryType(exactMatch.cat_type, 'edit');
             } else {
                 editCategoryIdInput.value = '';
+                // Reset to default when no category selected
+                updateFormBasedOnCategoryType('product', 'edit');
             }
         } else {
             editSuggestionsDiv.style.display = 'none';
             editCategoryIdInput.value = '';
+            // Reset to default when cleared
+            updateFormBasedOnCategoryType('product', 'edit');
         }
     });
 }
@@ -1115,6 +1128,12 @@ function selectEditCategory(id, name) {
     editCategoryInput.value = name;
     editCategoryIdInput.value = id;
     editSuggestionsDiv.style.display = 'none';
+    
+    // Check cat_type and update form accordingly
+    const selectedCategory = categories.find(cat => cat.id == id);
+    if (selectedCategory) {
+        updateFormBasedOnCategoryType(selectedCategory.cat_type, 'edit');
+    }
 }
 </script>
 
@@ -1161,7 +1180,61 @@ function selectEditCategory(id, name) {
            categoryInput.value = name;
            categoryIdInput.value = id;
            suggestionsDiv.style.display = 'none';
+           
+           // Check cat_type and update form accordingly
+           const selectedCategory = categories.find(cat => cat.id == id);
+           if (selectedCategory) {
+               updateFormBasedOnCategoryType(selectedCategory.cat_type, 'create');
+           }
+           
            toggleSubmit();
+       }
+       
+       // Function to update form based on category type
+       window.updateFormBasedOnCategoryType = function(catType, formType) {
+           const prefix = formType === 'create' ? '' : 'edit_';
+           const titleLabel = document.getElementById(prefix + 'title_label');
+           const descriptionLabel = document.getElementById(prefix + 'description_label');
+           const priceContainer = document.getElementById(prefix + 'price_field_container');
+           const priceInput = document.getElementById(prefix + 'price');
+           const discountContainer = document.getElementById(prefix + 'discount_field_container');
+           
+           if (catType === 'post') {
+               // Hide price field
+               if (priceContainer) priceContainer.style.display = 'none';
+               if (priceInput) {
+                   priceInput.removeAttribute('required');
+                   priceInput.value = '';
+               }
+               
+               // Hide discount field (for edit modal)
+               if (discountContainer) discountContainer.style.display = 'none';
+               
+               // Update labels
+               if (titleLabel) {
+                   titleLabel.innerHTML = 'Notice Title <span class="text-danger">*</span>';
+               }
+               if (descriptionLabel) {
+                   descriptionLabel.textContent = 'Notice Description';
+               }
+           } else {
+               // Show price field
+               if (priceContainer) priceContainer.style.display = 'block';
+               if (priceInput) {
+                   priceInput.setAttribute('required', 'required');
+               }
+               
+               // Show discount field (for edit modal)
+               if (discountContainer) discountContainer.style.display = 'block';
+               
+               // Reset labels to default
+               if (titleLabel) {
+                   titleLabel.innerHTML = 'Title <span class="text-danger">*</span>';
+               }
+               if (descriptionLabel) {
+                   descriptionLabel.textContent = 'Product or Service Description';
+               }
+           }
        }
        
        categoryInput.addEventListener('input', function() {
@@ -1177,12 +1250,18 @@ function selectEditCategory(id, name) {
                
                if (exactMatch) {
                    categoryIdInput.value = exactMatch.id; // Set existing category ID
+                   // Update form based on category type
+                   updateFormBasedOnCategoryType(exactMatch.cat_type, 'create');
                } else {
                    categoryIdInput.value = ''; // Clear category_id for new category
+                   // Reset to default when no category selected
+                   updateFormBasedOnCategoryType('product', 'create');
                }
            } else {
                suggestionsDiv.style.display = 'none';
                categoryIdInput.value = '';
+               // Reset to default when cleared
+               updateFormBasedOnCategoryType('product', 'create');
            }
            
            toggleSubmit();
@@ -1203,11 +1282,20 @@ function selectEditCategory(id, name) {
        const descInput = document.getElementById('description');
        const submitBtn = document.getElementById('submitBtn');
        
-       if (titleInput && priceInput && categoryInput && submitBtn) {
+       if (titleInput && categoryInput && submitBtn) {
+           // Get selected category type
+           const selectedCategoryId = document.getElementById('category_id').value;
+           const selectedCategory = categories.find(cat => cat.id == selectedCategoryId);
+           const isPostType = selectedCategory && selectedCategory.cat_type === 'post';
+           
            // Check if all required fields are filled
-           const hasRequiredFields = titleInput.value.trim() !== '' && 
-                                    priceInput.value.trim() !== '' && 
-                                    categoryInput.value.trim() !== '';
+           let hasRequiredFields = titleInput.value.trim() !== '' && 
+                                   categoryInput.value.trim() !== '';
+           
+           // Price is only required if not post type
+           if (!isPostType) {
+               hasRequiredFields = hasRequiredFields && (priceInput && priceInput.value.trim() !== '');
+           }
            
            // Check if at least image or description is provided
            const hasContent = (imageInput && imageInput.files.length > 0) || 
@@ -1228,6 +1316,17 @@ function selectEditCategory(id, name) {
        if (priceInput) priceInput.addEventListener('input', toggleSubmit);
        if (imageInput) imageInput.addEventListener('change', toggleSubmit);
        if (descInput) descInput.addEventListener('input', toggleSubmit);
+       
+       // Reset form when create modal opens
+       const createModal = document.getElementById('createPostModal');
+       if (createModal) {
+           createModal.addEventListener('show.bs.modal', function() {
+               // Reset to default state
+               if (window.updateFormBasedOnCategoryType) {
+                   updateFormBasedOnCategoryType('product', 'create');
+               }
+           });
+       }
        
        // Initial check
        toggleSubmit();

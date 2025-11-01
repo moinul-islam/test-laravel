@@ -74,7 +74,61 @@ class ProductController extends Controller
     
         return view('frontend.discount_wise_product', compact('discount_wise_products', 'path'));
     }
-    
+
+    public function notice(Request $request, $username)
+    {
+        $path = $username;
+        $userIds = [];
+        
+        if ($path == 'international') {
+            $userIds = User::where(function($query) {
+                $query->where('phone_verified', 0)
+                      ->orWhere('email_verified', 0);
+            })->pluck('id')->toArray();
+        } else {
+            $country = Country::where('username', $path)->first();
+            if ($country) {
+                $userIds = User::where('country_id', $country->id)
+                    ->where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                $city = City::where('username', $path)->first();
+                if ($city) {
+                    $userIds = User::where('city_id', $city->id)
+                        ->where(function($query) {
+                            $query->where('phone_verified', 0)
+                                  ->orWhere('email_verified', 0);
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                } else {
+                    return redirect('/');
+                }
+            }
+        }
+        
+        // ✅ শুধুমাত্র cat_type = 'post' এর posts (discount_price থাকুক বা না থাকুক)
+        $discount_wise_products = Post::whereIn('user_id', $userIds)
+            ->whereHas('category', function($q) {
+                $q->where('cat_type', 'post'); // শুধুমাত্র post টাইপ
+            })
+            ->with(['user', 'category'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'posts' => view('frontend.products-partial', compact('discount_wise_products'))->render(),
+                'hasMore' => $discount_wise_products->hasMorePages()
+            ]);
+        }
+        
+        return view('frontend.notice_wise_product', compact('discount_wise_products', 'path'));
+    }
 
 
 
