@@ -46,11 +46,11 @@
                 @endif
             @endif>
             @if($categoryType == 'service')                            
-                                    @if($isOwnPost)
-                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                                    @else
-                                        <i class="bi bi-calendar-check"></i>
-                                    @endif
+                @if($isOwnPost)
+                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                @else
+                    <i class="bi bi-calendar-check"></i>
+                @endif
             @elseif($categoryType == 'post')                                
                 @if($isOwnPost)
                     <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
