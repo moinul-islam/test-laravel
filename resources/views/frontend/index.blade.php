@@ -391,39 +391,72 @@
                     $maxTagsFirstLine = 7; // aro choto choto, so show more in first line
                     $showSeeMore = $profileCategories->count() > $maxTagsFirstLine;
                 @endphp
-                <div class="col-12 text-center">
-                    <div class="d-flex flex-wrap justify-content-center gap-1" id="profileTags-{{ $universalCategory->id }}" style="max-width: 100%;">
-                        @foreach($profileCategories as $index => $profileCat)
-                            <a 
-                                href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
-                                class="badge rounded bg-light text-dark border border-secondary px-2 py-1 mb-1 profile-tag-{{ $universalCategory->id }} 
-                                    @if($showSeeMore && $index >= $maxTagsFirstLine) d-none extra-tag-{{ $universalCategory->id }} @endif"
-                                style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;"
-                            >
-                                @t($profileCat->category_name)
-                            </a>
-                        @endforeach
+                <div class="col-12">
+    {{-- Horizontal Scrollable Profile Tags --}}
+    <div class="profile-tags-scroll-wrapper">
+        <div class="profile-tags-scroll-container" id="profileTags-{{ $universalCategory->id }}">
+            @foreach($profileCategories as $profileCat)
+                <a 
+                    href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
+                    class="profile-tag-item"
+                >
+                    @t($profileCat->category_name)
+                </a>
+            @endforeach
+        </div>
+    </div>
+</div>
 
-                        @if($showSeeMore)
-                            <a href="javascript:void(0);" 
-                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
-                               id="seeMoreProfileTagsBtn-{{ $universalCategory->id }}"
-                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
-                               onclick="showAllProfileTags('{{ $universalCategory->id }}')"
-                            >
-                                See More
-                            </a>
-                            <a href="javascript:void(0);" 
-                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1 d-none"
-                               id="seeLessProfileTagsBtn-{{ $universalCategory->id }}"
-                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
-                               onclick="showLessProfileTags('{{ $universalCategory->id }}')"
-                            >
-                                See Less
-                            </a>
-                        @endif
-                    </div>
-                </div>
+<style>
+.profile-tags-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin: 0 -15px;
+    padding: 0 15px 10px 15px;
+}
+
+.profile-tags-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.profile-tags-scroll-container {
+    display: flex;
+    gap: 8px;
+    padding: 5px 0;
+}
+
+.profile-tag-item {
+    flex: 0 0 auto;
+    background: #f8f9fa;
+    color: #212529;
+    border: 1px solid #6c757d;
+    border-radius: 0.25rem;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.profile-tag-item:hover {
+    background: #e9ecef;
+    border-color: #495057;
+    color: #000;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .profile-tag-item {
+        font-size: 12px;
+        padding: 5px 12px;
+    }
+}
+</style>
                 <script>
                     function showAllProfileTags(sectionId) {
                         var tags = document.querySelectorAll('.extra-tag-' + sectionId);
