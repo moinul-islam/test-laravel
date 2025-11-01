@@ -328,11 +328,11 @@
                                     @endif
                                 @else
                                 
-                                @if($isOwnPost)
-                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                                @else
-                                    <i class="bi bi-cart-plus"></i>
-                                @endif
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-cart-plus"></i>
+                                    @endif
                                 @endif
                                 </span>
                             </div>
@@ -431,13 +431,18 @@
                                     @else
                                         <i class="bi bi-calendar-check"></i>
                                     @endif
-                                @else
-                                
-                                @if($isOwnPost)
-                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                                @else
-                                    <i class="bi bi-cart-plus"></i>
-                                @endif
+                                @elseif($categoryType == 'post')                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-eye"></i>
+                                    @endif
+                                @else                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-cart-plus"></i>
+                                    @endif
                                 @endif
                                 </span>
                             </div>
@@ -831,6 +836,36 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
+<div class="mb-3" id="edit_discount_field_container">
+                <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
+                
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <!-- Discount Amount-->
+                    <input type="number" 
+                        class="form-control" 
+                        id="discount_price" 
+                        name="discount_price" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="Discount Amount">
+
+                    <!-- Discount Duration -->
+                    <input type="number" 
+                        class="form-control d-none" 
+                        id="discount_days" 
+                        name="discount_days" 
+                        min="1" 
+                        placeholder="Duration (days)">
+
+                    <!-- Discount End Datetime -->
+                    <input type="datetime-local" 
+                        class="form-control d-none" 
+                        id="discount_until" 
+                        name="discount_until" 
+                        placeholder="Valid Until">
+                </div>
+                </div>
+
              <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
                   <label for="description" class="form-label" id="description_label">Product or Service Description</label>
@@ -902,13 +937,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 <div class="d-flex gap-2 align-items-center flex-wrap">
                     <!-- Discount Amount-->
-                    <input type="number" 
-                        class="form-control" 
-                        id="discount_price" 
-                        name="discount_price" 
-                        min="0" 
-                        step="0.01" 
-                        placeholder="Discount Amount">
+                   
 
                     <!-- Discount Duration -->
                     <input type="number" 

@@ -122,7 +122,7 @@
                     } else {
                         // Show both product AND service siblings
                         $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
-                            ->whereIn('cat_type', ['product', 'service'])
+                            ->whereIn('cat_type', ['product', 'service','post'])
                             ->get();
                     }
                 } 

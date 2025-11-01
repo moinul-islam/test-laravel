@@ -368,7 +368,7 @@
     @foreach($universalCategories as $universalCategory)
     @php
         $profileCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->where('cat_type', 'profile')->get();
-        $productCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->whereIn('cat_type', ['product', 'service'])->get();
+        $productCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->whereIn('cat_type', ['product', 'service','post'])->get();
         
         // If profile categories are more than product categories, swap them
         if($profileCategories->count() > $productCategories->count()) {
