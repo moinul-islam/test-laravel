@@ -488,13 +488,13 @@
                         @if($prodHiddenOnLg) product-hidden-lg-{{ $sectionId }} @endif"
                         data-prod-index="{{ $prodIndex }}">
                         <a href="{{ route('products.category', [$visitorLocationPath, $productCat->slug]) }}" class="text-decoration-none">
-                            <div class="mx-auto mb-2" style="width: 50px; height: 50px; overflow: hidden;">
+                            <div class="mx-auto mb-2" style="width: 30px; height: 30px; overflow: hidden;">
                                 <img src="{{ $productCat->image ? asset('icon/' . $productCat->image) : asset('profile-image/no-image.jpeg') }}"
                                     alt="{{ $productCat->category_name }}"
                                     style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <div>
-                                <span style="display: block; font-size: 14px; color: #000;">@t($productCat->category_name)</span>
+                                <span style="display: block; font-size: 11px; color: #000;">@t($productCat->category_name)</span>
                             </div>
                         </a>
                     </div>
