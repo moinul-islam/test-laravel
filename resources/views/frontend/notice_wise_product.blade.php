@@ -76,13 +76,18 @@
                                     @else
                                         <i class="bi bi-calendar-check"></i>
                                     @endif
-                                @else
-                                
-                                @if($isOwnPost)
-                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
-                                @else
-                                    <i class="bi bi-cart-plus"></i>
-                                @endif
+                                @elseif($categoryType == 'post')                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-eye"></i>
+                                    @endif
+                                @else                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-cart-plus"></i>
+                                    @endif
                                 @endif
                                 </span>
                             </div>
