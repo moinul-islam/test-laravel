@@ -901,14 +901,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                 
                 <div class="d-flex gap-2 align-items-center flex-wrap">
-                    <!-- Discount Price -->
+                    <!-- Discount Amount-->
                     <input type="number" 
                         class="form-control" 
                         id="discount_price" 
                         name="discount_price" 
                         min="0" 
                         step="0.01" 
-                        placeholder="Discount Price">
+                        placeholder="Discount Amount">
 
                     <!-- Discount Duration -->
                     <input type="number" 

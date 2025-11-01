@@ -21,8 +21,6 @@ class ProductController extends Controller
     public function discount_wise_product(Request $request, $username)
     {
         $path = $username;
-    
-        // Initialize user IDs based on location
         $userIds = [];
     
         if ($path == 'international') {
@@ -51,20 +49,22 @@ class ProductController extends Controller
                         ->pluck('id')
                         ->toArray();
                 } else {
-                    // যদি কোন দেশ বা শহর না মিলে
-                    return redirect('/'); // এখানে রিডাইরেক্ট
+                    return redirect('/');
                 }
             }
         }
     
-        // Get discount products with location filtering
+        // ✅ এখানে discount_until ও check করুন
         $discount_wise_products = Post::whereNotNull('discount_price')
+            ->where(function($query) {
+                $query->whereNull('discount_until') // যদি কোন expiry না থাকে
+                      ->orWhere('discount_until', '>', now()); // অথবা এখনো valid
+            })
             ->whereIn('user_id', $userIds)
             ->with(['user', 'category'])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
     
-        // AJAX request handling for lazy loading
         if ($request->ajax()) {
             return response()->json([
                 'posts' => view('frontend.products-partial', compact('discount_wise_products'))->render(),

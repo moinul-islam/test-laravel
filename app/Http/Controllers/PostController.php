@@ -281,7 +281,6 @@ class PostController extends Controller
 
 public function update(Request $request, $id)
 {
- 
     $post = Post::findOrFail($id);
     
     // Check if user owns this post
@@ -365,6 +364,19 @@ public function update(Request $request, $id)
         $newCategory = $request->category_name;
     }
     
+    // ✅ Check করুন নতুন discount যোগ করা হচ্ছে কিনা
+    $isNewDiscount = false;
+    
+    // যদি আগে discount না থাকে এবং এখন দেওয়া হচ্ছে
+    if (is_null($post->discount_price) && $request->filled('discount_price')) {
+        $isNewDiscount = true;
+    }
+    // অথবা আগের discount থেকে নতুন discount দেওয়া হচ্ছে
+    elseif (!is_null($post->discount_price) && $request->filled('discount_price') 
+             && $post->discount_price != $request->discount_price) {
+        $isNewDiscount = true;
+    }
+    
     // Update post in DB
     $post->update([
         'title' => $request->title,
@@ -373,12 +385,64 @@ public function update(Request $request, $id)
         'discount_until' => $request->discount_until ?? null,
         'image' => $photo,
         'description' => $request->description,
-        'category_id' => $categoryId, // Will be null if new category
-        'new_category' => $newCategory, // Will be null if existing category
+        'category_id' => $categoryId,
+        'new_category' => $newCategory,
     ]);
+    
+    // ✅ শুধুমাত্র নতুন discount যোগ হলে notification পাঠান
+   // ✅ শুধুমাত্র নতুন discount যোগ হলে notification পাঠান
+if ($isNewDiscount) {
+    try {
+        $postCreator = Auth::user();
+        $followers = $postCreator->followers;
+        
+        \Log::info('Post updated with discount, sending notifications', [
+            'post_id' => $post->id,
+            'discount_price' => $request->discount_price,
+            'followers_count' => $followers->count()
+        ]);
+        
+        // ✅ সঠিক discount calculation
+        $originalPrice = $request->price; // মূল দাম
+        $discountAmount = $request->discount_price; // যত টাকা ছাড়
+        $finalPrice = $originalPrice - $discountAmount; // ছাড়ের পরের দাম
+        
+        $discountPercentage = 0;
+        if ($originalPrice > 0 && $discountAmount) {
+            $discountPercentage = round(($discountAmount / $originalPrice) * 100);
+        }
+        
+        foreach ($followers as $follower) {
+            $this->sendBrowserNotification(
+                $follower->id,
+                '🔥 Discount Alert from ' . $postCreator->name,
+                "{$postCreator->name} added {$discountPercentage}% discount on: {$post->title}. Now only ৳{$finalPrice}!",
+                $post->id,
+                url('/post/' . $post->slug),
+                'post',
+                $post->slug
+            );
+            
+            \Log::info('Discount notification sent to follower', [
+                'follower_id' => $follower->id,
+                'post_id' => $post->id,
+                'original_price' => $originalPrice,
+                'discount_amount' => $discountAmount,
+                'final_price' => $finalPrice,
+                'discount_percentage' => $discountPercentage
+            ]);
+        }
+    } catch (\Exception $e) {
+        \Log::error('Failed to send discount notifications', [
+            'error' => $e->getMessage(),
+            'post_id' => $post->id
+        ]);
+    }
+}
     
     return back()->with('success', 'Post updated successfully!');
 }
+
 public function showByCategory(Request $request, $username, $slug)
 {
     $path = $username;
