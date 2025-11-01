@@ -328,7 +328,7 @@
                         @if($hiddenOnLg) category-hidden-lg @endif"
                         data-index="{{ $index }}">
                         <a href="#{{ $category->slug }}" class="text-decoration-none">                  
-                            <div class="mx-auto mb-2" style="width: 30px; height: 30px; overflow: hidden;">
+                            <div class="mx-auto mb-2" style="width: 50px; height: 50px; overflow: hidden;">
                                 <img src="{{ $category->image ? asset('icon/' . $category->image) : asset('profile-image/no-image.jpeg') }}"
                                     alt="{{ $category->category_name }}" 
                                     style="width: 100%; height: 100%; object-fit: cover;">
@@ -343,7 +343,7 @@
                     @if($needSeeMoreSm && $index == $seeMorePositionSm)
                         <div class="col-4 col-sm-4 d-lg-none text-center mb-3 toggle-btn-sm" id="toggleBtnSm">
                             <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesSm()">
-                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
+                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
                                     <span style="font-size: 11px; color: #888;" id="toggleTextSm">See More</span>
                                 </div>
                             </a>
@@ -354,7 +354,7 @@
                     @if($needSeeMoreLg && $index == $seeMorePositionLg)
                         <div class="d-none d-lg-block col-lg-3 text-center mb-3 toggle-btn-lg" id="toggleBtnLg">
                             <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesLg()">
-                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
+                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
                                     <span style="font-size: 14px; color: #888;" id="toggleTextLg">See More</span>
                                 </div>
                             </a>
