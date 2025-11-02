@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use Stichoza\GoogleTranslate\GoogleTranslate;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 
 class AutoTranslate
@@ -10,7 +12,21 @@ class AutoTranslate
     {
         $locale = Session::get('locale', 'en');
         
-        // আপাতত translation বন্ধ, শুধু text return করবে
-        return $text;
+        if ($locale == 'en' || empty($text)) {
+            return $text;
+        }
+        
+        $cacheKey = 'trans_' . md5($text) . '_' . $locale;
+        
+        return Cache::remember($cacheKey, 60 * 24 * 30, function () use ($text, $locale) {
+            try {
+                $tr = new GoogleTranslate();
+                $tr->setSource('en');
+                $tr->setTarget($locale);
+                return $tr->translate($text);
+            } catch (\Exception $e) {
+                return $text;
+            }
+        });
     }
 }
