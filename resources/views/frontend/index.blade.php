@@ -280,13 +280,13 @@
         <div class="container">
             <div class="row">
                 <div class="col-12">
-                    <h2 class="section-title fw-bold text-dark text-center mb-4">@t('Categories')</h2>
+                    <h2 class="section-title fw-bold text-dark text-center mb-2">@t('Categories')</h2>
                 </div>
             </div>
             
             <center class="mb-3">
-                <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">Discount & Offers</a> | 
-                <a href="{{ route('notice',$visitorLocationPath) }}">Notice</a>     
+                <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">@t('Discount & Offers')</a> | 
+                <a href="{{ route('notice',$visitorLocationPath) }}">@t('Notice')</a>     
             </center>
             
             <div class="row g-3 g-md-4">
@@ -295,8 +295,8 @@
                     $totalCategories = $universalCategories->count();
                     
                     // Cards per row: 3 for sm, 4 for lg
-                    $cardsPerRowSm = 3;
-                    $cardsPerRowLg = 4;
+                    $cardsPerRowSm = 4;
+                    $cardsPerRowLg = 6;
                     
                     // Calculate complete rows
                     $completeRowsSm = intval($totalCategories / $cardsPerRowSm);
@@ -316,51 +316,59 @@
                 @endphp
 
                 @foreach($universalCategories as $index => $category)
-                    @php
-                        // Hide categories after see more position
-                        $hiddenOnSm = $needSeeMoreSm && $index >= $seeMorePositionSm;
-                        $hiddenOnLg = $needSeeMoreLg && $index >= $seeMorePositionLg;
-                    @endphp
+    @php
+        // Last complete row এর শেষ card এবং incomplete row এর cards hide করতে হবে
+        $hiddenOnSm = $needSeeMoreSm && $index > $seeMorePositionSm;
+        $hiddenOnLg = $needSeeMoreLg && $index > $seeMorePositionLg;
+        
+        // See More button এর জায়গায় last complete row এর শেষ card টাও hide
+        if($needSeeMoreSm && $index == $seeMorePositionSm) $hiddenOnSm = true;
+        if($needSeeMoreLg && $index == $seeMorePositionLg) $hiddenOnLg = true;
+    @endphp
 
-                    {{-- Regular category card --}}
-                    <div class="col-4 col-sm-4 col-lg-3 text-center mb-3 category-card 
-                        @if($hiddenOnSm) category-hidden-sm @endif 
-                        @if($hiddenOnLg) category-hidden-lg @endif"
-                        data-index="{{ $index }}">
-                        <a href="#{{ $category->slug }}" class="text-decoration-none">                  
-                            <div class="mx-auto mb-2" style="width: 50px; height: 50px; overflow: hidden;">
+    {{-- Regular category card --}}
+    <div class="col-3 col-sm-3 col-lg-2 text-center mb-3 category-card 
+        @if($hiddenOnSm) category-hidden-sm @endif 
+        @if($hiddenOnLg) category-hidden-lg @endif"
+        data-index="{{ $index }}">
+        <a href="#{{ $category->slug }}" class="text-decoration-none d-block">
+                            <!-- Icon container -->
+                            <div class="mx-auto mb-2 border rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px; overflow: hidden;">
                                 <img src="{{ $category->image ? asset('icon/' . $category->image) : asset('profile-image/no-image.jpeg') }}"
-                                    alt="{{ $category->category_name }}" 
-                                    style="width: 100%; height: 100%; object-fit: cover;">
+                                     alt="{{ $category->category_name }}" 
+                                     style="width: 80%; height: 80%; object-fit: cover;">
                             </div>
-                            <div>
-                                <span style="display: block; font-size: 11px; color: #000;">@t($category->category_name)</span>
-                            </div>
+                    
+                            <!-- Category Name -->
+                            <span class="d-block text-truncate" style="font-size: 12px; color: #111;">
+                                @t($category->category_name)
+                            </span>
                         </a>
-                    </div>
+    </div>
 
-                    {{-- Show "See More" button at the right position for SM --}}
-                    @if($needSeeMoreSm && $index == $seeMorePositionSm)
-                        <div class="col-4 col-sm-4 d-lg-none text-center mb-3 toggle-btn-sm" id="toggleBtnSm">
-                            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesSm()">
-                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                                    <span style="font-size: 11px; color: #888;" id="toggleTextSm">See More</span>
-                                </div>
-                            </a>
-                        </div>
-                    @endif
+    {{-- Show "See More" button at the same position --}}
+    @if($needSeeMoreSm && $index == $seeMorePositionSm)
+        <div class="col-3 col-sm-3 d-lg-none text-center mb-3 toggle-btn-sm" id="toggleBtnSm">
+            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesSm()">
+                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
+                    <span style="font-size: 11px; color: #888;" id="toggleTextSm">See More</span>
+                </div>
+            </a>
+        </div>
+    @endif
 
-                    {{-- Show "See More" button at the right position for LG --}}
-                    @if($needSeeMoreLg && $index == $seeMorePositionLg)
-                        <div class="d-none d-lg-block col-lg-3 text-center mb-3 toggle-btn-lg" id="toggleBtnLg">
-                            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesLg()">
-                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                                    <span style="font-size: 14px; color: #888;" id="toggleTextLg">See More</span>
-                                </div>
-                            </a>
-                        </div>
-                    @endif
-                @endforeach
+    {{-- Show "See More" button for LG --}}
+    @if($needSeeMoreLg && $index == $seeMorePositionLg)
+        <div class="d-none d-lg-block col-lg-2 text-center mb-3 toggle-btn-lg" id="toggleBtnLg">
+            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesLg()">
+                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
+                    <span style="font-size: 14px; color: #888;" id="toggleTextLg">See More</span>
+                </div>
+            </a>
+        </div>
+    @endif
+@endforeach
             </div>
         </div>
     </section>
@@ -391,72 +399,39 @@
                     $maxTagsFirstLine = 7; // aro choto choto, so show more in first line
                     $showSeeMore = $profileCategories->count() > $maxTagsFirstLine;
                 @endphp
-                <div class="col-12">
-    {{-- Horizontal Scrollable Profile Tags --}}
-    <div class="profile-tags-scroll-wrapper">
-        <div class="profile-tags-scroll-container" id="profileTags-{{ $universalCategory->id }}">
-            @foreach($profileCategories as $profileCat)
-                <a 
-                    href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
-                    class="profile-tag-item"
-                >
-                    @t($profileCat->category_name)
-                </a>
-            @endforeach
-        </div>
-    </div>
-</div>
+                <div class="col-12 text-center">
+                    <div class="d-flex flex-wrap justify-content-center gap-1" id="profileTags-{{ $universalCategory->id }}" style="max-width: 100%;">
+                        @foreach($profileCategories as $index => $profileCat)
+                            <a 
+                                href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
+                                class="badge rounded bg-light text-dark border px-2 py-1 mb-1 profile-tag-{{ $universalCategory->id }} 
+                                    @if($showSeeMore && $index >= $maxTagsFirstLine) d-none extra-tag-{{ $universalCategory->id }} @endif"
+                                style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;"
+                            >
+                                @t($profileCat->category_name)
+                            </a>
+                        @endforeach
 
-<style>
-.profile-tags-scroll-wrapper {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    margin: 0 -15px;
-    padding: 0 15px 10px 15px;
-}
-
-.profile-tags-scroll-wrapper::-webkit-scrollbar {
-    display: none;
-}
-
-.profile-tags-scroll-container {
-    display: flex;
-    gap: 8px;
-    padding: 5px 0;
-}
-
-.profile-tag-item {
-    flex: 0 0 auto;
-    background: #f8f9fa;
-    color: #212529;
-    border: 1px solid #6c757d;
-    border-radius: 0.25rem;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.1;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.profile-tag-item:hover {
-    background: #e9ecef;
-    border-color: #495057;
-    color: #000;
-}
-
-/* Responsive */
-@media (min-width: 768px) {
-    .profile-tag-item {
-        font-size: 12px;
-        padding: 5px 12px;
-    }
-}
-</style>
+                        @if($showSeeMore)
+                            <a href="javascript:void(0);" 
+                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
+                               id="seeMoreProfileTagsBtn-{{ $universalCategory->id }}"
+                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
+                               onclick="showAllProfileTags('{{ $universalCategory->id }}')"
+                            >
+                                See More
+                            </a>
+                            <a href="javascript:void(0);" 
+                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1 d-none"
+                               id="seeLessProfileTagsBtn-{{ $universalCategory->id }}"
+                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
+                               onclick="showLessProfileTags('{{ $universalCategory->id }}')"
+                            >
+                                See Less
+                            </a>
+                        @endif
+                    </div>
+                </div>
                 <script>
                     function showAllProfileTags(sectionId) {
                         var tags = document.querySelectorAll('.extra-tag-' + sectionId);
@@ -488,8 +463,8 @@
                     $totalProductCats = $productCategories->count();
                     
                     // Cards per row: 3 for sm, 4 for lg
-                    $prodCardsPerRowSm = 3;
-                    $prodCardsPerRowLg = 4;
+                    $prodCardsPerRowSm = 4;
+                    $prodCardsPerRowLg = 6;
                     
                     // Calculate complete rows
                     $prodCompleteRowsSm = intval($totalProductCats / $prodCardsPerRowSm);
@@ -509,63 +484,64 @@
                 @endphp
 
                 @foreach($productCategories as $prodIndex => $productCat)
-                    @php
-                        // Hide categories after see more position
-                        $prodHiddenOnSm = $prodNeedSeeMoreSm && $prodIndex >= $prodSeeMorePositionSm;
-                        $prodHiddenOnLg = $prodNeedSeeMoreLg && $prodIndex >= $prodSeeMorePositionLg;
-                    @endphp
+    @php
+        // Hide logic - last complete row এর শেষ card এবং incomplete row
+        $prodHiddenOnSm = $prodNeedSeeMoreSm && $prodIndex > $prodSeeMorePositionSm;
+        $prodHiddenOnLg = $prodNeedSeeMoreLg && $prodIndex > $prodSeeMorePositionLg;
+        
+        // See More button এর জায়গায় card টাও hide
+        if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm) $prodHiddenOnSm = true;
+        if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg) $prodHiddenOnLg = true;
+    @endphp
 
-                    {{-- Regular product category card --}}
-                    <div class="col-4 col-sm-4 col-lg-3 text-center mb-3 product-category-card-{{ $sectionId }}
-                        @if($prodHiddenOnSm) product-hidden-sm-{{ $sectionId }} @endif 
-                        @if($prodHiddenOnLg) product-hidden-lg-{{ $sectionId }} @endif"
-                        data-prod-index="{{ $prodIndex }}">
-                        <a href="{{ route('products.category', [$visitorLocationPath, $productCat->slug]) }}" class="text-decoration-none">
-                            <div class="mx-auto mb-2" style="width: 30px; height: 30px; overflow: hidden;">
+    {{-- Regular product category card --}}
+    <div class="col-3 col-sm-3 col-lg-2 text-center mb-3 product-category-card-{{ $sectionId }}
+        @if($prodHiddenOnSm) product-hidden-sm-{{ $sectionId }} @endif 
+        @if($prodHiddenOnLg) product-hidden-lg-{{ $sectionId }} @endif"
+        data-prod-index="{{ $prodIndex }}">
+        <a href="{{ route('products.category', [$visitorLocationPath, $productCat->slug]) }}" class="text-decoration-none d-block">
+                            <div class="mx-auto mb-2 border rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px; overflow: hidden;">
                                 <img src="{{ $productCat->image ? asset('icon/' . $productCat->image) : asset('profile-image/no-image.jpeg') }}"
-                                    alt="{{ $productCat->category_name }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
+                                     alt="{{ $productCat->category_name }}"
+                                     style="width: 60%; height: 60%; object-fit: cover;">
                             </div>
-                            <div>
-                                <span style="display: block; font-size: 11px; color: #000;">@t($productCat->category_name)</span>
-                            </div>
+                            <span class="d-block text-truncate" style="font-size: 12px; color: #111;">
+                                @t($productCat->category_name)
+                            </span>
                         </a>
-                    </div>
+    </div>
 
-                    {{-- Show "See More" button at the right position for SM --}}
-                    @if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm)
-                        <div class="col-4 col-sm-4 d-lg-none text-center mb-3 prod-toggle-btn-sm-{{ $sectionId }}" id="prodToggleBtnSm{{ $sectionId }}">
-                            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleProductCategoriesSm('{{ $sectionId }}', {{ $prodSeeMorePositionSm }})">
-                                <div class="mx-auto mb-2 align-items-center justify-content-center" style="width: 30px; height: 30px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                                <img src="{{asset('icon/swipe-down.gif') }}"
-                                    alt="{{ $productCat->category_name }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                                    
+    {{-- Show "See More" button for SM --}}
+    @if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm)
+        <div class="col-3 col-sm-3 d-lg-none text-center mb-3 prod-toggle-btn-sm-{{ $sectionId }}" id="prodToggleBtnSm{{ $sectionId }}">
+        <a href="javascript:void(0);" class="text-decoration-none d-block" onclick="toggleProductCategoriesSm('{{ $sectionId }}', {{ $prodSeeMorePositionSm }})">
+                                <div class="mx-auto mb-2 border rounded border-dashed d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px; cursor: pointer;">
+                                    <img src="{{asset('icon/swipe-down.gif')}}" 
+                                         alt="Toggle" 
+                                         style="width: 60%; height: 60%; object-fit: cover;">
                                 </div>
-                                <div>
-                                    <span style="display: block; font-size: 11px; color: #888;" id="prodToggleTextSm{{ $sectionId }}">See More</span>                                
-                                </div>
+                                <span class="d-block text-truncate" style="font-size: 12px; color: #888;" id="prodToggleTextSm{{ $sectionId }}">See More</span>
                             </a>
-                        </div>
-                    @endif
+        </div>
+    @endif
 
-                    {{-- Show "See More" button at the right position for LG --}}
-                    @if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg)
-                        <div class="d-none d-lg-block col-lg-3 text-center mb-3 prod-toggle-btn-lg-{{ $sectionId }}" id="prodToggleBtnLg{{ $sectionId }}">
-                            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleProductCategoriesLg('{{ $sectionId }}', {{ $prodSeeMorePositionLg }})">
-                                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                                <img src="{{asset('icon/swipe-down.gif') }}"
-                                    alt="{{ $productCat->category_name }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                                    
+    {{-- Show "See More" button for LG --}}
+    @if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg)
+        <div class="d-none d-lg-block col-lg-2 text-center mb-3 prod-toggle-btn-lg-{{ $sectionId }}" id="prodToggleBtnLg{{ $sectionId }}">
+        <a href="javascript:void(0);" class="text-decoration-none d-block" onclick="toggleProductCategoriesLg('{{ $sectionId }}', {{ $prodSeeMorePositionLg }})">
+                                <div class="mx-auto mb-2 border rounded border-dashed d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px; cursor: pointer;">
+                                    <img src="{{asset('icon/swipe-down.gif')}}" 
+                                         alt="Toggle" 
+                                         style="width: 60%; height: 60%; object-fit: cover;">
                                 </div>
-                                <div>
-                                <span style="display: block; font-size: 11px; color: #888;" id="prodToggleTextLg{{ $sectionId }}">See More</span>
-                                </div>
+                                <span class="d-block text-truncate" style="font-size: 12px; color: #888;" id="prodToggleTextLg{{ $sectionId }}">See More</span>
                             </a>
-                        </div>
-                    @endif
-                @endforeach
+        </div>
+    @endif
+@endforeach
             </div>
         </div>
     </section>
@@ -575,6 +551,9 @@
 </div>
 
 <style>
+    .border-dashed {
+    border-style: dashed !important;         /* optional: match Bootstrap rounded */
+}
     /* Dynamic styles for product sections */
     @foreach($universalCategories as $universalCategory)
         @php
