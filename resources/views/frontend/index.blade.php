@@ -396,7 +396,7 @@
                 
                 @if($profileCategories->count() > 0)
                 @php
-                    $maxTagsFirstLine = 7; // aro choto choto, so show more in first line
+                    $maxTagsFirstLine = 5; // aro choto choto, so show more in first line
                     $showSeeMore = $profileCategories->count() > $maxTagsFirstLine;
                 @endphp
                 <div class="col-12 text-center">
