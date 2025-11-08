@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.einfo.site",
+      "sha256_cert_fingerprints": [
+        "CE:7F:20:AC:6E:14:FD:5E:26:34:D7:57:ED:F2:4B:45:55:E8:CB:FA:F5:6A:38:86:C9:87:36:79:12:71:24:10"
+      ]
+    }
+  }
+]
