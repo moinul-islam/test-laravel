@@ -1,573 +1,545 @@
 @extends("frontend.master")
 @section('main-content')
-<!-- <h1>location : {{ $visitorLocationName }}</h1> -->
+
 <style>
-/* প্রতিটি section এর উপরে offset */
-.grid-section {
-    scroll-margin-top: 80px; /* এখানে 80px হচ্ছে header এর height */
+/* ===== Global Styles ===== */
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #64748b;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --bg-light: #f8fafc;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
 }
 
-/* Hide on small screens */
+/* Section Offset for Anchor Links */
+.grid-section {
+    scroll-margin-top: 100px;
+    padding: 2rem 0;
+}
+
+/* ===== Section Title ===== */
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: inline-block;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), #60a5fa);
+    border-radius: 2px;
+}
+
+/* ===== Top Links ===== */
+.top-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.top-links a {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: var(--transition);
+    position: relative;
+}
+
+.top-links a:hover {
+    color: var(--primary-color);
+    background: var(--bg-light);
+}
+
+.top-links a::before {
+    content: '•';
+    position: absolute;
+    right: -0.75rem;
+    color: var(--border-color);
+}
+
+.top-links a:last-child::before {
+    display: none;
+}
+
+/* ===== Category Cards ===== */
+.category-card-wrapper {
+    transition: var(--transition);
+}
+
+.category-card {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 12px;
+    transition: var(--transition);
+    background: white;
+    border: 1px solid transparent;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.category-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-color);
+}
+
+.category-icon-wrapper {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 0.75rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 2px solid var(--border-color);
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.category-card:hover .category-icon-wrapper {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: var(--primary-color);
+}
+
+.category-icon-wrapper img {
+    width: 65%;
+    height: 65%;
+    object-fit: contain;
+}
+
+.category-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* ===== Profile Tags (Badges) ===== */
+.profile-tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-tag {
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: white;
+    border: 1.5px solid var(--border-color);
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.profile-tag:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.tag-toggle-btn {
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--secondary-color);
+    border: 1.5px solid var(--secondary-color);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tag-toggle-btn:hover {
+    background: #475569;
+    border-color: #475569;
+}
+
+/* ===== See More/Less Toggle Button ===== */
+.toggle-button-wrapper {
+    text-align: center;
+}
+
+.toggle-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    margin: 0 auto;
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+    background: var(--bg-light);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.toggle-button:hover {
+    border-color: var(--primary-color);
+    background: #eff6ff;
+}
+
+.toggle-button img {
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+    margin-bottom: 0.25rem;
+}
+
+.toggle-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ===== Responsive Utilities ===== */
 @media (max-width: 991px) {
     .category-hidden-sm {
         display: none !important;
     }
 }
 
-/* Hide on large screens */
 @media (min-width: 992px) {
     .category-hidden-lg {
         display: none !important;
     }
 }
 
-/* Ensure flexbox order works */
-.row {
-    display: flex;
-    flex-wrap: wrap;
+/* ===== Dark Mode Support ===== */
+[data-bs-theme="dark"] {
+    --text-dark: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --bg-light: #1e293b;
 }
 
-
-
-/* Section titles */
-[data-bs-theme="dark"] .section-title {
-    color: #dee2e6 !important;
+[data-bs-theme="dark"] .section-title,
+[data-bs-theme="dark"] .category-name,
+[data-bs-theme="dark"] .top-links a {
+    color: var(--text-dark);
 }
 
-/* Category card text */
-[data-bs-theme="dark"] .text-center span {
-    color: #dee2e6 !important;
+[data-bs-theme="dark"] .category-card {
+    background: #0f172a;
+    border-color: var(--border-color);
 }
 
-[data-bs-theme="dark"] .text-decoration-none span {
-    color: #dee2e6 !important;
+[data-bs-theme="dark"] .category-icon-wrapper {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-color: var(--border-color);
 }
 
-/* See More/Less buttons background */
-[data-bs-theme="dark"] .mx-auto {
-    background: #343a40 !important;
+[data-bs-theme="dark"] .profile-tag {
+    background: #1e293b;
+    border-color: var(--border-color);
+    color: var(--text-dark);
 }
 
-/* See More/Less text */
-[data-bs-theme="dark"] #toggleTextSm,
-[data-bs-theme="dark"] #toggleTextLg,
-[data-bs-theme="dark"] span[id^="prodToggleTextSm"],
-[data-bs-theme="dark"] span[id^="prodToggleTextLg"] {
-    color: #adb5bd !important;
+[data-bs-theme="dark"] .profile-tag:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
 }
 
-/* Profile tags (badges) */
-[data-bs-theme="dark"] .badge.bg-light {
-    background-color: #495057 !important;
-    color: #dee2e6 !important;
-    border-color: #6c757d !important;
+[data-bs-theme="dark"] .toggle-button {
+    background: #1e293b;
+    border-color: var(--border-color);
 }
 
-[data-bs-theme="dark"] .badge.bg-secondary {
-    background-color: #6c757d !important;
-    color: #fff !important;
+[data-bs-theme="dark"] .toggle-button:hover {
+    border-color: var(--primary-color);
+    background: #1e3a8a;
 }
 
-/* Links - prevent turning white */
-[data-bs-theme="dark"] a.text-decoration-none {
-    color: inherit;
-}
-
-/* Image containers in dark mode */
-[data-bs-theme="dark"] .mx-auto.mb-2 {
-    background: #343a40 !important;
-    border-radius: 8px;
-}
-
-/* Select dropdowns (if location section is enabled) */
-[data-bs-theme="dark"] .form-select {
-    background-color: #2b3035;
-    border-color: #495057;
-    color: #dee2e6;
-}
-
-[data-bs-theme="dark"] .form-select option {
-    background-color: #2b3035;
-    color: #dee2e6;
+/* ===== Mobile Optimization ===== */
+@media (max-width: 576px) {
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .category-icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .category-name {
+        font-size: 0.8rem;
+    }
+    
+    .profile-tag {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.7rem;
+    }
 }
 </style>
 
-
-
-
-<!-- //////////////////////////////////for location start///////////////////////////////// 
-<div class="mt-4">
-    @php
-        $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
-    ->orderBy('name') // অথবা যেকোনো column দিয়ে sort করতে চান
-    ->get();
-        
-        // $visitorLocationPath থেকে current location খুঁজে বের করুন
-        $selectedCountry = null;
-        $selectedCity = null;
-        $cities = collect();
-        
-        if(isset($visitorLocationPath) && $visitorLocationPath) {
-            // প্রথমে check করুন এটা country কিনা
-            $selectedCountry = App\Models\Country::where('username', $visitorLocationPath)->first();
-            
-            if($selectedCountry) {
-                // এটা country, তাহলে এর cities load করুন
-                $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                        ->orderBy('name', 'asc')
-                                        ->get();
-            } else {
-                // না হলে check করুন এটা city কিনা
-                $selectedCity = App\Models\City::where('username', $visitorLocationPath)->first();
-                
-                if($selectedCity) {
-                    // City পেলে এর country খুঁজুন
-                    $selectedCountry = App\Models\Country::find($selectedCity->country_id);
-                    
-                    // এই country এর সব cities load করুন
-                    if($selectedCountry) {
-                        $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                                ->orderBy('name', 'asc')
-                                                ->get();
-                    }
-                }
-            }
-        }
-    @endphp
-
-    <div class="col-4">
-        <div class="mb-3">
-            <select class="form-select" id="countrySelect">
-                <option value="">Country</option>
-                @foreach($countries as $country)
-                    <option value="{{$country->username}}" data-id="{{$country->id}}"
-                        @if($selectedCountry && $selectedCountry->id == $country->id) selected @endif>
-                        {{$country->name}}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-
-    <div class="col-4">
-        <div class="mb-3" id="cityContainer">
-            <select class="form-select" id="citySelect" @if($cities->count() == 0) disabled @endif>
-                <option value="">City</option>
-                @foreach($cities as $city)
-                    <option value="{{$city->username}}" data-id="{{$city->id}}"
-                        @if($selectedCity && $selectedCity->id == $city->id) selected @endif>
-                        {{$city->name}}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
-<script>
-    $(document).ready(function () {
-        
-        // Country select change - Load cities and redirect
-        $('#countrySelect').on('change', function () {
-            var selectedCountry = $(this).val();
-            if (selectedCountry) {
-                const countryId = $(this).find(':selected').data('id');
-                
-                // Prepare location data for saving
-                const locationData = {
-                    country_id: countryId,
-                    reset_city: true
-                };
-                
-                // Fetch cities for this country
-                $.ajax({
-                    url: '/get-cities/' + countryId,
-                    method: 'GET',
-                    success: function(cities) {
-                        // Enable and populate city dropdown
-                        $('#citySelect').prop('disabled', false);
-                        $('#citySelect').find('option:not(:first)').remove();
-                        
-                        if (cities && cities.length > 0) {
-                            cities.forEach(city => {
-                                $('#citySelect').append(
-                                    `<option value="${city.username}" data-id="${city.id}">${city.name}</option>`
-                                );
-                            });
-                        }
-                        
-                        // Save location and redirect to country page
-                        saveVisitorLocation(locationData, selectedCountry);
-                    }
-                });
-            } else {
-                $('#citySelect').prop('disabled', true).find('option:not(:first)').remove();
-            }
-        });
-        
-        // City select change - Redirect to city
-        $('#citySelect').on('change', function () {
-            var selectedCity = $(this).val();
-            
-            if (selectedCity) {
-                const cityId = $(this).find(':selected').data('id');
-                
-                // Prepare location data for saving
-                const locationData = {
-                    city_id: cityId
-                };
-                
-                // Save location and redirect to city page
-                saveVisitorLocation(locationData, selectedCity);
-            }
-        });
-    });
-
-    // Save visitor location to server and redirect
-    function saveVisitorLocation(locationData, redirectTo = null) {
-        console.log('Saving location:', locationData, 'Redirect to:', redirectTo);
-        
-        fetch('/save-location', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(locationData)
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            if (data.success) {
-                console.log('Location successfully saved');
-                
-                // Redirect to the selected location
-                if (redirectTo) {
-                    window.location.href = '/' + redirectTo;
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error saving location:', error);
-            
-            // Still redirect even if save fails
-            if (redirectTo) {
-                window.location.href = '/' + redirectTo;
-            }
-        });
-    }
-</script>
-</div>
- //////////////////////////////////for location end///////////////////////////////// -->
-
-
-
-
-
-
-<div class="mt-4">
+<div class="container mt-4">
    
-    <section class="grid-section mb-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <h2 class="section-title fw-bold text-dark text-center mb-2">@t('Categories')</h2>
-                </div>
+    <!-- ===== Categories Section ===== -->
+    <section class="grid-section mb-5">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="section-title">@t('Categories')</h2>
             </div>
-            
-            <center class="mb-3">
-                <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">@t('Discount & Offers')</a> | 
-                <a href="{{ route('notice',$visitorLocationPath) }}">@t('Notice')</a>     
-            </center>
-            
-            <div class="row g-3 g-md-4">
+        </div>
+        
+        <div class="top-links">
+            <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">@t('Discount & Offers')</a>
+            <a href="{{ route('notice',$visitorLocationPath) }}">@t('Notice')</a>
+        </div>
+        
+        <div class="row g-3">
+            @php
+                $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();
+                $totalCategories = $universalCategories->count();
+                
+                $cardsPerRowSm = 4;
+                $cardsPerRowLg = 6;
+                
+                $completeRowsSm = intval($totalCategories / $cardsPerRowSm);
+                $completeRowsLg = intval($totalCategories / $cardsPerRowLg);
+                
+                $remainingSm = $totalCategories % $cardsPerRowSm;
+                $remainingLg = $totalCategories % $cardsPerRowLg;
+                
+                $needSeeMoreSm = $remainingSm > 0;
+                $needSeeMoreLg = $remainingLg > 0;
+                
+                $seeMorePositionSm = $needSeeMoreSm ? ($completeRowsSm * $cardsPerRowSm) - 1 : -1;
+                $seeMorePositionLg = $needSeeMoreLg ? ($completeRowsLg * $cardsPerRowLg) - 1 : -1;
+            @endphp
+
+            @foreach($universalCategories as $index => $category)
                 @php
-                    $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();
-                    $totalCategories = $universalCategories->count();
+                    $hiddenOnSm = $needSeeMoreSm && $index > $seeMorePositionSm;
+                    $hiddenOnLg = $needSeeMoreLg && $index > $seeMorePositionLg;
                     
-                    // Cards per row: 3 for sm, 4 for lg
-                    $cardsPerRowSm = 4;
-                    $cardsPerRowLg = 6;
-                    
-                    // Calculate complete rows
-                    $completeRowsSm = intval($totalCategories / $cardsPerRowSm);
-                    $completeRowsLg = intval($totalCategories / $cardsPerRowLg);
-                    
-                    // Calculate remaining cards in last row
-                    $remainingSm = $totalCategories % $cardsPerRowSm;
-                    $remainingLg = $totalCategories % $cardsPerRowLg;
-                    
-                    // Show "See More" only if the last row is incomplete
-                    $needSeeMoreSm = $remainingSm > 0;
-                    $needSeeMoreLg = $remainingLg > 0;
-                    
-                    // Position where "See More" should appear (last card of last complete row)
-                    $seeMorePositionSm = $needSeeMoreSm ? ($completeRowsSm * $cardsPerRowSm) - 1 : -1;
-                    $seeMorePositionLg = $needSeeMoreLg ? ($completeRowsLg * $cardsPerRowLg) - 1 : -1;
+                    if($needSeeMoreSm && $index == $seeMorePositionSm) $hiddenOnSm = true;
+                    if($needSeeMoreLg && $index == $seeMorePositionLg) $hiddenOnLg = true;
                 @endphp
 
-                @foreach($universalCategories as $index => $category)
-    @php
-        // Last complete row এর শেষ card এবং incomplete row এর cards hide করতে হবে
-        $hiddenOnSm = $needSeeMoreSm && $index > $seeMorePositionSm;
-        $hiddenOnLg = $needSeeMoreLg && $index > $seeMorePositionLg;
-        
-        // See More button এর জায়গায় last complete row এর শেষ card টাও hide
-        if($needSeeMoreSm && $index == $seeMorePositionSm) $hiddenOnSm = true;
-        if($needSeeMoreLg && $index == $seeMorePositionLg) $hiddenOnLg = true;
-    @endphp
-
-    {{-- Regular category card --}}
-    <div class="col-3 col-sm-3 col-lg-2 text-center mb-3 category-card 
-        @if($hiddenOnSm) category-hidden-sm @endif 
-        @if($hiddenOnLg) category-hidden-lg @endif"
-        data-index="{{ $index }}">
-        <a href="#{{ $category->slug }}" class="text-decoration-none d-block">
-                            <!-- Icon container -->
-                            <div class="mx-auto mb-2 border rounded d-flex align-items-center justify-content-center" 
-                                 style="width: 60px; height: 60px; overflow: hidden;">
+                <div class="col-3 col-sm-3 col-lg-2 category-card-wrapper 
+                    @if($hiddenOnSm) category-hidden-sm @endif 
+                    @if($hiddenOnLg) category-hidden-lg @endif"
+                    data-index="{{ $index }}">
+                    <a href="#{{ $category->slug }}" class="text-decoration-none">
+                        <div class="">
+                            <div class="category-icon-wrapper">
                                 <img src="{{ $category->image ? asset('icon/' . $category->image) : asset('profile-image/no-image.jpeg') }}"
-                                     alt="{{ $category->category_name }}" 
-                                     style="width: 80%; height: 80%; object-fit: cover;">
+                                     alt="{{ $category->category_name }}">
                             </div>
-                    
-                            <!-- Category Name -->
-                            <span class="d-block text-truncate" style="font-size: 12px; color: #111;">
-                                @t($category->category_name)
-                            </span>
-                        </a>
-    </div>
-
-    {{-- Show "See More" button at the same position --}}
-    @if($needSeeMoreSm && $index == $seeMorePositionSm)
-        <div class="col-3 col-sm-3 d-lg-none text-center mb-3 toggle-btn-sm" id="toggleBtnSm">
-            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesSm()">
-                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                    <span style="font-size: 11px; color: #888;" id="toggleTextSm">See More</span>
+                            <span class="category-name">@t($category->category_name)</span>
+                        </div>
+                    </a>
                 </div>
-            </a>
-        </div>
-    @endif
 
-    {{-- Show "See More" button for LG --}}
-    @if($needSeeMoreLg && $index == $seeMorePositionLg)
-        <div class="d-none d-lg-block col-lg-2 text-center mb-3 toggle-btn-lg" id="toggleBtnLg">
-            <a href="javascript:void(0);" class="text-decoration-none" onclick="toggleCategoriesLg()">
-                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f5f5f5; border-radius: 8px; cursor: pointer;">
-                    <span style="font-size: 14px; color: #888;" id="toggleTextLg">See More</span>
-                </div>
-            </a>
-        </div>
-    @endif
-@endforeach
-            </div>
+                @if($needSeeMoreSm && $index == $seeMorePositionSm)
+                    <div class="col-3 col-sm-3 d-lg-none toggle-btn-sm" id="toggleBtnSm">
+                        <div class="toggle-button-wrapper">
+                            <a href="javascript:void(0);" onclick="toggleCategoriesSm()">
+                                <div class="toggle-button">
+                                    <img src="{{asset('icon/swipe-down.gif')}}" alt="Toggle">
+                                    <span class="toggle-text" id="toggleTextSm">See More</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
+                @if($needSeeMoreLg && $index == $seeMorePositionLg)
+                    <div class="d-none d-lg-block col-lg-2 toggle-btn-lg" id="toggleBtnLg">
+                        <div class="toggle-button-wrapper">
+                            <a href="javascript:void(0);" onclick="toggleCategoriesLg()">
+                                <div class="toggle-button">
+                                    <img src="{{asset('icon/swipe-down.gif')}}" alt="Toggle">
+                                    <span class="toggle-text" id="toggleTextLg">See More</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
         </div>
     </section>
 
+    <!-- ===== Product Categories Sections ===== -->
     @foreach($universalCategories as $universalCategory)
-    @php
-        $profileCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->where('cat_type', 'profile')->get();
-        $productCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->whereIn('cat_type', ['product', 'service','post'])->get();
+        @php
+            $profileCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->where('cat_type', 'profile')->get();
+            $productCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->whereIn('cat_type', ['product', 'service','post'])->get();
+            
+            if($profileCategories->count() > $productCategories->count()) {
+                $tempProfile = $profileCategories;
+                $profileCategories = $productCategories;
+                $productCategories = $tempProfile;
+            }
+        @endphp
         
-        // If profile categories are more than product categories, swap them
-        if($profileCategories->count() > $productCategories->count()) {
-            $tempProfile = $profileCategories;
-            $profileCategories = $productCategories;
-            $productCategories = $tempProfile;
-        }
-    @endphp
-    
-    @if($productCategories->count() > 0)
-    <section class="grid-section mb-4" id="{{ $universalCategory->slug }}">
-        <div class="container">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h2 class="section-title fw-bold text-dark text-center">@t($universalCategory->category_name)</h2>
+        @if($productCategories->count() > 0)
+        <section class="grid-section mb-5" id="{{ $universalCategory->slug }}">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="section-title">@t($universalCategory->category_name)</h2>
                 </div>
                 
                 @if($profileCategories->count() > 0)
-                @php
-                    $maxTagsFirstLine = 5; // aro choto choto, so show more in first line
-                    $showSeeMore = $profileCategories->count() > $maxTagsFirstLine;
-                @endphp
-                <div class="col-12 text-center">
-                    <div class="d-flex flex-wrap justify-content-center gap-1" id="profileTags-{{ $universalCategory->id }}" style="max-width: 100%;">
-                        @foreach($profileCategories as $index => $profileCat)
-                            <a 
-                                href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
-                                class="badge rounded bg-light text-dark border px-2 py-1 mb-1 profile-tag-{{ $universalCategory->id }} 
-                                    @if($showSeeMore && $index >= $maxTagsFirstLine) d-none extra-tag-{{ $universalCategory->id }} @endif"
-                                style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;"
-                            >
-                                @t($profileCat->category_name)
-                            </a>
-                        @endforeach
+                    @php
+                        $maxTagsFirstLine = 5;
+                        $showSeeMore = $profileCategories->count() > $maxTagsFirstLine;
+                    @endphp
+                    <div class="col-12">
+                        <div class="profile-tags-wrapper" id="profileTags-{{ $universalCategory->id }}">
+                            @foreach($profileCategories as $index => $profileCat)
+                                <a href="{{ route('products.category', [$visitorLocationPath, $profileCat->slug]) }}" 
+                                   class="profile-tag profile-tag-{{ $universalCategory->id }} 
+                                       @if($showSeeMore && $index >= $maxTagsFirstLine) d-none extra-tag-{{ $universalCategory->id }} @endif">
+                                    @t($profileCat->category_name)
+                                </a>
+                            @endforeach
 
-                        @if($showSeeMore)
-                            <a href="javascript:void(0);" 
-                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
-                               id="seeMoreProfileTagsBtn-{{ $universalCategory->id }}"
-                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
-                               onclick="showAllProfileTags('{{ $universalCategory->id }}')"
-                            >
-                                See More
-                            </a>
-                            <a href="javascript:void(0);" 
-                               class="badge rounded bg-secondary text-white px-2 py-1 mb-1 d-none"
-                               id="seeLessProfileTagsBtn-{{ $universalCategory->id }}"
-                               style="font-size: 11px; font-weight: 500; line-height: 1.1;"
-                               onclick="showLessProfileTags('{{ $universalCategory->id }}')"
-                            >
-                                See Less
-                            </a>
-                        @endif
+                            @if($showSeeMore)
+                                <a href="javascript:void(0);" 
+                                   class="tag-toggle-btn"
+                                   id="seeMoreProfileTagsBtn-{{ $universalCategory->id }}"
+                                   onclick="showAllProfileTags('{{ $universalCategory->id }}')">
+                                    See More
+                                </a>
+                                <a href="javascript:void(0);" 
+                                   class="tag-toggle-btn d-none"
+                                   id="seeLessProfileTagsBtn-{{ $universalCategory->id }}"
+                                   onclick="showLessProfileTags('{{ $universalCategory->id }}')">
+                                    See Less
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
-                <script>
-                    function showAllProfileTags(sectionId) {
-                        var tags = document.querySelectorAll('.extra-tag-' + sectionId);
-                        tags.forEach(function(tag) {
-                            tag.classList.remove('d-none');
-                        });
-                        var btn = document.getElementById('seeMoreProfileTagsBtn-' + sectionId);
-                        if(btn) btn.style.display = 'none';
-                        var seeLessBtn = document.getElementById('seeLessProfileTagsBtn-' + sectionId);
-                        if(seeLessBtn) seeLessBtn.classList.remove('d-none');
-                    }
-                    function showLessProfileTags(sectionId) {
-                        var tags = document.querySelectorAll('.extra-tag-' + sectionId);
-                        tags.forEach(function(tag) {
-                            tag.classList.add('d-none');
-                        });
-                        var btn = document.getElementById('seeMoreProfileTagsBtn-' + sectionId);
-                        if(btn) btn.style.display = '';
-                        var seeLessBtn = document.getElementById('seeLessProfileTagsBtn-' + sectionId);
-                        if(seeLessBtn) seeLessBtn.classList.add('d-none');
-                    }
-                </script>
                 @endif
             </div>
             
-            <div class="row g-3 g-md-4">
+            <div class="row g-3 mt-2">
                 @php
                     $sectionId = 'section_' . $universalCategory->id;
                     $totalProductCats = $productCategories->count();
                     
-                    // Cards per row: 3 for sm, 4 for lg
                     $prodCardsPerRowSm = 4;
                     $prodCardsPerRowLg = 6;
                     
-                    // Calculate complete rows
                     $prodCompleteRowsSm = intval($totalProductCats / $prodCardsPerRowSm);
                     $prodCompleteRowsLg = intval($totalProductCats / $prodCardsPerRowLg);
                     
-                    // Calculate remaining cards in last row
                     $prodRemainingSm = $totalProductCats % $prodCardsPerRowSm;
                     $prodRemainingLg = $totalProductCats % $prodCardsPerRowLg;
                     
-                    // Show "See More" only if the last row is incomplete
                     $prodNeedSeeMoreSm = $prodRemainingSm > 0;
                     $prodNeedSeeMoreLg = $prodRemainingLg > 0;
                     
-                    // Position where "See More" should appear (last card of last complete row)
                     $prodSeeMorePositionSm = $prodNeedSeeMoreSm ? ($prodCompleteRowsSm * $prodCardsPerRowSm) - 1 : -1;
                     $prodSeeMorePositionLg = $prodNeedSeeMoreLg ? ($prodCompleteRowsLg * $prodCardsPerRowLg) - 1 : -1;
                 @endphp
 
                 @foreach($productCategories as $prodIndex => $productCat)
-    @php
-        // Hide logic - last complete row এর শেষ card এবং incomplete row
-        $prodHiddenOnSm = $prodNeedSeeMoreSm && $prodIndex > $prodSeeMorePositionSm;
-        $prodHiddenOnLg = $prodNeedSeeMoreLg && $prodIndex > $prodSeeMorePositionLg;
-        
-        // See More button এর জায়গায় card টাও hide
-        if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm) $prodHiddenOnSm = true;
-        if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg) $prodHiddenOnLg = true;
-    @endphp
+                    @php
+                        $prodHiddenOnSm = $prodNeedSeeMoreSm && $prodIndex > $prodSeeMorePositionSm;
+                        $prodHiddenOnLg = $prodNeedSeeMoreLg && $prodIndex > $prodSeeMorePositionLg;
+                        
+                        if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm) $prodHiddenOnSm = true;
+                        if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg) $prodHiddenOnLg = true;
+                    @endphp
 
-    {{-- Regular product category card --}}
-    <div class="col-3 col-sm-3 col-lg-2 text-center mb-3 product-category-card-{{ $sectionId }}
-        @if($prodHiddenOnSm) product-hidden-sm-{{ $sectionId }} @endif 
-        @if($prodHiddenOnLg) product-hidden-lg-{{ $sectionId }} @endif"
-        data-prod-index="{{ $prodIndex }}">
-        <a href="{{ route('products.category', [$visitorLocationPath, $productCat->slug]) }}" class="text-decoration-none d-block">
-                            <div class="mx-auto mb-2 border rounded d-flex align-items-center justify-content-center" 
-                                 style="width: 60px; height: 60px; overflow: hidden;">
-                                <img src="{{ $productCat->image ? asset('icon/' . $productCat->image) : asset('profile-image/no-image.jpeg') }}"
-                                     alt="{{ $productCat->category_name }}"
-                                     style="width: 60%; height: 60%; object-fit: cover;">
+                    <div class="col-3 col-sm-3 col-lg-2 product-category-card-{{ $sectionId }}
+                        @if($prodHiddenOnSm) product-hidden-sm-{{ $sectionId }} @endif 
+                        @if($prodHiddenOnLg) product-hidden-lg-{{ $sectionId }} @endif"
+                        data-prod-index="{{ $prodIndex }}">
+                        <a href="{{ route('products.category', [$visitorLocationPath, $productCat->slug]) }}" class="text-decoration-none">
+                            <div class="category-card">
+                                <div class="category-icon-wrapper">
+                                    <img src="{{ $productCat->image ? asset('icon/' . $productCat->image) : asset('profile-image/no-image.jpeg') }}"
+                                         alt="{{ $productCat->category_name }}">
+                                </div>
+                                <span class="category-name">@t($productCat->category_name)</span>
                             </div>
-                            <span class="d-block text-truncate" style="font-size: 12px; color: #111;">
-                                @t($productCat->category_name)
-                            </span>
                         </a>
-    </div>
+                    </div>
 
-    {{-- Show "See More" button for SM --}}
-    @if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm)
-        <div class="col-3 col-sm-3 d-lg-none text-center mb-3 prod-toggle-btn-sm-{{ $sectionId }}" id="prodToggleBtnSm{{ $sectionId }}">
-        <a href="javascript:void(0);" class="text-decoration-none d-block" onclick="toggleProductCategoriesSm('{{ $sectionId }}', {{ $prodSeeMorePositionSm }})">
-                                <div class="mx-auto mb-2 border rounded border-dashed d-flex align-items-center justify-content-center" 
-                                     style="width: 60px; height: 60px; cursor: pointer;">
-                                    <img src="{{asset('icon/swipe-down.gif')}}" 
-                                         alt="Toggle" 
-                                         style="width: 60%; height: 60%; object-fit: cover;">
-                                </div>
-                                <span class="d-block text-truncate" style="font-size: 12px; color: #888;" id="prodToggleTextSm{{ $sectionId }}">See More</span>
-                            </a>
-        </div>
-    @endif
+                    @if($prodNeedSeeMoreSm && $prodIndex == $prodSeeMorePositionSm)
+                        <div class="col-3 col-sm-3 d-lg-none prod-toggle-btn-sm-{{ $sectionId }}" id="prodToggleBtnSm{{ $sectionId }}">
+                            <div class="toggle-button-wrapper">
+                                <a href="javascript:void(0);" onclick="toggleProductCategoriesSm('{{ $sectionId }}', {{ $prodSeeMorePositionSm }})">
+                                    <div class="toggle-button">
+                                        <img src="{{asset('icon/swipe-down.gif')}}" alt="Toggle">
+                                        <span class="toggle-text" id="prodToggleTextSm{{ $sectionId }}">See More</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
 
-    {{-- Show "See More" button for LG --}}
-    @if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg)
-        <div class="d-none d-lg-block col-lg-2 text-center mb-3 prod-toggle-btn-lg-{{ $sectionId }}" id="prodToggleBtnLg{{ $sectionId }}">
-        <a href="javascript:void(0);" class="text-decoration-none d-block" onclick="toggleProductCategoriesLg('{{ $sectionId }}', {{ $prodSeeMorePositionLg }})">
-                                <div class="mx-auto mb-2 border rounded border-dashed d-flex align-items-center justify-content-center" 
-                                     style="width: 60px; height: 60px; cursor: pointer;">
-                                    <img src="{{asset('icon/swipe-down.gif')}}" 
-                                         alt="Toggle" 
-                                         style="width: 60%; height: 60%; object-fit: cover;">
-                                </div>
-                                <span class="d-block text-truncate" style="font-size: 12px; color: #888;" id="prodToggleTextLg{{ $sectionId }}">See More</span>
-                            </a>
-        </div>
-    @endif
-@endforeach
+                    @if($prodNeedSeeMoreLg && $prodIndex == $prodSeeMorePositionLg)
+                        <div class="d-none d-lg-block col-lg-2 prod-toggle-btn-lg-{{ $sectionId }}" id="prodToggleBtnLg{{ $sectionId }}">
+                            <div class="toggle-button-wrapper">
+                                <a href="javascript:void(0);" onclick="toggleProductCategoriesLg('{{ $sectionId }}', {{ $prodSeeMorePositionLg }})">
+                                    <div class="toggle-button">
+                                        <img src="{{asset('icon/swipe-down.gif')}}" alt="Toggle">
+                                        <span class="toggle-text" id="prodToggleTextLg{{ $sectionId }}">See More</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
             </div>
-        </div>
-    </section>
-    @endif
-@endforeach
+        </section>
+        @endif
+    @endforeach
 
 </div>
 
 <style>
-    .border-dashed {
-    border-style: dashed !important;         /* optional: match Bootstrap rounded */
-}
     /* Dynamic styles for product sections */
     @foreach($universalCategories as $universalCategory)
         @php
             $sectionId = 'section_' . $universalCategory->id;
         @endphp
         
-        /* Hide on small screens for section {{ $sectionId }} */
         @media (max-width: 991px) {
             .product-hidden-sm-{{ $sectionId }} {
                 display: none !important;
             }
         }
         
-        /* Hide on large screens for section {{ $sectionId }} */
         @media (min-width: 992px) {
             .product-hidden-lg-{{ $sectionId }} {
                 display: none !important;
@@ -577,7 +549,24 @@
 </style>
 
 <script>
-    // Main categories toggle functions
+    // Profile tags toggle functions
+    function showAllProfileTags(sectionId) {
+        document.querySelectorAll('.extra-tag-' + sectionId).forEach(tag => {
+            tag.classList.remove('d-none');
+        });
+        document.getElementById('seeMoreProfileTagsBtn-' + sectionId).style.display = 'none';
+        document.getElementById('seeLessProfileTagsBtn-' + sectionId).classList.remove('d-none');
+    }
+
+    function showLessProfileTags(sectionId) {
+        document.querySelectorAll('.extra-tag-' + sectionId).forEach(tag => {
+            tag.classList.add('d-none');
+        });
+        document.getElementById('seeMoreProfileTagsBtn-' + sectionId).style.display = '';
+        document.getElementById('seeLessProfileTagsBtn-' + sectionId).classList.add('d-none');
+    }
+
+    // Main categories toggle
     let expandedSm = false;
     let expandedLg = false;
 
@@ -587,36 +576,26 @@
         const toggleText = document.getElementById('toggleTextSm');
         
         if (expandedSm) {
-            // Show hidden categories
-            document.querySelectorAll('.category-hidden-sm').forEach(function(card) {
+            document.querySelectorAll('.category-hidden-sm').forEach(card => {
                 card.classList.remove('category-hidden-sm');
                 card.style.display = 'block';
             });
-            
-            // Change button text to "See Less"
             toggleText.textContent = 'See Less';
-            
-            // Move button to the end
-            const row = toggleBtn.parentElement;
-            row.appendChild(toggleBtn);
+            toggleBtn.parentElement.appendChild(toggleBtn);
         } else {
-            // Hide categories again
-            document.querySelectorAll('.category-card').forEach(function(card) {
+            document.querySelectorAll('.category-card-wrapper').forEach(card => {
                 const index = parseInt(card.getAttribute('data-index'));
                 if (index >= {{ $seeMorePositionSm ?? -1 }}) {
                     card.classList.add('category-hidden-sm');
                 }
             });
-            
-            // Change button text back to "See More"
             toggleText.textContent = 'See More';
             
-            // Move button back to original position
             const row = toggleBtn.parentElement;
-            const cards = row.querySelectorAll('.category-card');
+            const cards = row.querySelectorAll('.category-card-wrapper');
             let insertPosition = null;
             
-            cards.forEach(function(card) {
+            cards.forEach(card => {
                 const index = parseInt(card.getAttribute('data-index'));
                 if (index === {{ $seeMorePositionSm ?? -1 }}) {
                     insertPosition = card;
@@ -635,36 +614,26 @@
         const toggleText = document.getElementById('toggleTextLg');
         
         if (expandedLg) {
-            // Show hidden categories
-            document.querySelectorAll('.category-hidden-lg').forEach(function(card) {
+            document.querySelectorAll('.category-hidden-lg').forEach(card => {
                 card.classList.remove('category-hidden-lg');
                 card.style.display = 'block';
             });
-            
-            // Change button text to "See Less"
             toggleText.textContent = 'See Less';
-            
-            // Move button to the end
-            const row = toggleBtn.parentElement;
-            row.appendChild(toggleBtn);
+            toggleBtn.parentElement.appendChild(toggleBtn);
         } else {
-            // Hide categories again
-            document.querySelectorAll('.category-card').forEach(function(card) {
+            document.querySelectorAll('.category-card-wrapper').forEach(card => {
                 const index = parseInt(card.getAttribute('data-index'));
                 if (index >= {{ $seeMorePositionLg ?? -1 }}) {
                     card.classList.add('category-hidden-lg');
                 }
             });
-            
-            // Change button text back to "See More"
             toggleText.textContent = 'See More';
             
-            // Move button back to original position
             const row = toggleBtn.parentElement;
-            const cards = row.querySelectorAll('.category-card');
+            const cards = row.querySelectorAll('.category-card-wrapper');
             let insertPosition = null;
             
-            cards.forEach(function(card) {
+            cards.forEach(card => {
                 const index = parseInt(card.getAttribute('data-index'));
                 if (index === {{ $seeMorePositionLg ?? -1 }}) {
                     insertPosition = card;
@@ -677,7 +646,7 @@
         }
     }
 
-    // Product categories toggle functions
+    // Product categories toggle
     let productExpandedSm = {};
     let productExpandedLg = {};
 
@@ -687,36 +656,26 @@
         const toggleText = document.getElementById('prodToggleTextSm' + sectionId);
         
         if (productExpandedSm[sectionId]) {
-            // Show hidden categories
-            document.querySelectorAll('.product-hidden-sm-' + sectionId).forEach(function(card) {
+            document.querySelectorAll('.product-hidden-sm-' + sectionId).forEach(card => {
                 card.classList.remove('product-hidden-sm-' + sectionId);
                 card.style.display = 'block';
             });
-            
-            // Change button text to "See Less"
             toggleText.textContent = 'See Less';
-            
-            // Move button to the end
-            const row = toggleBtn.parentElement;
-            row.appendChild(toggleBtn);
+            toggleBtn.parentElement.appendChild(toggleBtn);
         } else {
-            // Hide categories again
-            document.querySelectorAll('.product-category-card-' + sectionId).forEach(function(card) {
+            document.querySelectorAll('.product-category-card-' + sectionId).forEach(card => {
                 const index = parseInt(card.getAttribute('data-prod-index'));
                 if (index >= seeMorePosition) {
                     card.classList.add('product-hidden-sm-' + sectionId);
                 }
             });
-            
-            // Change button text back to "See More"
             toggleText.textContent = 'See More';
             
-            // Move button back to original position
             const row = toggleBtn.parentElement;
             const cards = row.querySelectorAll('.product-category-card-' + sectionId);
             let insertPosition = null;
             
-            cards.forEach(function(card) {
+            cards.forEach(card => {
                 const index = parseInt(card.getAttribute('data-prod-index'));
                 if (index === seeMorePosition) {
                     insertPosition = card;
@@ -735,36 +694,26 @@
         const toggleText = document.getElementById('prodToggleTextLg' + sectionId);
         
         if (productExpandedLg[sectionId]) {
-            // Show hidden categories
-            document.querySelectorAll('.product-hidden-lg-' + sectionId).forEach(function(card) {
+            document.querySelectorAll('.product-hidden-lg-' + sectionId).forEach(card => {
                 card.classList.remove('product-hidden-lg-' + sectionId);
                 card.style.display = 'block';
             });
-            
-            // Change button text to "See Less"
             toggleText.textContent = 'See Less';
-            
-            // Move button to the end
-            const row = toggleBtn.parentElement;
-            row.appendChild(toggleBtn);
+            toggleBtn.parentElement.appendChild(toggleBtn);
         } else {
-            // Hide categories again
-            document.querySelectorAll('.product-category-card-' + sectionId).forEach(function(card) {
+            document.querySelectorAll('.product-category-card-' + sectionId).forEach(card => {
                 const index = parseInt(card.getAttribute('data-prod-index'));
                 if (index >= seeMorePosition) {
                     card.classList.add('product-hidden-lg-' + sectionId);
                 }
             });
-            
-            // Change button text back to "See More"
             toggleText.textContent = 'See More';
             
-            // Move button back to original position
             const row = toggleBtn.parentElement;
             const cards = row.querySelectorAll('.product-category-card-' + sectionId);
             let insertPosition = null;
             
-            cards.forEach(function(card) {
+            cards.forEach(card => {
                 const index = parseInt(card.getAttribute('data-prod-index'));
                 if (index === seeMorePosition) {
                     insertPosition = card;
