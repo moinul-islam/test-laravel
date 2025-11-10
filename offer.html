@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfferBazar - সেরা অফার ও ডিসকাউন্ট</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .add-offer-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .add-offer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .hero {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar button {
+            position: absolute;
+            right: 3px;
+            top: 2px;
+            padding: 0.7rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .filters {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.5rem;
+            background: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .offers-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .offer-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .offer-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .offer-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ff4757;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .offer-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            position: relative;
+        }
+
+        .offer-content {
+            padding: 1.5rem;
+        }
+
+        .business-name {
+            color: #667eea;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .offer-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.8rem;
+            color: #333;
+        }
+
+        .offer-description {
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .offer-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .offer-date {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        .view-btn {
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .view-btn:hover {
+            background: #764ba2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 1.8rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .offers-container {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">🎁 OfferBazar</div>
+            <ul class="nav-links">
+                <li><a href="#home">হোম</a></li>
+                <li><a href="#offers">অফার</a></li>
+                <li><a href="#categories">ক্যাটাগরি</a></li>
+                <li><a href="#about">আমাদের সম্পর্কে</a></li>
+            </ul>
+            <button class="add-offer-btn" onclick="addOffer()">+ অফার যোগ করুন</button>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>সেরা অফার ও ডিসকাউন্ট খুঁজুন</h1>
+        <p>আপনার এলাকার সব ব্যবসায়িক অফার এক জায়গায়</p>
+        
+        <div class="search-bar">
+            <input type="text" placeholder="অফার খুঁজুন..." id="searchInput">
+            <button onclick="searchOffers()">সার্চ করুন</button>
+        </div>
+    </section>
+
+    <div class="filters">
+        <button class="filter-btn active" onclick="filterCategory('all')">সব</button>
+        <button class="filter-btn" onclick="filterCategory('food')">খাবার</button>
+        <button class="filter-btn" onclick="filterCategory('fashion')">ফ্যাশন</button>
+        <button class="filter-btn" onclick="filterCategory('electronics')">ইলেকট্রনিক্স</button>
+        <button class="filter-btn" onclick="filterCategory('services')">সেবা</button>
+        <button class="filter-btn" onclick="filterCategory('others')">অন্যান্য</button>
+    </div>
+
+    <div class="offers-container" id="offersContainer">
+        <!-- Sample Offer Cards -->
+        <div class="offer-card" data-category="food">
+            <div class="offer-image">
+                <span class="offer-badge">৫০% ছাড়</span>
+                🍕
+            </div>
+            <div class="offer-content">
+                <div class="business-name">পিজ্জা হাট</div>
+                <h3 class="offer-title">যেকোনো পিজ্জায় ৫০% ছাড়!</h3>
+                <p class="offer-description">দুপুর ১২টা থেকে ৩টা পর্যন্ত সকল পিজ্জায় বিশেষ ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ৩০ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(1)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="fashion">
+            <div class="offer-image">
+                <span class="offer-badge">কিনুন ১ পান ১</span>
+                👕
+            </div>
+            <div class="offer-content">
+                <div class="business-name">ফ্যাশন হাউস</div>
+                <h3 class="offer-title">শীতের সেল - কিনুন ১ পান ১ ফ্রি</h3>
+                <p class="offer-description">সকল শীতের পোশাকে বিশেষ অফার</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ১৫ ডিসেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(2)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="electronics">
+            <div class="offer-image">
+                <span class="offer-badge">৩০% ছাড়</span>
+                📱
+            </div>
+            <div class="offer-content">
+                <div class="business-name">টেক শপ</div>
+                <h3 class="offer-title">মোবাইল ফোনে বিশেষ ছাড়</h3>
+                <p class="offer-description">সব ব্র্যান্ডের স্মার্টফোনে ৩০% পর্যন্ত ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ২৫ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(3)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="services">
+            <div class="offer-image">
+                <span class="offer-badge">২০% ছাড়</span>
+                💇
+            </div>
+            <div class="offer-content">
+                <div class="business-name">সেলুন & স্পা</div>
+                <h3 class="offer-title">হেয়ার কাট ও স্পা সেবায় ছাড়</h3>
+                <p class="offer-description">সব ধরনের সেবায় ২০% বিশেষ ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ১০ ডিসেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(4)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="food">
+            <div class="offer-image">
+                <span class="offer-badge">ফ্রি ডেলিভারি</span>
+                🍔
+            </div>
+            <div class="offer-content">
+                <div class="business-name">বার্গার কিং</div>
+                <h3 class="offer-title">১০০০ টাকার অর্ডারে ফ্রি ডেলিভারি</h3>
+                <p class="offer-description">আজই অর্ডার করুন এবং ফ্রি হোম ডেলিভারি পান</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ২০ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(5)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="fashion">
+            <div class="offer-image">
+                <span class="offer-badge">৪০% ছাড়</span>
+                👟
+            </div>
+            <div class="offer-content">
+                <div class="business-name">স্পোর্টস ওয়ার্ল্ড</div>
+                <h3 class="offer-title">স্পোর্টস শু এবং পোশাকে মেগা সেল</h3>
+                <p class="offer-description">সকল ব্র্যান্ডের শু এবং স্পোর্টস পোশাকে ৪০% পর্যন্ত ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ৫ ডিসেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(6)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="others">
+            <div class="offer-image">
+                <span class="offer-badge">২৫% ছাড়</span>
+                📚
+            </div>
+            <div class="offer-content">
+                <div class="business-name">বুক স্টোর</div>
+                <h3 class="offer-title">সব ধরনের বইয়ে বিশেষ ছাড়</h3>
+                <p class="offer-description">শিক্ষামূলক এবং গল্পের বই কিনুন সাশ্রয়ী দামে</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ৩০ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(7)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="services">
+            <div class="offer-image">
+                <span class="offer-badge">১৫% ছাড়</span>
+                🏋️
+            </div>
+            <div class="offer-content">
+                <div class="business-name">ফিটনেস জিম</div>
+                <h3 class="offer-title">বার্ষিক মেম্বারশিপে ১৫% ছাড়</h3>
+                <p class="offer-description">এক বছরের জিম মেম্বারশিপ নিন কম খরচে</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ১৫ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(8)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="food">
+            <div class="offer-image">
+                <span class="offer-badge">কিনুন ২ পান ৩</span>
+                🍰
+            </div>
+            <div class="offer-content">
+                <div class="business-name">কেক হাউস</div>
+                <h3 class="offer-title">কাপকেক স্পেশাল অফার</h3>
+                <p class="offer-description">যেকোনো ২টি কাপকেক কিনুন আর ১টি ফ্রি পান</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ২৮ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(9)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="others">
+            <div class="offer-image">
+                <span class="offer-badge">৩৫% ছাড়</span>
+                🛋️
+            </div>
+            <div class="offer-content">
+                <div class="business-name">ফার্নিচার মার্ট</div>
+                <h3 class="offer-title">হোম ফার্নিচারে বিশাল ছাড়</h3>
+                <p class="offer-description">সোফা, বেড, টেবিল সহ সব ফার্নিচারে অফার</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ১০ ডিসেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(10)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="services">
+            <div class="offer-image">
+                <span class="offer-badge">১০% ছাড়</span>
+                🚗
+            </div>
+            <div class="offer-content">
+                <div class="business-name">কার সার্ভিস সেন্টার</div>
+                <h3 class="offer-title">গাড়ি সার্ভিসিং এ ছাড়</h3>
+                <p class="offer-description">সম্পূর্ণ গাড়ি চেক-আপ এবং সার্ভিসে ১০% ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ২২ নভেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(11)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="offer-card" data-category="fashion">
+            <div class="offer-image">
+                <span class="offer-badge">৪৫% ছাড়</span>
+                👗
+            </div>
+            <div class="offer-content">
+                <div class="business-name">লেডিস ফ্যাশন</div>
+                <h3 class="offer-title">নারীদের পোশাকে ঈদ সেল</h3>
+                <p class="offer-description">শাড়ি, সালোয়ার, কুর্তি সব কিছুতে বিশাল ছাড়</p>
+                <div class="offer-footer">
+                    <span class="offer-date">মেয়াদ: ১ ডিসেম্বর</span>
+                    <button class="view-btn" onclick="viewOffer(12)">বিস্তারিত</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Offer Modal -->
+    <div class="modal" id="addOfferModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>নতুন অফার যোগ করুন</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="offerForm" onsubmit="submitOffer(event)">
+                <div class="form-group">
+                    <label>ব্যবসার নাম *</label>
+                    <input type="text" id="businessName" required placeholder="যেমন: পিজ্জা হাট">
+                </div>
+
+                <div class="form-group">
+                    <label>অফারের শিরোনাম *</label>
+                    <input type="text" id="offerTitle" required placeholder="যেমন: যেকোনো পিজ্জায় ৫০% ছাড়">
+                </div>
+
+                <div class="form-group">
+                    <label>অফারের বিবরণ *</label>
+                    <textarea id="offerDescription" required placeholder="আপনার অফার সম্পর্কে বিস্তারিত লিখুন..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ক্যাটাগরি *</label>
+                        <select id="category" required>
+                            <option value="">নির্বাচন করুন</option>
+                            <option value="food">খাবার</option>
+                            <option value="fashion">ফ্যাশন</option>
+                            <option value="electronics">ইলেকট্রনিক্স</option>
+                            <option value="services">সেবা</option>
+                            <option value="others">অন্যান্য</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ডিসকাউন্ট ব্যাজ *</label>
+                        <input type="text" id="badge" required placeholder="যেমন: ৫০% ছাড়">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ইমোজি আইকন</label>
+                        <input type="text" id="emoji" placeholder="যেমন: 🍕" maxlength="2">
+                    </div>
+
+                    <div class="form-group">
+                        <label>মেয়াদ শেষের তারিখ *</label>
+                        <input type="date" id="expiryDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>যোগাযোগ নম্বর</label>
+                    <input type="tel" id="contactNumber" placeholder="০১৭xxxxxxxx">
+                </div>
+
+                <div class="form-group">
+                    <label>ঠিকানা</label>
+                    <input type="text" id="address" placeholder="আপনার ব্যবসার ঠিকানা">
+                </div>
+
+                <button type="submit" class="submit-btn">অফার পাবলিশ করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addOffer() {
+            document.getElementById('addOfferModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('addOfferModal').classList.remove('active');
+        }
+
+        function submitOffer(event) {
+            event.preventDefault();
+            
+            const businessName = document.getElementById('businessName').value;
+            const offerTitle = document.getElementById('offerTitle').value;
+            const description = document.getElementById('offerDescription').value;
+            const category = document.getElementById('category').value;
+            const badge = document.getElementById('badge').value;
+            const emoji = document.getElementById('emoji').value || '🎁';
+            const expiryDate = document.getElementById('expiryDate').value;
+            const contact = document.getElementById('contactNumber').value;
+            const address = document.getElementById('address').value;
+
+            // Format the date
+            const date = new Date(expiryDate);
+            const formattedDate = date.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' });
+
+            // Create new offer card
+            const offerCard = document.createElement('div');
+            offerCard.className = 'offer-card';
+            offerCard.setAttribute('data-category', category);
+            offerCard.innerHTML = `
+                <div class="offer-image">
+                    <span class="offer-badge">${badge}</span>
+                    ${emoji}
+                </div>
+                <div class="offer-content">
+                    <div class="business-name">${businessName}</div>
+                    <h3 class="offer-title">${offerTitle}</h3>
+                    <p class="offer-description">${description}</p>
+                    <div class="offer-footer">
+                        <span class="offer-date">মেয়াদ: ${formattedDate}</span>
+                        <button class="view-btn" onclick="viewOffer('new')">বিস্তারিত</button>
+                    </div>
+                </div>
+            `;
+
+            // Add to the beginning of offers container
+            const container = document.getElementById('offersContainer');
+            container.insertBefore(offerCard, container.firstChild);
+
+            // Show success message
+            alert('আপনার অফার সফলভাবে যুক্ত হয়েছে! ✅');
+
+            // Reset form and close modal
+            document.getElementById('offerForm').reset();
+            closeModal();
+
+            // Scroll to top to see the new offer
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addOfferModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        function searchOffers() {
+            const searchTerm = document.getElementById('searchInput').value;
+            alert('সার্চ ফিচার শীঘ্রই যুক্ত হবে। আপনি খুঁজছেন: ' + searchTerm);
+        }
+
+        function filterCategory(category) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const allCards = document.querySelectorAll('.offer-card');
+            
+            allCards.forEach(card => {
+                if (category === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    if (card.getAttribute('data-category') === category) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        function viewOffer(id) {
+            alert('অফার নম্বর ' + id + ' এর বিস্তারিত দেখা হচ্ছে');
+        }
+    </script>
+</body>
+</html>
