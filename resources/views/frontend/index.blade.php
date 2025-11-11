@@ -1,18 +1,28 @@
 @extends("frontend.master")
 @section('main-content')
 
+{{-- Posts Container --}}
 <div class="container mt-4">
     <div class="row">
-        <div class="col-12">
-            @include('frontend.posts-partial')
+        <div class="col-12" id="posts-container">
+            @include('frontend.posts-partial', ['posts' => $posts])
         </div>
     </div>
+    
+    {{-- Loading Spinner (scroll এর সময় দেখাবে) --}}
+    @if(isset($posts) && $posts->hasMorePages())
+    <div class="text-center my-4" id="loading-spinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading more posts...</p>
+    </div>
+    
+    {{-- Hidden flag to track if more pages exist --}}
+    <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
+    <input type="hidden" id="current-page" value="1">
+    @endif
 </div>
-
-
-
-
-
 
 <!-- Sidebar Button -->
 <button class="btn btn-primary" id="openSidebarBtn">
@@ -34,7 +44,6 @@
             
             @foreach($universalCategories as $universalCategory)
                 @php
-                    // Get all sub-categories (profile + product/service)
                     $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get();
                 @endphp
                 
@@ -60,13 +69,11 @@
                             <ul class="list-unstyled">
                                 @foreach($allSubCategories as $subCategory)
                                     @php
-                                        // Get sub-sub categories
                                         $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get();
                                     @endphp
                                     
                                     <li>
                                         @if($subSubCategories->count() > 0)
-                                            <!-- Sub-category with nested accordion -->
                                             <div class="sub-accordion-item">
                                                 <button class="sub-accordion-button collapsed" type="button" 
                                                         data-bs-toggle="collapse" 
@@ -96,7 +103,6 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <!-- Simple sub-category link -->
                                             <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}" 
                                                class="d-flex align-items-center text-decoration-none sub-link">
                                                 <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
@@ -432,7 +438,90 @@
 </style>
 
 <script>
-    // Sidebar Toggle Functions
+// ✅ Scroll-based Lazy Loading
+document.addEventListener('DOMContentLoaded', function() {
+    let isLoading = false;
+    let hasMorePages = document.getElementById('has-more-pages');
+    let currentPageInput = document.getElementById('current-page');
+    
+    if (hasMorePages && hasMorePages.value === '1') {
+        // Scroll event listener
+        window.addEventListener('scroll', function() {
+            // Check if user scrolled near bottom (500px before end)
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                if (!isLoading && hasMorePages.value === '1') {
+                    loadMorePosts();
+                }
+            }
+        });
+    }
+    
+    function loadMorePosts() {
+        isLoading = true;
+        
+        const currentPage = parseInt(currentPageInput.value);
+        const nextPage = currentPage + 1;
+        
+        const loadingSpinner = document.getElementById('loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'block';
+        }
+        
+        // AJAX Request
+        fetch(`{{ url()->current() }}?page=${nextPage}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (loadingSpinner) {
+                loadingSpinner.style.display = 'none';
+            }
+            
+            if (data.posts) {
+                // Posts container এ নতুন posts যোগ করুন
+                const container = document.getElementById('posts-container');
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.posts;
+                
+                // নতুন posts append করুন
+                while (tempDiv.firstChild) {
+                    container.appendChild(tempDiv.firstChild);
+                }
+                
+                // Update current page
+                currentPageInput.value = nextPage;
+                
+                // Check if more pages exist
+                if (!data.hasMore) {
+                    hasMorePages.value = '0';
+                    if (loadingSpinner) {
+                        loadingSpinner.remove();
+                    }
+                }
+                
+                isLoading = false;
+            } else {
+                hasMorePages.value = '0';
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+                isLoading = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (loadingSpinner) {
+                loadingSpinner.style.display = 'none';
+            }
+            isLoading = false;
+        });
+    }
+    
+    // Sidebar Toggle
     document.getElementById('openSidebarBtn').addEventListener('click', function() {
         document.getElementById('categorySidebar').classList.add('active');
         document.getElementById('sidebarOverlay').classList.add('active');
@@ -450,20 +539,15 @@
         document.getElementById('sidebarOverlay').classList.remove('active');
         document.body.style.overflow = '';
     });
-
+    
     // Sub-accordion toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        const subAccordionButtons = document.querySelectorAll('.sub-accordion-button');
-        
-        subAccordionButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                this.classList.toggle('collapsed');
-            });
+    const subAccordionButtons = document.querySelectorAll('.sub-accordion-button');
+    subAccordionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.classList.toggle('collapsed');
         });
     });
+});
 </script>
 
-
-
-
-@endsection 
+@endsection

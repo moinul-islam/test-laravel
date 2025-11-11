@@ -21,30 +21,24 @@ class LocationController extends Controller
     $not_user = User::where('username', $username)->first();
     
     if($not_user){
-        // ইউজার খুঁজে বের করো
+        // ইউজার পাওয়া গেছে - তার posts দেখান
         $user = User::where('username', $username)->first();
         
-        // যদি ইউজার না পাওয়া যায় → redirect to /
         if (!$user) {
             return redirect('/');
         }
         
-        // ওই ইউজারের সব পোস্ট নাও - pagination সহ (category relationship সহ)
         $posts = Post::with(['user', 'category'])
                     ->where('user_id', $user->id)
                     ->latest()
-                    ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
+                    ->paginate(3);
         
-        // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
         $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
         
-        // view এ পাঠাও
         return view("dashboard", compact('posts', 'user', 'categories'));
     } else {
-        // ✅ এখানে সমস্যা - $posts variable ছিল না
-        // এখন location অনুযায়ী posts fetch করবো
-        
-        $path = $username; // 'international' অথবা country/city username
+        // Location based posts
+        $path = $username;
         
         // Initialize user IDs based on location
         $userIds = [];
@@ -83,18 +77,19 @@ class LocationController extends Controller
             }
         }
         
-        // ✅ Posts fetch করুন location অনুযায়ী
+        // Posts fetch করুন
         $posts = Post::with(['user', 'category'])
                     ->whereIn('user_id', $userIds)
                     ->latest()
-                    ->paginate(12);
+                    ->paginate(5);
         
-        // 🔍 Debugging
-        \Log::info('Location Posts', [
-            'path' => $path,
-            'userIds_count' => count($userIds),
-            'posts_count' => $posts->count()
-        ]);
+        // ✅ AJAX request এর জন্য
+        if (request()->ajax()) {
+            return response()->json([
+                'posts' => view('frontend.posts-partial', compact('posts'))->render(),
+                'hasMore' => $posts->hasMorePages()
+            ]);
+        }
         
         return view("frontend.index", compact('posts'));
     }
