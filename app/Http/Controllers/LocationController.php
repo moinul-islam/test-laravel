@@ -17,34 +17,88 @@ class LocationController extends Controller
 
 
     public function usernameWiseHome($username)
-    {
-        $not_user = User::where('username',$username)->first();
-        if($not_user){
-                    // ইউজার খুঁজে বের করো
-            $user = User::where('username', $username)->first();
-            
-            // যদি ইউজার না পাওয়া যায় → redirect to /
-            if (!$user) {
-                return redirect('/');
-            }
-            
-            // ওই ইউজারের সব পোস্ট নাও - pagination সহ (category relationship সহ)
-            $posts = Post::with(['user', 'category'])
-                        ->where('user_id', $user->id)
-                        ->latest()
-                        ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
-            
-            // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
-            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
-            
-            // view এ পাঠাও
-            return view("dashboard", compact('posts', 'user', 'categories'));
-        }else{
-           
-            return view("frontend.index");
+{
+    $not_user = User::where('username', $username)->first();
+    
+    if($not_user){
+        // ইউজার খুঁজে বের করো
+        $user = User::where('username', $username)->first();
+        
+        // যদি ইউজার না পাওয়া যায় → redirect to /
+        if (!$user) {
+            return redirect('/');
         }
-       
+        
+        // ওই ইউজারের সব পোস্ট নাও - pagination সহ (category relationship সহ)
+        $posts = Post::with(['user', 'category'])
+                    ->where('user_id', $user->id)
+                    ->latest()
+                    ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
+        
+        // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
+        $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
+        
+        // view এ পাঠাও
+        return view("dashboard", compact('posts', 'user', 'categories'));
+    } else {
+        // ✅ এখানে সমস্যা - $posts variable ছিল না
+        // এখন location অনুযায়ী posts fetch করবো
+        
+        $path = $username; // 'international' অথবা country/city username
+        
+        // Initialize user IDs based on location
+        $userIds = [];
+        
+        if ($path == 'international') {
+            $userIds = User::where(function($query) {
+                $query->where('phone_verified', 0)
+                      ->orWhere('email_verified', 0);
+            })->pluck('id')->toArray();
+        } else {
+            $country = \App\Models\Country::where('username', $path)->first();
+            if ($country) {
+                $userIds = User::where('country_id', $country->id)
+                    ->where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                $city = \App\Models\City::where('username', $path)->first();
+                if ($city) {
+                    $userIds = User::where('city_id', $city->id)
+                        ->where(function($query) {
+                            $query->where('phone_verified', 0)
+                                  ->orWhere('email_verified', 0);
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                } else {
+                    $userIds = User::where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })->pluck('id')->toArray();
+                }
+            }
+        }
+        
+        // ✅ Posts fetch করুন location অনুযায়ী
+        $posts = Post::with(['user', 'category'])
+                    ->whereIn('user_id', $userIds)
+                    ->latest()
+                    ->paginate(12);
+        
+        // 🔍 Debugging
+        \Log::info('Location Posts', [
+            'path' => $path,
+            'userIds_count' => count($userIds),
+            'posts_count' => $posts->count()
+        ]);
+        
+        return view("frontend.index", compact('posts'));
     }
+}
 
     public function getCities($countryId)
     {

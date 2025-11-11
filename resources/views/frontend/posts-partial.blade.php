@@ -1,8 +1,9 @@
-
-<div class="mb-4 post-item" data-post-id="{{ $post->id }}">
+@foreach($posts as $post)
+    <div class="mb-4 post-item" data-post-id="{{ $post->id }}">
         <div class="card">
             {{-- Card Body: User + Description --}}
             <div class="card-body">
+            
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center">
                         <img src="{{ $post->user->image ? asset('profile-image/'.$post->user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
@@ -50,20 +51,12 @@
                 <h2>
                     {{ $post->title }}
                 </h2>
-                {{-- Post Description with Read More --}}
-                @if($post->description)
-                    <p class="card-text post-description" style="max-height:75px; overflow:hidden;">
-                        {{ $post->description }}
-                    </p>
-                    @if(strlen($post->description) > 150)
-                        <a href="javascript:void(0);" class="read-more text-primary">Read more</a>
-                    @endif
-                @endif
-            </div>
+                
             {{-- Card Image --}}
             @if($post->image)
                 <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
             @endif
-            
+            </div>
         </div>
     </div>
+@endforeach
