@@ -84,12 +84,17 @@
    
    <div class="container-fluid container">
       
+
+   {{-- Include Sidebar --}}
+@include('frontend.body.sidebar')
+
+
       
 <!-- Horizontal Scrollable Navigation -->
 <div class="scroll-container">
     <div class="scroll-content">
-        <a href="/" class="nav-item-custom">
-            <span><i class="bi bi-house"></i></span>
+        <a href="#" class="nav-item-custom" id="openSidebarBtn">
+            <span><i class="bi bi-list"></i></span>
         </a>
         
         @if(!isset($category) || $category->cat_type != 'profile')

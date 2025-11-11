@@ -169,21 +169,7 @@
     display: block;
 }
 
-#openSidebarBtn {
-    position: fixed;
-    top: 80px;
-    left: 20px;
-    z-index: 1050;
-    background: #ff6b6b;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
 
-#openSidebarBtn:hover {
-    background: #ff5252;
-}
 
 /* Main Accordion Styles */
 .accordion-item {
