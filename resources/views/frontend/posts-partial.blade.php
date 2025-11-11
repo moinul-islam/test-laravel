@@ -46,7 +46,7 @@
                     </div>
                     <h2>{{ $post->title }}</h2>
                     @if($post->image)
-                        <img src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
+                        <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
                     @endif
                 </div>
             </div>
