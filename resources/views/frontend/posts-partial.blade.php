@@ -2,8 +2,8 @@
     @foreach($posts as $post)
         <div class="mb-4 post-item" data-post-id="{{ $post->id }}">
             <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between card-body">
                         <div class="d-flex align-items-center">
                             <img src="{{ $post->user->image ? asset('profile-image/'.$post->user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
                             class="rounded-circle me-2"
@@ -22,7 +22,7 @@
                             </div>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -45,26 +45,61 @@
                         </div>
                     </div>
                     
+                    <div class="card-body">
                     <h2>{{ $post->title }}</h2>
-                    
+                    @php
+                        $maxLength = 200;
+                        $desc = $post->description;
+                        $descLength = mb_strlen($desc);
+                    @endphp
+                    @if($descLength > $maxLength)
+                        <p class="m-0 post-desc-short" style="display: block;">
+                            {{ mb_substr($desc, 0, $maxLength) }}...
+                            <a href="javascript:void(0);" class="see-more-link text-primary" onclick="toggleDescription(this)">See more</a>
+                        </p>
+                        <p class="m-0 post-desc-full" style="display: none;">
+                            {{ $desc }}
+                            <a href="javascript:void(0);" class="see-less-link text-primary" onclick="toggleDescription(this)">See less</a>
+                        </p>
+                    @else
+                        <p class="m-0">{{ $desc }}</p>
+                    @endif
+
+                    <script>
+                        function toggleDescription(link) {
+                            const shortDesc = link.closest('.card-body').querySelector('.post-desc-short');
+                            const fullDesc = link.closest('.card-body').querySelector('.post-desc-full');
+                            if (shortDesc && fullDesc) {
+                                if (shortDesc.style.display === 'none') {
+                                    shortDesc.style.display = 'block';
+                                    fullDesc.style.display = 'none';
+                                } else {
+                                    shortDesc.style.display = 'none';
+                                    fullDesc.style.display = 'block';
+                                }
+                            }
+                        }
+                    </script>
+                    </div>
+
                     @if($post->image)
                         <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
                     @endif
 
                     {{-- Card Footer: Social Actions --}}
-                    <div class="card-footer bg-white rounded-bottom border-0 pt-0">
+                    <div class="bg-white rounded-bottom border-0 pt-0">
                         {{-- Action Buttons --}}
-                        <div class="d-flex justify-content-around text-muted border-top pt-2">
-                            <button class="btn btn-link text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
+                        <div class="d-flex justify-content-around text-muted border-top pt-2 pb-2">
+                            <button class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
                                     data-post-id="{{ $post->id }}">
                                 <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
                                 <span class="action-count">{{ $post->likesCount() }}</span>
                             </button>
-                            <button class="btn btn-link text-muted d-flex align-items-center comment-toggle-btn" data-post-id="{{ $post->id }}">
+                            <button class="btn text-muted d-flex align-items-center comment-toggle-btn" data-post-id="{{ $post->id }}">
     <i class="bi bi-chat-left-text me-1"></i> 
     <span class="action-count">{{ $post->allComments()->count() }}</span>
 </button>
-                            <button class="btn btn-link text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
+                            <button class="btn text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
                                 <i class="bi bi-share me-1"></i> 
                                 <span class="action-count">3</span>
                             </button>
@@ -93,13 +128,13 @@
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center mt-2 px-2 comment-tools" style="display: none;">
                                             <div class="comment-actions">
-                                                <button type="button" class="btn btn-sm btn-link text-muted p-0 me-2">
+                                                <button type="button" class="btn btn-sm text-muted p-0 me-2">
                                                     <i class="bi bi-emoji-smile"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-link text-muted p-0 me-2">
+                                                <button type="button" class="btn btn-sm text-muted p-0 me-2">
                                                     <i class="bi bi-camera"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-link text-muted p-0">
+                                                <button type="button" class="btn btn-sm text-muted p-0">
                                                     <i class="bi bi-image"></i>
                                                 </button>
                                             </div>
@@ -132,12 +167,12 @@
                                             <small class="text-muted me-3">{{ $comment->created_at->diffForHumans() }}</small>
                                             
                                             @auth
-                                                <button class="btn btn-link btn-sm text-muted p-0 me-2 comment-like-btn {{ $comment->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
+                                                <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn {{ $comment->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
                                                         data-comment-id="{{ $comment->id }}">
                                                     <i class="bi {{ $comment->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
                                                     <span class="action-count">{{ $comment->likesCount() }}</span>
                                                 </button>
-                                                <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="{{ $comment->id }}">
+                                                <button class="btn btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="{{ $comment->id }}">
                                                     <i class="bi bi-reply me-1"></i>
                                                     Reply
                                                 </button>
@@ -146,7 +181,7 @@
                                                     <i class="bi bi-hand-thumbs-up me-1"></i>
                                                     <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
                                                 </span>
-                                                <a href="{{ route('login') }}" class="btn btn-link btn-sm text-muted p-0 me-2" style="font-size: 12px;">
+                                                <a href="{{ route('login') }}" class="btn btn-sm text-muted p-0 me-2" style="font-size: 12px;">
                                                     <i class="bi bi-reply me-1"></i>
                                                     Login to Reply
                                                 </a>
@@ -201,13 +236,13 @@
                                                         </small>
                                                         
                                                         @auth
-                                                            <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-like-btn {{ $reply->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
+                                                            <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn {{ $reply->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
                                                                     data-reply-id="{{ $reply->id }}" 
                                                                     style="font-size: 11px;">
                                                                 <i class="bi {{ $reply->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
                                                                 <span class="action-count">{{ $reply->likesCount() }}</span>
                                                             </button>
-                                                            <button class="btn btn-link btn-sm text-muted p-0 nested-reply-btn" 
+                                                            <button class="btn btn-sm text-muted p-0 nested-reply-btn" 
                                                                 data-reply-to="{{ $reply->user->name }}" 
                                                                 data-comment-id="{{ $comment->id }}" 
                                                                 style="font-size: 11px;">
@@ -219,7 +254,7 @@
                                                                 <i class="bi bi-hand-thumbs-up me-1"></i>
                                                                 <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
                                                             </span>
-                                                            <a href="{{ route('login') }}" class="btn btn-link btn-sm text-muted p-0" style="font-size: 11px;">
+                                                            <a href="{{ route('login') }}" class="btn btn-sm text-muted p-0" style="font-size: 11px;">
                                                                 <i class="bi bi-reply me-1"></i>
                                                                 Login to Reply
                                                             </a>
@@ -238,7 +273,7 @@
 
                         {{-- Load More Comments --}}
                         <div class="text-center p-3 border-top load-more-section" id="load-more-comments-{{ $post->id }}" style="display: none;">
-                            <button class="btn btn-link text-muted load-more-comments" data-post-id="{{ $post->id }}">
+                            <button class="btn text-muted load-more-comments" data-post-id="{{ $post->id }}">
                                 <i class="bi bi-arrow-down-circle me-1"></i>
                                 Load more comments (<span class="remaining-comments">5</span>)
                             </button>
@@ -282,12 +317,6 @@
     margin-left: 20px;
     border-left: 2px solid #e9ecef;
     padding-left: 15px;
-}
-.btn-link {
-    text-decoration: none;
-}
-.btn-link:hover {
-    text-decoration: underline;
 }
 </style>
 
@@ -644,12 +673,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                     <div class="comment-actions-bar d-flex align-items-center mt-1">
                                         <small class="text-muted me-3">Just now</small>
-                                        <button class="btn btn-link btn-sm text-muted p-0 me-2 comment-like-btn" 
+                                        <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn" 
                                                 data-comment-id="${data.comment.id}">
                                             <i class="bi bi-hand-thumbs-up me-1"></i>
                                             <span class="action-count">0</span>
                                         </button>
-                                        <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="${data.comment.id}">
+                                        <button class="btn btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="${data.comment.id}">
                                             <i class="bi bi-reply me-1"></i>
                                             Reply
                                         </button>
@@ -797,13 +826,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <small class="text-muted me-2" style="font-size: 11px;">
                                         Just now
                                     </small>
-                                    <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-like-btn" 
+                                    <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn" 
                                             data-reply-id="${data.comment.id}" 
                                             style="font-size: 11px;">
                                         <i class="bi bi-hand-thumbs-up me-1"></i>
                                         <span class="action-count">0</span>
                                     </button>
-                                    <button class="btn btn-link btn-sm text-muted p-0 nested-reply-btn" 
+                                    <button class="btn btn-sm text-muted p-0 nested-reply-btn" 
                                         data-reply-to="${data.comment.user_name}" 
                                         data-comment-id="${commentId}" 
                                         style="font-size: 11px;">
