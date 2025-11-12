@@ -16,7 +16,9 @@
             <a href="#" class="nav-item-custom" id="openSidebarBtn">
                 <span><i class="bi bi-list"></i></span>
             </a>
-            
+            <a href="#" class="nav-item-custom" id="openSidebarBtn">
+                <span><i class="bi bi-journal-bookmark"></i></span>
+            </a>
         
             
             @php
