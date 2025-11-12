@@ -68,4 +68,45 @@ class Post extends Model
         }
         return $this->price; // নাহলে normal price
     }
+
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    public function isLikedBy($userId)
+    {
+        return $this->likes()->where('user_id', $userId)->exists();
+    }
+
+    public function likesCount()
+    {
+        return $this->likes()->count();
+    }
+
+
+  
+
+// All comments including replies
+public function allComments()
+{
+    return $this->hasMany(Comment::class); // সব comments + replies
+}
+
+// Comments count method
+public function commentsCount()
+{
+    return $this->comments()->count(); // শুধু main comments count
+}
+
+// Total comments including replies
+public function totalCommentsCount()
+{
+    return $this->allComments()->count(); // সব comments + replies count
+}
+
+
+
+
 }

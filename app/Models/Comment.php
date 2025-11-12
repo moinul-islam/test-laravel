@@ -30,4 +30,19 @@ class Comment extends Model
         return $this->hasMany(Comment::class, 'comment_id');
     }
 
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    public function isLikedBy($userId)
+    {
+        return $this->likes()->where('user_id', $userId)->exists();
+    }
+
+    public function likesCount()
+    {
+        return $this->likes()->count();
+    }
+
 }

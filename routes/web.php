@@ -15,6 +15,12 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\AdminPostController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\LikeController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/post/like', [LikeController::class, 'togglePostLike'])->name('post.like');
+    Route::post('/comment/like', [LikeController::class, 'toggleCommentLike'])->name('comment.like');
+});
 
 Route::post('/review/store',  [ReviewController::class, 'store'])->name('review.store');
 Route::get('/{username}/notice',  [ProductController::class, 'notice'])->name('notice');
