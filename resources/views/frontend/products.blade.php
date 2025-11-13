@@ -89,7 +89,6 @@
 @include('frontend.body.sidebar')
 
 
-      
 <!-- Horizontal Scrollable Navigation -->
 <div class="scroll-container">
     <div class="scroll-content">
@@ -140,14 +139,66 @@
             }
         @endphp
         
-        @if($navCategories->count() > 0)
-            {{-- Show determined categories --}}
+        {{-- Fetch child categories if current category exists --}}
+        @php
+            $childCats = collect();
+            if(isset($category)) {
+                $childCats = \App\Models\Category::where('parent_cat_id', $category->id)->get();
+            }
+        @endphp
+        
+        @if($childCats->count() > 0)
+            {{-- If current category has children, show them --}}
+            
+            {{-- All items badge for current category --}}
+            <a href="{{ route('products.category', [$visitorLocationPath, $category->slug]) }}" 
+               class="nav-item-custom active"
+               style="background: #0d6efd; color: white;">
+                <span>All {{ $category->category_name }}</span>
+            </a>
+            
+            {{-- Child categories --}}
+            @foreach($childCats as $childCat)
+                <a href="{{ route('products.category', [$visitorLocationPath,$childCat->slug]) }}" 
+                   class="nav-item-custom"
+                   style="background: #f8f9fa; color: #212529; border: 1px solid #6c757d;">
+                    <span>{{ $childCat->category_name }}</span>
+                </a>
+            @endforeach
+            
+        @elseif($navCategories->count() > 0)
+            {{-- If no children, show sibling categories with current one active --}}
+            
+            {{-- Get parent to show "All Parent" badge --}}
+            @php
+                $parentCat = null;
+                if(isset($category) && $category->parent_cat_id) {
+                    $parentCat = \App\Models\Category::find($category->parent_cat_id);
+                }
+            @endphp
+            
+            @if($parentCat)
+                {{-- All items badge for parent category --}}
+                <a href="{{ route('products.category', [$visitorLocationPath, $parentCat->slug]) }}" 
+                   class="nav-item-custom"
+                   style="background: #f8f9fa; color: #212529; border: 1px solid #6c757d;">
+                    <span>All {{ $parentCat->category_name }}</span>
+                </a>
+            @endif
+            
+            {{-- Show sibling categories --}}
             @foreach($navCategories as $navCat)
                 <a href="{{ route('products.category',[$visitorLocationPath, $navCat->slug]) }}" 
-                   class="nav-item-custom {{ isset($category) && $category->id == $navCat->id ? 'active' : '' }}">
+                   class="nav-item-custom {{ isset($category) && $category->id == $navCat->id ? 'active' : '' }}"
+                   @if(isset($category) && $category->id == $navCat->id)
+                       style="background: #0d6efd; color: white;"
+                   @else
+                       style="background: #f8f9fa; color: #212529; border: 1px solid #6c757d;"
+                   @endif>
                     <span>{{ $navCat->category_name }}</span>
                 </a>
             @endforeach
+            
         @else
             {{-- Show main parent categories as dropdown --}}
             @php
@@ -183,62 +234,6 @@
         @endif
     </div>
 </div>
-
-<!-- Breadcrumb Navigation 
-@if(isset($breadcrumbs) && count($breadcrumbs) > 0)
-    <div class="container mt-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                @foreach($breadcrumbs as $index => $breadcrumb)
-                    @if($index == count($breadcrumbs) - 1)
-                        <li class="breadcrumb-item active" aria-current="page">{{ $breadcrumb->category_name }}</li>
-                    @else
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('products.category', [$visitorLocationPath, $breadcrumb->slug]) }}">
-                                {{ $breadcrumb->category_name }}
-                            </a>
-                        </li>
-                    @endif
-                @endforeach
-            </ol>
-        </nav>
-    </div>
-@endif -->
-
-<!-- Child Categories Tags -->
-@if(isset($childCategories) && $childCategories->count() > 0)
-    <div class="col-12 text-center mt-3">
-        <div class="d-flex flex-wrap justify-content-center gap-1" id="childCategoriesTags">
-            
-            <!-- Back to parent button (if applicable) 
-            @if(isset($parentCategory))
-                <a href="{{ route('products.category', [$visitorLocationPath, $parentCategory->slug]) }}" 
-                   class="badge rounded bg-secondary text-white px-2 py-1 mb-1"
-                   style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
-                    <i class="bi bi-arrow-left"></i> Back to {{ $parentCategory->category_name }}
-                </a>
-            @endif -->
-            
-            <!-- Current category (All items) -->
-            <a href="{{ route('products.category', [$visitorLocationPath, $category->slug]) }}" 
-               class="badge rounded bg-primary text-white px-2 py-1 mb-1"
-               style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
-                All {{ $category->category_name }}
-            </a>
-            
-            <!-- Child categories -->
-            @foreach($childCategories as $childCat)
-                <a href="{{ route('products.category', [$visitorLocationPath,$childCat->slug]) }}" 
-                   class="badge rounded bg-light text-dark border border-secondary px-2 py-1 mb-1"
-                   style="font-size: 11px; font-weight: 500; transition: background 0.2s; line-height: 1.1;">
-                    {{ $childCat->category_name }}
-                </a>
-            @endforeach
-        </div>
-    </div>
-@endif
-
 
    </div>
 </div>
