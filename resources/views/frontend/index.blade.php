@@ -10,17 +10,69 @@
     {{-- Include Sidebar --}}
     @include('frontend.body.sidebar')
 
-    @include('frontend.index-new')
+    @include('frontend.phonebook')
+    
+    @php
+           $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
+       ->orderBy('name') // অথবা যেকোনো column দিয়ে sort করতে চান
+       ->get();
+           
+           // $visitorLocationPath থেকে current location খুঁজে বের করুন
+           $selectedCountry = null;
+           $selectedCity = null;
+           $cities = collect();
+           
+           if(isset($visitorLocationPath) && $visitorLocationPath) {
+               // প্রথমে check করুন এটা country কিনা
+               $selectedCountry = App\Models\Country::where('username', $visitorLocationPath)->first();
+               
+               if($selectedCountry) {
+                   // এটা country, তাহলে এর cities load করুন
+                   $cities = App\Models\City::where('country_id', $selectedCountry->id)
+                                           ->orderBy('name', 'asc')
+                                           ->get();
+               } else {
+                   // না হলে check করুন এটা city কিনা
+                   $selectedCity = App\Models\City::where('username', $visitorLocationPath)->first();
+                   
+                   if($selectedCity) {
+                       // City পেলে এর country খুঁজুন
+                       $selectedCountry = App\Models\Country::find($selectedCity->country_id);
+                       
+                       // এই country এর সব cities load করুন
+                       if($selectedCountry) {
+                           $cities = App\Models\City::where('country_id', $selectedCountry->id)
+                                                   ->orderBy('name', 'asc')
+                                                   ->get();
+                       }
+                   }
+               }
+           }
+       @endphp
 
     <!-- Horizontal Scrollable Navigation -->
     <div class="scroll-container mb-4">
         <div class="scroll-content">
-            <button href="" class="nav-item-custom" id="openSidebarBtn">
+            <!-- <button href="" class="nav-item-custom" id="openSidebarBtn">
                 <span><i class="bi bi-list"></i></span>
-            </button>
+            </button> -->
             <button href="" class="nav-item-custom" data-bs-toggle="modal" data-bs-target="#fullModal">
                 <span><i class="bi bi-journal-bookmark"></i></span>
             </button>
+
+            <button class="nav-item-custom" data-bs-toggle="modal" data-bs-target="#locationModal">
+                <span><i class="bi bi-geo-alt"></i></span>
+                <span>
+                    @if($selectedCity)
+                        {{ $selectedCity->name }}, {{ $selectedCountry->name ?? '' }}
+                    @elseif($selectedCountry)
+                        {{ $selectedCountry->name }}
+                    @else
+                        Select Location
+                    @endif
+                </span>
+            </button>
+
 
             
         
@@ -122,6 +174,7 @@
     @endif
 </div>
 
+@include('frontend.location')
 
 @endsection
 
