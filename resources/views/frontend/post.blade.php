@@ -75,10 +75,35 @@
                      <i class="bi bi-chat-left-text me-1"></i> 
                      <span class="action-count">8</span>
                      </button>
-                     <button class="btn btn-link text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
-                     <i class="bi bi-share me-1"></i> 
-                     <span class="action-count">3</span>
-                     </button>
+                     
+
+
+                     <button 
+  class="btn btn-link text-muted d-flex align-items-center share-btn" 
+  data-post-id="{{ $post->id }}" 
+  data-share-url="{{ url('/post/' . $post->id) }}"
+>
+  <i class="bi bi-share me-1"></i>
+  <span class="action-count">3</span>
+</button>
+
+<!-- Share Popup -->
+<div id="sharePopup" class="share-popup d-none">
+  <div class="share-popup-content">
+    <h6 class="mb-2">Share this post</h6>
+    <div class="d-flex gap-3">
+      <a href="#" id="share-fb"><i class="bi bi-facebook"></i></a>
+      <a href="#" id="share-wa"><i class="bi bi-whatsapp"></i></a>
+      <a href="#" id="share-x"><i class="bi bi-twitter-x"></i></a>
+      <button id="copy-link" class="btn btn-sm btn-outline-secondary">Copy Link</button>
+    </div>
+    <button class="btn btn-sm btn-light mt-2" id="closePopup">Close</button>
+  </div>
+</div>
+
+
+
+
                   </div>
                </div>
                {{-- Comments Section --}}
@@ -246,6 +271,81 @@
                         </div>
                      </div>
                      @endforeach
+
+                     <style>
+                        .share-popup {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+.share-popup-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  width: 250px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+.share-popup.d-none { display: none; }
+.share-popup a {
+  font-size: 1.5rem;
+  color: #333;
+}
+.share-popup a:hover { color: #007bff; }
+
+                     </style>
+                     <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const shareBtns = document.querySelectorAll('.share-btn');
+  const popup = document.getElementById('sharePopup');
+  const closePopup = document.getElementById('closePopup');
+  const fb = document.getElementById('share-fb');
+  const wa = document.getElementById('share-wa');
+  const x = document.getElementById('share-x');
+  const copy = document.getElementById('copy-link');
+
+  shareBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const shareUrl = btn.getAttribute('data-share-url');
+
+      // ✅ If browser supports native share
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: document.title,
+            url: shareUrl
+          });
+        } catch (err) {
+          console.log('Share cancelled');
+        }
+      } else {
+        // ✅ Show custom popup
+        popup.classList.remove('d-none');
+        
+        fb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+        wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareUrl)}`;
+        x.href  = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`;
+        
+        copy.onclick = () => {
+          navigator.clipboard.writeText(shareUrl);
+          copy.textContent = "Copied!";
+          setTimeout(() => copy.textContent = "Copy Link", 1500);
+        };
+      }
+    });
+  });
+
+  closePopup.addEventListener('click', () => {
+    popup.classList.add('d-none');
+  });
+});
+</script>
+
+
                      <script>
                         // Basic JS for like and reply functionality
                         document.addEventListener('DOMContentLoaded', function() {
