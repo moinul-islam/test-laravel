@@ -142,9 +142,12 @@
                     @else
                         {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
                         <a href="{{ route('products.category', [$visitorLocationPath, $parentCat->slug]) }}" class="nav-item-custom">
-                            @if($parentCat->image)
+                            <!-- @if($parentCat->image)
                                 <img src="{{ asset('icon/' . $parentCat->image) }}" alt="{{ $parentCat->category_name }}" style="width:24px; height:24px; object-fit:contain; margin-right:6px;">
-                            @endif
+                            @endif -->
+                            <span>
+                                <i class="bi {{ $parentCat->image }}"></i>
+                            </span>
                             <span>{{ $parentCat->category_name }}</span>
                         </a>
                     @endif
