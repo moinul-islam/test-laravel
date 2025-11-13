@@ -9,20 +9,41 @@
         <div class="accordion" id="categoryAccordion">
             @php
                 $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();
+                $currentCategoryId = null;
+                $currentParentId = null;
+                $currentGrandParentId = null;
+                
+                // Get current category from URL
+                if(request()->route('slug')) {
+                    $currentCategory = \App\Models\Category::where('slug', request()->route('slug'))->first();
+                    if($currentCategory) {
+                        $currentCategoryId = $currentCategory->id;
+                        $currentParentId = $currentCategory->parent_cat_id;
+                        
+                        // Find grandparent if exists
+                        if($currentParentId) {
+                            $parentCategory = \App\Models\Category::find($currentParentId);
+                            if($parentCategory) {
+                                $currentGrandParentId = $parentCategory->parent_cat_id;
+                            }
+                        }
+                    }
+                }
             @endphp
             
             @foreach($universalCategories as $universalCategory)
                 @php
                     $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get();
+                    $isActiveParent = ($currentGrandParentId == $universalCategory->id || $currentParentId == $universalCategory->id || $currentCategoryId == $universalCategory->id);
                 @endphp
                 
                 @if($allSubCategories->count() > 0)
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="heading{{ $universalCategory->id }}">
-                        <button class="accordion-button collapsed" type="button" 
+                        <button class="accordion-button {{ $isActiveParent ? '' : 'collapsed' }}" type="button" 
                                 data-bs-toggle="collapse" 
                                 data-bs-target="#collapse{{ $universalCategory->id }}" 
-                                aria-expanded="false" 
+                                aria-expanded="{{ $isActiveParent ? 'true' : 'false' }}" 
                                 aria-controls="collapse{{ $universalCategory->id }}">
                             <img src="{{ $universalCategory->image ? asset('icon/' . $universalCategory->image) : asset('profile-image/no-image.jpeg') }}"
                                  alt="{{ $universalCategory->category_name }}"
@@ -31,7 +52,7 @@
                         </button>
                     </h2>
                     <div id="collapse{{ $universalCategory->id }}" 
-                         class="accordion-collapse collapse" 
+                         class="accordion-collapse collapse {{ $isActiveParent ? 'show' : '' }}" 
                          aria-labelledby="heading{{ $universalCategory->id }}" 
                          data-bs-parent="#categoryAccordion">
                         <div class="accordion-body">
@@ -39,28 +60,34 @@
                                 @foreach($allSubCategories as $subCategory)
                                     @php
                                         $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get();
+                                        $isActiveSubParent = ($currentParentId == $subCategory->id || $currentCategoryId == $subCategory->id);
                                     @endphp
                                     
                                     <li>
                                         @if($subSubCategories->count() > 0)
                                             <div class="sub-accordion-item">
-                                                <button class="sub-accordion-button collapsed" type="button" 
-                                                        data-bs-toggle="collapse" 
-                                                        data-bs-target="#subCollapse{{ $subCategory->id }}" 
-                                                        aria-expanded="false">
-                                                    <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
-                                                         alt="{{ $subCategory->category_name }}"
-                                                         style="width: 20px; height: 20px; margin-right: 10px; object-fit: cover; border-radius: 3px;">
-                                                    <span>@t($subCategory->category_name)</span>
-                                                    <i class="fas fa-chevron-down sub-arrow"></i>
-                                                </button>
+                                                <div class="sub-accordion-wrapper">
+                                                    <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}" 
+                                                       class="sub-category-link {{ $currentCategoryId == $subCategory->id ? 'active' : '' }}">
+                                                        <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
+                                                             alt="{{ $subCategory->category_name }}"
+                                                             style="width: 20px; height: 20px; margin-right: 10px; object-fit: cover; border-radius: 3px;">
+                                                        <span>@t($subCategory->category_name)</span>
+                                                    </a>
+                                                    <button class="collapse-toggle {{ $isActiveSubParent ? '' : 'collapsed' }}" type="button" 
+                                                            data-bs-toggle="collapse" 
+                                                            data-bs-target="#subCollapse{{ $subCategory->id }}" 
+                                                            aria-expanded="{{ $isActiveSubParent ? 'true' : 'false' }}">
+                                                        <i class="fas fa-chevron-down sub-arrow"></i>
+                                                    </button>
+                                                </div>
                                                 
-                                                <div class="collapse sub-collapse" id="subCollapse{{ $subCategory->id }}">
+                                                <div class="collapse sub-collapse {{ $isActiveSubParent ? 'show' : '' }}" id="subCollapse{{ $subCategory->id }}">
                                                     <ul class="list-unstyled sub-sub-list">
                                                         @foreach($subSubCategories as $subSubCategory)
                                                             <li>
                                                                 <a href="{{ route('products.category', [$visitorLocationPath, $subSubCategory->slug]) }}" 
-                                                                   class="d-flex align-items-center text-decoration-none sub-sub-link">
+                                                                   class="d-flex align-items-center text-decoration-none sub-sub-link {{ $currentCategoryId == $subSubCategory->id ? 'active' : '' }}">
                                                                     <img src="{{ $subSubCategory->image ? asset('icon/' . $subSubCategory->image) : asset('profile-image/no-image.jpeg') }}"
                                                                          alt="{{ $subSubCategory->category_name }}"
                                                                          style="width: 18px; height: 18px; margin-right: 8px; object-fit: cover; border-radius: 3px;">
@@ -73,7 +100,7 @@
                                             </div>
                                         @else
                                             <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}" 
-                                               class="d-flex align-items-center text-decoration-none sub-link">
+                                               class="d-flex align-items-center text-decoration-none sub-link {{ $currentCategoryId == $subCategory->id ? 'active' : '' }}">
                                                 <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
                                                      alt="{{ $subCategory->category_name }}"
                                                      style="width: 20px; height: 20px; margin-right: 10px; object-fit: cover; border-radius: 3px;">
@@ -169,12 +196,10 @@
     display: block;
 }
 
-
-
 /* Main Accordion Styles */
 .accordion-item {
     border: none;
-    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px;
 }
 
 .accordion-button {
@@ -186,7 +211,7 @@
 }
 
 .accordion-button:not(.collapsed) {
-    background: #f8f9fa;
+    background: #fff;
     color: #ff6b6b;
     box-shadow: none;
 }
@@ -202,6 +227,18 @@
 
 .accordion-body {
     padding: 0;
+    position: relative;
+}
+
+/* Vertical line for subcategories */
+.accordion-body::before {
+    content: '';
+    position: absolute;
+    left: 25px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
 }
 
 .accordion-body ul {
@@ -217,16 +254,19 @@
 .sub-link {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
+    padding: 12px 15px 12px 35px;
     color: #555;
     transition: all 0.2s;
-    border-bottom: 1px solid #f0f0f0;
+    position: relative;
 }
 
 .sub-link:hover {
-    background: #f8f9fa;
     color: #ff6b6b;
-    padding-left: 20px;
+}
+
+.sub-link.active {
+    color: #ff6b6b;
+    font-weight: 500;
 }
 
 .sub-link span {
@@ -235,68 +275,96 @@
 
 /* Sub-accordion (for nested categories) */
 .sub-accordion-item {
-    border-bottom: 1px solid #f0f0f0;
+    position: relative;
 }
 
-.sub-accordion-button {
-    width: 100%;
+.sub-accordion-wrapper {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 15px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.sub-category-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 12px 15px 12px 35px;
+    color: #555;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.sub-category-link:hover {
+    color: #ff6b6b;
+}
+
+.sub-category-link.active {
+    color: #ff6b6b;
+    font-weight: 500;
+}
+
+.collapse-toggle {
     background: none;
     border: none;
-    color: #555;
-    font-size: 14px;
+    padding: 12px 15px;
     cursor: pointer;
+    color: #555;
     transition: all 0.2s;
-    text-align: left;
 }
 
-.sub-accordion-button:hover {
-    background: #f8f9fa;
+.collapse-toggle:hover {
     color: #ff6b6b;
-    padding-left: 20px;
-}
-
-.sub-accordion-button span {
-    flex: 1;
 }
 
 .sub-arrow {
     font-size: 12px;
     transition: transform 0.3s;
-    margin-left: auto;
 }
 
-.sub-accordion-button:not(.collapsed) .sub-arrow {
+.collapse-toggle:not(.collapsed) .sub-arrow {
     transform: rotate(180deg);
 }
 
-.sub-accordion-button:not(.collapsed) {
+.collapse-toggle:not(.collapsed) {
     color: #ff6b6b;
-    background: #f8f9fa;
 }
 
 /* Sub-sub category list */
 .sub-sub-list {
     padding-left: 15px;
-    background: #fafafa;
+    background: transparent;
+    position: relative;
+}
+
+/* Vertical line for sub-sub categories */
+.sub-sub-list::before {
+    content: '';
+    position: absolute;
+    left: 45px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
 }
 
 .sub-sub-link {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    padding: 10px 15px 10px 65px;
     color: #666;
     transition: all 0.2s;
     font-size: 13px;
 }
 
 .sub-sub-link:hover {
-    background: #f0f0f0;
     color: #ff6b6b;
-    padding-left: 20px;
+}
+
+.sub-sub-link.active {
+    color: #ff6b6b;
+    font-weight: 500;
 }
 
 /* Dark Mode for Sidebar */
@@ -327,44 +395,61 @@
 }
 
 [data-bs-theme="dark"] .accordion-button:not(.collapsed) {
-    background: #2b2b2b;
+    background: #1a1a1a;
     color: #ff6b6b;
 }
 
-[data-bs-theme="dark"] .accordion-item {
-    border-bottom-color: #404040;
+[data-bs-theme="dark"] .accordion-body::before {
+    background: #404040;
 }
 
 [data-bs-theme="dark"] .sub-link {
     color: #adb5bd;
-    border-bottom-color: #2b2b2b;
 }
 
 [data-bs-theme="dark"] .sub-link:hover {
-    background: #2b2b2b;
     color: #ff6b6b;
 }
 
-[data-bs-theme="dark"] .sub-accordion-item {
-    border-bottom-color: #2b2b2b;
+[data-bs-theme="dark"] .sub-link.active {
+    color: #ff6b6b;
 }
 
-[data-bs-theme="dark"] .sub-accordion-button {
+[data-bs-theme="dark"] .sub-accordion-wrapper:hover {
+    background: #2b2b2b;
+}
+
+[data-bs-theme="dark"] .sub-category-link {
     color: #adb5bd;
 }
 
-[data-bs-theme="dark"] .sub-accordion-button:hover {
-    background: #2b2b2b;
+[data-bs-theme="dark"] .sub-category-link:hover {
     color: #ff6b6b;
 }
 
-[data-bs-theme="dark"] .sub-accordion-button:not(.collapsed) {
+[data-bs-theme="dark"] .sub-category-link.active {
+    color: #ff6b6b;
     background: #2b2b2b;
+}
+
+[data-bs-theme="dark"] .collapse-toggle {
+    color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .collapse-toggle:hover {
+    color: #ff6b6b;
+}
+
+[data-bs-theme="dark"] .collapse-toggle:not(.collapsed) {
     color: #ff6b6b;
 }
 
 [data-bs-theme="dark"] .sub-sub-list {
-    background: #252525;
+    background: transparent;
+}
+
+[data-bs-theme="dark"] .sub-sub-list::before {
+    background: #404040;
 }
 
 [data-bs-theme="dark"] .sub-sub-link {
@@ -372,7 +457,10 @@
 }
 
 [data-bs-theme="dark"] .sub-sub-link:hover {
-    background: #2b2b2b;
+    color: #ff6b6b;
+}
+
+[data-bs-theme="dark"] .sub-sub-link.active {
     color: #ff6b6b;
 }
 
@@ -391,6 +479,7 @@
     }
 }
 </style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const openBtn = document.getElementById('openSidebarBtn');
@@ -421,13 +510,5 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = '';
         });
     }
-    
-    // Sub-accordion toggle
-    const subAccordionButtons = document.querySelectorAll('.sub-accordion-button');
-    subAccordionButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            this.classList.toggle('collapsed');
-        });
-    });
 });
 </script>
