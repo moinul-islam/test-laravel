@@ -75,35 +75,10 @@
                      <i class="bi bi-chat-left-text me-1"></i> 
                      <span class="action-count">8</span>
                      </button>
-                     
-
-
-                     <button 
-  class="btn btn-link text-muted d-flex align-items-center share-btn" 
-  data-post-id="{{ $post->id }}" 
-  data-share-url="{{ url('/post/' . $post->id) }}"
->
-  <i class="bi bi-share me-1"></i>
-  <span class="action-count">3</span>
-</button>
-
-<!-- Share Popup -->
-<div id="sharePopup" class="share-popup d-none">
-  <div class="share-popup-content">
-    <h6 class="mb-2">Share this post</h6>
-    <div class="d-flex gap-3">
-      <a href="#" id="share-fb"><i class="bi bi-facebook"></i></a>
-      <a href="#" id="share-wa"><i class="bi bi-whatsapp"></i></a>
-      <a href="#" id="share-x"><i class="bi bi-twitter-x"></i></a>
-      <button id="copy-link" class="btn btn-sm btn-outline-secondary">Copy Link</button>
-    </div>
-    <button class="btn btn-sm btn-light mt-2" id="closePopup">Close</button>
-  </div>
-</div>
-
-
-
-
+                     <button class="btn btn-link text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
+                     <i class="bi bi-share me-1"></i> 
+                     <span class="action-count">3</span>
+                     </button>
                   </div>
                </div>
                {{-- Comments Section --}}
@@ -271,81 +246,6 @@
                         </div>
                      </div>
                      @endforeach
-
-                     <style>
-                        .share-popup {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1050;
-}
-.share-popup-content {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  width: 250px;
-  text-align: center;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-}
-.share-popup.d-none { display: none; }
-.share-popup a {
-  font-size: 1.5rem;
-  color: #333;
-}
-.share-popup a:hover { color: #007bff; }
-
-                     </style>
-                     <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const shareBtns = document.querySelectorAll('.share-btn');
-  const popup = document.getElementById('sharePopup');
-  const closePopup = document.getElementById('closePopup');
-  const fb = document.getElementById('share-fb');
-  const wa = document.getElementById('share-wa');
-  const x = document.getElementById('share-x');
-  const copy = document.getElementById('copy-link');
-
-  shareBtns.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const shareUrl = btn.getAttribute('data-share-url');
-
-      // ✅ If browser supports native share
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: document.title,
-            url: shareUrl
-          });
-        } catch (err) {
-          console.log('Share cancelled');
-        }
-      } else {
-        // ✅ Show custom popup
-        popup.classList.remove('d-none');
-        
-        fb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-        wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareUrl)}`;
-        x.href  = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`;
-        
-        copy.onclick = () => {
-          navigator.clipboard.writeText(shareUrl);
-          copy.textContent = "Copied!";
-          setTimeout(() => copy.textContent = "Copy Link", 1500);
-        };
-      }
-    });
-  });
-
-  closePopup.addEventListener('click', () => {
-    popup.classList.add('d-none');
-  });
-});
-</script>
-
-
                      <script>
                         // Basic JS for like and reply functionality
                         document.addEventListener('DOMContentLoaded', function() {
@@ -634,3 +534,181 @@ document.addEventListener('DOMContentLoaded', () => {
        initReadMore();
    });
 </script>
+
+
+<!-- Add this modal before closing body tag -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title" id="shareModalLabel">Share Post</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary share-option" data-share="facebook">
+            <i class="bi bi-facebook me-2"></i>Facebook
+          </button>
+          <button class="btn btn-outline-info share-option" data-share="twitter">
+            <i class="bi bi-twitter me-2"></i>Twitter
+          </button>
+          <button class="btn btn-outline-success share-option" data-share="whatsapp">
+            <i class="bi bi-whatsapp me-2"></i>WhatsApp
+          </button>
+          <button class="btn btn-outline-secondary share-option" data-share="copy">
+            <i class="bi bi-clipboard me-2"></i>Copy Link
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentPostId = null;
+    let shareModalInstance = null;
+
+    // Initialize modal
+    const shareModalEl = document.getElementById('shareModal');
+    if (shareModalEl) {
+        shareModalInstance = new bootstrap.Modal(shareModalEl);
+    }
+
+    // Share button click handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.share-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.share-btn');
+            currentPostId = btn.dataset.postId;
+            
+            const postUrl = window.location.origin + '/post/' + currentPostId;
+            const postTitle = 'Check out this post!';
+
+            // Check if Web Share API is supported
+            if (navigator.share) {
+                navigator.share({
+                    title: postTitle,
+                    url: postUrl
+                })
+                .then(() => {
+                    // Share successful - update count
+                    updateShareCount(currentPostId, btn);
+                })
+                .catch((error) => {
+                    // User cancelled or error - show custom modal
+                    if (error.name !== 'AbortError') {
+                        showCustomShareModal();
+                    }
+                });
+            } else {
+                // Web Share API not supported - show custom modal
+                showCustomShareModal();
+            }
+        }
+    });
+
+    // Custom share options click handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.share-option')) {
+            const btn = e.target.closest('.share-option');
+            const shareType = btn.dataset.share;
+            const postUrl = window.location.origin + '/post/' + currentPostId;
+            const postTitle = 'Check out this post!';
+
+            switch(shareType) {
+                case 'facebook':
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
+                    break;
+                case 'twitter':
+                    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(postTitle)}`, '_blank', 'width=600,height=400');
+                    break;
+                case 'whatsapp':
+                    window.open(`https://wa.me/?text=${encodeURIComponent(postTitle + ' ' + postUrl)}`, '_blank');
+                    break;
+                case 'copy':
+                    navigator.clipboard.writeText(postUrl).then(() => {
+                        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Link Copied!';
+                        setTimeout(() => {
+                            btn.innerHTML = '<i class="bi bi-clipboard me-2"></i>Copy Link';
+                        }, 2000);
+                    });
+                    break;
+            }
+
+            // Update share count
+            const shareBtn = document.querySelector(`.share-btn[data-post-id="${currentPostId}"]`);
+            updateShareCount(currentPostId, shareBtn);
+            
+            // Close modal
+            if (shareModalInstance) {
+                shareModalInstance.hide();
+            }
+        }
+    });
+
+    function showCustomShareModal() {
+        if (shareModalInstance) {
+            shareModalInstance.show();
+        }
+    }
+
+    function updateShareCount(postId, btn) {
+        $.ajax({
+            url: '/posts/' + postId + '/share',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    const actionCount = btn.querySelector('.action-count');
+                    actionCount.textContent = response.shares_count;
+                    
+                    // Visual feedback
+                    btn.classList.add('text-success');
+                    setTimeout(() => {
+                        btn.classList.remove('text-success');
+                    }, 1000);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating share count:', error);
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.share-btn {
+    transition: all 0.3s ease;
+}
+
+.share-btn.text-success {
+    transform: scale(1.1);
+}
+
+.share-option {
+    text-align: left;
+    padding: 12px 20px;
+    font-weight: 500;
+}
+
+.share-option:hover {
+    transform: translateX(5px);
+    transition: transform 0.2s ease;
+}
+
+#shareModal .modal-content {
+    border-radius: 15px;
+}
+
+#shareModal .modal-header {
+    padding: 20px 20px 10px 20px;
+}
+
+#shareModal .modal-body {
+    padding: 10px 20px 20px 20px;
+}
+</style>
