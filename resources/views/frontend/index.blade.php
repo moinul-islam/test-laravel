@@ -195,70 +195,80 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Scroll to active item ONLY on page load — not again
+    // Auto scroll active item to center
     const scrollContainer = document.querySelector('.scroll-container');
     const activeItem = document.querySelector('.nav-item-custom.active');
-
+    
     if (scrollContainer && activeItem) {
         scrollToCenter(activeItem, scrollContainer);
     }
     
-
-    // Infinite Scroll
+    // Handle navigation clicks and scroll to center
+    document.querySelectorAll('.nav-item-custom').forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            document.querySelectorAll('.nav-item-custom').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Add active class to clicked item (if not a dropdown)
+            if (!this.classList.contains('dropdown-toggle')) {
+                this.classList.add('active');
+                if (scrollContainer) {
+                    scrollToCenter(this, scrollContainer);
+                }
+            }
+        });
+    });
+    
+    // Variables for load more functionality
     let currentPage = parseInt(document.getElementById('current-page')?.value || 1);
     let isLoading = false;
     const postsContainer = document.getElementById('posts-container');
     const loadingSpinner = document.getElementById('loading-spinner');
     let hasMorePages = document.getElementById('has-more-pages')?.value === '1';
-
-    if (postsContainer && hasMorePages) {
-        window.addEventListener('scroll', function () {
-
-            if (isLoading) return;
-
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-                loadMorePosts();
+    
+    // Get current URL path and category parameter
+    const currentPath = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    // Get category from path (e.g., /international/offer) or query parameter
+    const pathParts = currentPath.split('/').filter(part => part);
+    const categoryParam = pathParts.length > 1 ? pathParts[1] : urlParams.get('category');
+    
+    // Only set up load more if we have the necessary elements and are on a location-based page
+    // Allow category filtering in URL (e.g., /international/offer)
+    if (postsContainer && currentPath && !currentPath.includes('/posts/load-more')) {
+        // Auto load on scroll
+        window.addEventListener('scroll', function() {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+                if (!isLoading && hasMorePages && loadingSpinner) {
+                    loadMorePosts();
+                }
             }
         });
-    }
-
-    function loadMorePosts() {
-        if (isLoading) return;
-        isLoading = true;
-
-        loadingSpinner.style.display = 'block';
-        currentPage++;
-
-        fetch(`?page=${currentPage}`)
-            .then(res => res.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, "text/html");
-                const newPosts = doc.querySelector('#posts-container').innerHTML;
-
-                postsContainer.insertAdjacentHTML('beforeend', newPosts);
-
-                hasMorePages = doc.querySelector('#has-more-pages')?.value === '1';
-
-                if (!hasMorePages) loadingSpinner.remove();
-                loadingSpinner.style.display = 'none';
-                isLoading = false;
-            });
+        
+       
     }
 });
 
 function scrollToCenter(element, container) {
+    if (!element || !container) return;
+    
     const elementRect = element.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
-
+    
+    // Calculate the position to scroll to center the element
+    const elementCenter = elementRect.left + elementRect.width / 2;
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    const scrollOffset = elementCenter - containerCenter;
+    
+    // Smooth scroll to center
     container.scrollBy({
-        left: (elementRect.left + elementRect.width / 2) - (containerRect.left + containerRect.width / 2),
+        left: scrollOffset,
         behavior: 'smooth'
     });
 }
 </script>
-
 
 @endsection
 
