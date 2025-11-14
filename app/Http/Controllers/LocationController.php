@@ -17,51 +17,41 @@ class LocationController extends Controller
 
 
     public function usernameWiseHome($username)
-{
-    $not_user = User::where('username', $username)->first();
-    
-    if($not_user){
-        // ইউজার পাওয়া গেছে - তার posts দেখান
-        $user = User::where('username', $username)->first();
+    {
+        $not_user = User::where('username', $username)->first();
         
-        if (!$user) {
-            return redirect('/');
-        }
-        
-        $posts = Post::with(['user', 'category'])
-                    ->where('user_id', $user->id)
-                    ->latest()
-                    ->paginate(3);
-        
-        $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
-        
-        return view("dashboard", compact('posts', 'user', 'categories'));
-    } else {
-        // Location based posts
-        $path = $username;
-        
-        // Initialize user IDs based on location
-        $userIds = [];
-        
-        if ($path == 'international') {
-            $userIds = User::where(function($query) {
-                $query->where('phone_verified', 0)
-                      ->orWhere('email_verified', 0);
-            })->pluck('id')->toArray();
+        if($not_user){
+            // ইউজার পাওয়া গেছে - তার posts দেখান
+            $user = User::where('username', $username)->first();
+            
+            if (!$user) {
+                return redirect('/');
+            }
+            
+            $posts = Post::with(['user', 'category'])
+                        ->where('user_id', $user->id)
+                        ->latest()
+                        ->paginate(3);
+            
+            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
+            
+            return view("dashboard", compact('posts', 'user', 'categories'));
         } else {
-            $country = \App\Models\Country::where('username', $path)->first();
-            if ($country) {
-                $userIds = User::where('country_id', $country->id)
-                    ->where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })
-                    ->pluck('id')
-                    ->toArray();
+            // Location based posts
+            $path = $username;
+            
+            // Initialize user IDs based on location
+            $userIds = [];
+            
+            if ($path == 'international') {
+                $userIds = User::where(function($query) {
+                    $query->where('phone_verified', 0)
+                          ->orWhere('email_verified', 0);
+                })->pluck('id')->toArray();
             } else {
-                $city = \App\Models\City::where('username', $path)->first();
-                if ($city) {
-                    $userIds = User::where('city_id', $city->id)
+                $country = \App\Models\Country::where('username', $path)->first();
+                if ($country) {
+                    $userIds = User::where('country_id', $country->id)
                         ->where(function($query) {
                             $query->where('phone_verified', 0)
                                   ->orWhere('email_verified', 0);
@@ -69,31 +59,58 @@ class LocationController extends Controller
                         ->pluck('id')
                         ->toArray();
                 } else {
-                    $userIds = User::where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })->pluck('id')->toArray();
+                    $city = \App\Models\City::where('username', $path)->first();
+                    if ($city) {
+                        $userIds = User::where('city_id', $city->id)
+                            ->where(function($query) {
+                                $query->where('phone_verified', 0)
+                                      ->orWhere('email_verified', 0);
+                            })
+                            ->pluck('id')
+                            ->toArray();
+                    } else {
+                        $userIds = User::where(function($query) {
+                            $query->where('phone_verified', 0)
+                                  ->orWhere('email_verified', 0);
+                        })->pluck('id')->toArray();
+                    }
                 }
             }
+            
+            // Posts fetch করুন
+            $postsQuery = Post::with(['user', 'category'])
+                        ->whereIn('user_id', $userIds);
+            
+            // ✅ Category filter যোগ করুন
+            if (request()->has('category') && request()->get('category')) {
+                $categorySlug = request()->get('category');
+                $category = Category::where('slug', $categorySlug)
+                                  ->where('cat_type', 'post')
+                                  ->first();
+                
+                if ($category) {
+                    // Get all descendant category IDs
+                    $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+                    $categoryIds[] = $category->id;
+                    
+                    // Filter posts by category
+                    $postsQuery->whereIn('category_id', $categoryIds);
+                }
+            }
+            
+            $posts = $postsQuery->latest()->paginate(5);
+            
+            // ✅ AJAX request এর জন্য
+            if (request()->ajax()) {
+                return response()->json([
+                    'posts' => view('frontend.posts-partial', compact('posts'))->render(),
+                    'hasMore' => $posts->hasMorePages()
+                ]);
+            }
+            
+            return view("frontend.index", compact('posts'));
         }
-        
-        // Posts fetch করুন
-        $posts = Post::with(['user', 'category'])
-                    ->whereIn('user_id', $userIds)
-                    ->latest()
-                    ->paginate(5);
-        
-        // ✅ AJAX request এর জন্য
-        if (request()->ajax()) {
-            return response()->json([
-                'posts' => view('frontend.posts-partial', compact('posts'))->render(),
-                'hasMore' => $posts->hasMorePages()
-            ]);
-        }
-        
-        return view("frontend.index", compact('posts'));
     }
-}
 
     public function getCities($countryId)
     {
@@ -105,30 +122,30 @@ class LocationController extends Controller
     }
 
     public function follow(User $user)
-{
-    $authUser = Auth::user();
-    if ($authUser->id === $user->id) {
-        return response()->json(['error' => 'You cannot follow yourself.']);
+    {
+        $authUser = Auth::user();
+        if ($authUser->id === $user->id) {
+            return response()->json(['error' => 'You cannot follow yourself.']);
+        }
+
+        if (!$authUser->following->contains($user->id)) {
+            $authUser->following()->attach($user->id);
+        }
+
+        return response()->json(['success' => true]);
     }
 
-    if (!$authUser->following->contains($user->id)) {
-        $authUser->following()->attach($user->id);
+    public function unfollow(User $user)
+    {
+        $authUser = Auth::user();
+        if ($authUser->id === $user->id) {
+            return response()->json(['error' => 'You cannot unfollow yourself.']);
+        }
+
+        $authUser->following()->detach($user->id);
+
+        return response()->json(['success' => true]);
     }
-
-    return response()->json(['success' => true]);
-}
-
-public function unfollow(User $user)
-{
-    $authUser = Auth::user();
-    if ($authUser->id === $user->id) {
-        return response()->json(['error' => 'You cannot unfollow yourself.']);
-    }
-
-    $authUser->following()->detach($user->id);
-
-    return response()->json(['success' => true]);
-}
 
 
 
@@ -302,5 +319,24 @@ public function unfollow(User $user)
     public function destroy(string $id)
     {
         //
+    }
+    
+    /**
+     * Get all descendant category IDs recursively
+     */
+    private function getAllDescendantCategoryIds($categoryId)
+    {
+        $ids = [];
+        
+        // Get direct children
+        $children = Category::where('parent_cat_id', $categoryId)->pluck('id')->toArray();
+        
+        foreach ($children as $childId) {
+            $ids[] = $childId;
+            // Recursively get descendants of each child
+            $ids = array_merge($ids, $this->getAllDescendantCategoryIds($childId));
+        }
+        
+        return $ids;
     }
 }

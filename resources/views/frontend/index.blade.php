@@ -101,11 +101,21 @@
                 }
             @endphp
 
+            @php
+                $selectedCategorySlug = request()->get('category');
+            @endphp
+
+            {{-- All Posts Link --}}
+            <a href="{{ url('/' . $visitorLocationPath) }}" 
+               class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
+                <span>All Posts</span>
+            </a>
+
             @if($navCategories->count() > 0)
                 {{-- Show determined post categories --}}
                 @foreach($navCategories as $navCat)
-                    <a href="{{ route('products.category', [$visitorLocationPath, $navCat->slug]) }}" 
-                    class="nav-item-custom {{ isset($category) && $category->id == $navCat->id ? 'active' : '' }}">
+                    <a href="{{ url('/' . $visitorLocationPath . '?category=' . $navCat->slug) }}" 
+                    class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
                         <span>{{ $navCat->category_name }}</span>
                     </a>
                 @endforeach
@@ -132,7 +142,7 @@
                             <ul class="dropdown-menu">
                                 @foreach($subCategories as $subCat)
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('products.category', [$visitorLocationPath, $subCat->slug]) }}">
+                                        <a class="dropdown-item" href="{{ url('/' . $visitorLocationPath . '?category=' . $subCat->slug) }}">
                                             {{ $subCat->category_name }}
                                         </a>
                                     </li>
@@ -141,7 +151,8 @@
                         </div>
                     @else
                         {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
-                        <a href="{{ route('products.category', [$visitorLocationPath, $parentCat->slug]) }}" class="nav-item-custom">
+                        <a href="{{ url('/' . $visitorLocationPath . '?category=' . $parentCat->slug) }}" 
+                           class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
                             <!-- @if($parentCat->image)
                                 <img src="{{ asset('icon/' . $parentCat->image) }}" alt="{{ $parentCat->category_name }}" style="width:24px; height:24px; object-fit:contain; margin-right:6px;">
                             @endif -->
@@ -180,6 +191,88 @@
 </div>
 
 @include('frontend.location')
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables for load more functionality
+    let currentPage = parseInt(document.getElementById('current-page')?.value || 1);
+    let isLoading = false;
+    const postsContainer = document.getElementById('posts-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let hasMorePages = document.getElementById('has-more-pages')?.value === '1';
+    
+    // Get current URL path and category parameter
+    const currentPath = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get('category');
+    
+    // Only set up load more if we have the necessary elements and are on a location-based page
+    if (postsContainer && currentPath && !currentPath.includes('/posts/load-more') && !currentPath.match(/^\/[^\/]+\/[^\/]+$/)) {
+        // Auto load on scroll
+        window.addEventListener('scroll', function() {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+                if (!isLoading && hasMorePages && loadingSpinner) {
+                    loadMorePosts();
+                }
+            }
+        });
+        
+        function loadMorePosts() {
+            if (isLoading || !hasMorePages) return;
+            
+            isLoading = true;
+            currentPage++;
+            
+            // Show loading spinner
+            if (loadingSpinner) loadingSpinner.style.display = 'block';
+            
+            // Build data with category parameter
+            let data = { page: currentPage };
+            if (categoryParam) {
+                data.category = categoryParam;
+            }
+            
+            $.ajax({
+                url: currentPath,
+                method: 'GET',
+                data: data,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    // Hide loading spinner
+                    if (loadingSpinner) loadingSpinner.style.display = 'none';
+                    
+                    // Append new posts
+                    if (postsContainer && response.posts) {
+                        postsContainer.insertAdjacentHTML('beforeend', response.posts);
+                    }
+                    
+                    // Update has more pages
+                    hasMorePages = response.hasMore;
+                    if (!response.hasMore) {
+                        if (document.getElementById('has-more-pages')) {
+                            document.getElementById('has-more-pages').value = '0';
+                        }
+                        if (loadingSpinner) loadingSpinner.style.display = 'none';
+                    }
+                    
+                    isLoading = false;
+                },
+                error: function(xhr, status, error) {
+                    if (loadingSpinner) loadingSpinner.style.display = 'none';
+                    console.error('Error loading posts:', error);
+                    isLoading = false;
+                    currentPage--; // Revert page increment on error
+                }
+            });
+        }
+        
+        // Make function available globally if needed
+        window.loadMorePosts = loadMorePosts;
+    }
+});
+</script>
 
 @endsection
 
