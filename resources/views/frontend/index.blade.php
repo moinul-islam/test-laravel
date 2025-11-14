@@ -247,56 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        function loadMorePosts() {
-            if (isLoading || !hasMorePages) return;
-            
-            isLoading = true;
-            currentPage++;
-            
-            // Show loading spinner
-            if (loadingSpinner) loadingSpinner.style.display = 'block';
-            
-            // Build data - category is already in URL path, so no need to add to data
-            let data = { page: currentPage };
-            
-            $.ajax({
-                url: currentPath,
-                method: 'GET',
-                data: data,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    // Hide loading spinner
-                    if (loadingSpinner) loadingSpinner.style.display = 'none';
-                    
-                    // Append new posts
-                    if (postsContainer && response.posts) {
-                        postsContainer.insertAdjacentHTML('beforeend', response.posts);
-                    }
-                    
-                    // Update has more pages
-                    hasMorePages = response.hasMore;
-                    if (!response.hasMore) {
-                        if (document.getElementById('has-more-pages')) {
-                            document.getElementById('has-more-pages').value = '0';
-                        }
-                        if (loadingSpinner) loadingSpinner.style.display = 'none';
-                    }
-                    
-                    isLoading = false;
-                },
-                error: function(xhr, status, error) {
-                    if (loadingSpinner) loadingSpinner.style.display = 'none';
-                    console.error('Error loading posts:', error);
-                    isLoading = false;
-                    currentPage--; // Revert page increment on error
-                }
-            });
-        }
-        
-        // Make function available globally if needed
-        window.loadMorePosts = loadMorePosts;
+       
     }
 });
 
