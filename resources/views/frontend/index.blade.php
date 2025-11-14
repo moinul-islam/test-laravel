@@ -102,7 +102,8 @@
             @endphp
 
             @php
-                $selectedCategorySlug = request()->get('category');
+                // Check if category is set from path parameter or query parameter
+                $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
             @endphp
 
             {{-- All Posts Link --}}
@@ -114,7 +115,7 @@
             @if($navCategories->count() > 0)
                 {{-- Show determined post categories --}}
                 @foreach($navCategories as $navCat)
-                    <a href="{{ url('/' . $visitorLocationPath . '?category=' . $navCat->slug) }}" 
+                    <a href="{{ url('/' . $visitorLocationPath . '/' . $navCat->slug) }}" 
                     class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
                         <span>{{ $navCat->category_name }}</span>
                     </a>
@@ -142,7 +143,7 @@
                             <ul class="dropdown-menu">
                                 @foreach($subCategories as $subCat)
                                     <li>
-                                        <a class="dropdown-item" href="{{ url('/' . $visitorLocationPath . '?category=' . $subCat->slug) }}">
+                                        <a class="dropdown-item" href="{{ url('/' . $visitorLocationPath . '/' . $subCat->slug) }}">
                                             {{ $subCat->category_name }}
                                         </a>
                                     </li>
@@ -151,7 +152,7 @@
                         </div>
                     @else
                         {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
-                        <a href="{{ url('/' . $visitorLocationPath . '?category=' . $parentCat->slug) }}" 
+                        <a href="{{ url('/' . $visitorLocationPath . '/' . $parentCat->slug) }}" 
                            class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
                             <!-- @if($parentCat->image)
                                 <img src="{{ asset('icon/' . $parentCat->image) }}" alt="{{ $parentCat->category_name }}" style="width:24px; height:24px; object-fit:contain; margin-right:6px;">
@@ -194,6 +195,32 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto scroll active item to center
+    const scrollContainer = document.querySelector('.scroll-container');
+    const activeItem = document.querySelector('.nav-item-custom.active');
+    
+    if (scrollContainer && activeItem) {
+        scrollToCenter(activeItem, scrollContainer);
+    }
+    
+    // Handle navigation clicks and scroll to center
+    document.querySelectorAll('.nav-item-custom').forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            document.querySelectorAll('.nav-item-custom').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Add active class to clicked item (if not a dropdown)
+            if (!this.classList.contains('dropdown-toggle')) {
+                this.classList.add('active');
+                if (scrollContainer) {
+                    scrollToCenter(this, scrollContainer);
+                }
+            }
+        });
+    });
+    
     // Variables for load more functionality
     let currentPage = parseInt(document.getElementById('current-page')?.value || 1);
     let isLoading = false;
@@ -204,10 +231,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get current URL path and category parameter
     const currentPath = window.location.pathname;
     const urlParams = new URLSearchParams(window.location.search);
-    const categoryParam = urlParams.get('category');
+    // Get category from path (e.g., /international/offer) or query parameter
+    const pathParts = currentPath.split('/').filter(part => part);
+    const categoryParam = pathParts.length > 1 ? pathParts[1] : urlParams.get('category');
     
     // Only set up load more if we have the necessary elements and are on a location-based page
-    if (postsContainer && currentPath && !currentPath.includes('/posts/load-more') && !currentPath.match(/^\/[^\/]+\/[^\/]+$/)) {
+    // Allow category filtering in URL (e.g., /international/offer)
+    if (postsContainer && currentPath && !currentPath.includes('/posts/load-more')) {
         // Auto load on scroll
         window.addEventListener('scroll', function() {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
@@ -226,11 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading spinner
             if (loadingSpinner) loadingSpinner.style.display = 'block';
             
-            // Build data with category parameter
+            // Build data - category is already in URL path, so no need to add to data
             let data = { page: currentPage };
-            if (categoryParam) {
-                data.category = categoryParam;
-            }
             
             $.ajax({
                 url: currentPath,
@@ -272,6 +299,24 @@ document.addEventListener('DOMContentLoaded', function() {
         window.loadMorePosts = loadMorePosts;
     }
 });
+
+function scrollToCenter(element, container) {
+    if (!element || !container) return;
+    
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Calculate the position to scroll to center the element
+    const elementCenter = elementRect.left + elementRect.width / 2;
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    const scrollOffset = elementCenter - containerCenter;
+    
+    // Smooth scroll to center
+    container.scrollBy({
+        left: scrollOffset,
+        behavior: 'smooth'
+    });
+}
 </script>
 
 @endsection

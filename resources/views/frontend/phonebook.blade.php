@@ -116,10 +116,7 @@
                 </div>
             </div>
             
-            <!-- <center class="mb-3">
-                <a href="{{ route('discount_wise_product',$visitorLocationPath) }}">@t('Discount & Offers')</a> | 
-                <a href="{{ route('notice',$visitorLocationPath) }}">@t('Notice')</a>     
-            </center> -->
+            
             
             <div class="row g-3 g-md-4">
                 @php

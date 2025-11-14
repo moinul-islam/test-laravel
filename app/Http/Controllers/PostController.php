@@ -492,6 +492,11 @@ public function showByCategory(Request $request, $username, $slug)
     if (!$category) {
         abort(404, 'Category not found');
     }
+    
+    // ✅ যদি category post type হয়, তাহলে home page-এ forward করো
+    if ($category->cat_type == 'post') {
+        return app(LocationController::class)->usernameWiseHome($username, $slug);
+    }
    
     // Get all descendant category IDs
     $categoryIds = $this->getAllDescendantCategoryIds($category->id);

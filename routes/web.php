@@ -23,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::post('/review/store',  [ReviewController::class, 'store'])->name('review.store');
-Route::get('/{username}/notice',  [ProductController::class, 'notice'])->name('notice');
+// Route::get('/{username}/notice',  [ProductController::class, 'notice'])->name('notice');
 Route::get('/{username}/discount-wise-product',  [ProductController::class, 'discount_wise_product'])->name('discount_wise_product');
 
 Route::post('/review/update/{id}',  [ReviewController::class, 'update'])->name('review.update')->middleware('auth');
@@ -199,5 +199,8 @@ Route::post('/account-check', [ProfileController::class, 'accountCheck'])->name(
 
 require __DIR__.'/auth.php';
 // agula sob somoy niche thakbe
+// Products category route - check first if it's a product/service category
 Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
+// Home page with category filter - will handle post categories
+Route::get('/{username}/{category}', [LocationController::class, 'usernameWiseHome'])->name('home.category');
 Route::get('/{username}',  [LocationController::class, 'usernameWiseHome'])->name('profile.show');

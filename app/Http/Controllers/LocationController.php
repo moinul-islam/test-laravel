@@ -16,7 +16,7 @@ class LocationController extends Controller
 {
 
 
-    public function usernameWiseHome($username)
+    public function usernameWiseHome($username, $categorySlug = null)
     {
         $not_user = User::where('username', $username)->first();
         
@@ -81,21 +81,33 @@ class LocationController extends Controller
             $postsQuery = Post::with(['user', 'category'])
                         ->whereIn('user_id', $userIds);
             
-            // ✅ Category filter যোগ করুন
-            if (request()->has('category') && request()->get('category')) {
-                $categorySlug = request()->get('category');
+            // ✅ Category filter যোগ করুন - path parameter বা query parameter থেকে
+            $category = null;
+            if ($categorySlug) {
+                // Path parameter থেকে category - শুধুমাত্র post type
                 $category = Category::where('slug', $categorySlug)
                                   ->where('cat_type', 'post')
                                   ->first();
                 
-                if ($category) {
-                    // Get all descendant category IDs
-                    $categoryIds = $this->getAllDescendantCategoryIds($category->id);
-                    $categoryIds[] = $category->id;
-                    
-                    // Filter posts by category
-                    $postsQuery->whereIn('category_id', $categoryIds);
+                // যদি category না পাওয়া যায়, 404
+                if (!$category) {
+                    abort(404, 'Category not found');
                 }
+            } elseif (request()->has('category') && request()->get('category')) {
+                // Query parameter থেকে category (backward compatibility)
+                $categorySlug = request()->get('category');
+                $category = Category::where('slug', $categorySlug)
+                                  ->where('cat_type', 'post')
+                                  ->first();
+            }
+            
+            if ($category) {
+                // Get all descendant category IDs
+                $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+                $categoryIds[] = $category->id;
+                
+                // Filter posts by category
+                $postsQuery->whereIn('category_id', $categoryIds);
             }
             
             $posts = $postsQuery->latest()->paginate(5);
@@ -108,7 +120,7 @@ class LocationController extends Controller
                 ]);
             }
             
-            return view("frontend.index", compact('posts'));
+            return view("frontend.index", compact('posts', 'category'));
         }
     }
 
