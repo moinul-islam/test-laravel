@@ -104,12 +104,6 @@
 {{-- Posts Container --}}
 <div class="container mt-4">
 
-@php
-$posts = \App\Models\Post::where('user_id', $user->id)
-    ->with(['user', 'category'])
-    ->latest()
-    ->paginate(10);
-@endphp
 
     <!-- Horizontal Scrollable Navigation -->
     <div class="scroll-container mb-4">

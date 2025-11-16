@@ -57,7 +57,7 @@ class LocationController extends Controller
             }
         }
         
-        $posts = $postsQuery->latest()->paginate(10);
+        $posts = $postsQuery->latest()->paginate(3);
         
         // AJAX request এর জন্য
         if (request()->ajax()) {
