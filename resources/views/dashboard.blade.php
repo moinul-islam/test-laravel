@@ -120,7 +120,6 @@ $posts = \App\Models\Post::where('user_id', $user->id)
             <span><i class="bi bi-cart"></i></span>
             <span>Product & Services</span>
         </a>
-
 @php
     // User এর post করা সব unique categories খুঁজুন (শুধু post type)
     $userPostCategoryIds = \App\Models\Post::where('user_id', $user->id)
@@ -149,8 +148,10 @@ $posts = \App\Models\Post::where('user_id', $user->id)
                                 ->whereIn('id', $userPostCategoryIds)
                                 ->get();
         }
-    } else {
-        // কোনো category select না থাকলে → user এর সব parent categories
+    }
+    
+    // যদি কোনো category navigation না থাকে, তাহলে parent categories দেখান
+    if($navCategories->isEmpty()) {
         $parentCategoryIds = $userCategories->pluck('parent_cat_id')->filter()->unique();
         $navCategories = \App\Models\Category::whereIn('id', $parentCategoryIds)
                             ->where('cat_type', 'post')
