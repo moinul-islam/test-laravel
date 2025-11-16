@@ -100,194 +100,486 @@
    {{-- Include Profile Card Partial for Guest Users --}}
    @include('frontend.profile-card')
    @endguest
-   
-
-
-
-
-
-
-   {{-- Posts Container --}}
-<div class="container mt-4">
-
-
-
-
-@php
-$posts = \App\Models\Post::where('user_id', $user->id)
-    ->with(['user', 'category'])
-    ->latest()
-    ->paginate(10); // get() এর বদলে paginate()
-@endphp
-    
-    @php
-           $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
-       ->orderBy('name') // অথবা যেকোনো column দিয়ে sort করতে চান
-       ->get();
-           
-           // $visitorLocationPath থেকে current location খুঁজে বের করুন
-           $selectedCountry = null;
-           $selectedCity = null;
-           $cities = collect();
-           
-           if(isset($visitorLocationPath) && $visitorLocationPath) {
-               // প্রথমে check করুন এটা country কিনা
-               $selectedCountry = App\Models\Country::where('username', $visitorLocationPath)->first();
-               
-               if($selectedCountry) {
-                   // এটা country, তাহলে এর cities load করুন
-                   $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                           ->orderBy('name', 'asc')
-                                           ->get();
-               } else {
-                   // না হলে check করুন এটা city কিনা
-                   $selectedCity = App\Models\City::where('username', $visitorLocationPath)->first();
-                   
-                   if($selectedCity) {
-                       // City পেলে এর country খুঁজুন
-                       $selectedCountry = App\Models\Country::find($selectedCity->country_id);
-                       
-                       // এই country এর সব cities load করুন
-                       if($selectedCountry) {
-                           $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                                   ->orderBy('name', 'asc')
-                                                   ->get();
-                       }
-                   }
-               }
-           }
-       @endphp
-
-    <!-- Horizontal Scrollable Navigation -->
-    <div class="scroll-container mb-4">
-        <div class="scroll-content">
-            
-        {{-- Replace the navigation section with this updated code --}}
-
-{{-- Product & Services Link --}}
-<a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-    <span><i class="bi bi-cart"></i></span>
-    <span>Product & Services</span>
-</a>
-
-@php
-    // Determine which categories to show in navigation
-    $navCategories = collect();
-    
-    if(isset($category)) {
-        // শুধু post type ধরবে
-        if($category->parent_cat_id) {
-            // যদি child হয় তাহলে parent এর child গুলো নেবে
-            $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
-                                ->where('cat_type', 'post')
-                                ->get();
-        } 
-        // যদি parent হয় তাহলে এর child নেবে
-        else if($category->cat_type == 'post') {
-            $navCategories = \App\Models\Category::where('parent_cat_id', $category->id)
-                                ->where('cat_type', 'post')
-                                ->get();
+   <div class="">
+      @php
+      // Get categories that have posts from this specific user
+      $userPostCategories = \App\Models\Post::where('user_id', $user->id)
+      ->with('category')
+      ->get()
+      ->pluck('category')
+      ->unique('id')
+      ->filter(); // Remove null categories
+      @endphp
+      <style>
+         .scroll-container {
+         position: sticky;
+         top: 0;
+         z-index: 1000;
+         background: #fff;
+         /* border-bottom: 1px solid #e0e0e0; */
+         }
+         /* Dark mode background */
+        [data-bs-theme="dark"] .scroll-container {
+            background: #212529;
         }
-    }
-@endphp
+         .scroll-content {
+         display: flex;
+         overflow-x: auto;
+         white-space: nowrap;
+         padding: 10px 0;
+         gap: 5px;
+         scrollbar-width: none;
+         -ms-overflow-style: none;
+         }
+         .scroll-content::-webkit-scrollbar {
+         display: none;
+         }
+         .nav-item-custom {
+         display: inline-flex;
+         align-items: center;
+         padding: 4px 10px 6px 10px;
+         margin-right: 10px;
+         text-decoration: none;
+         color: #333;
+         border: 1px solid #ddd;
+         border-radius: 8px;
+         white-space: nowrap;
+         transition: all 0.3s ease;
+         min-width: fit-content;
+         }
+         .nav-item-custom.active {
+         background-color: #c6e0fcff;
+         color: #007bff;
+         border-radius: 8px;
+         }
+         .grid-section {
+         scroll-margin-top: 120px; /* এখানে 80px হচ্ছে header এর height */
+         }
+      </style>
+      <div class="scroll-container pt-5 mb-5">
+         <div class="scroll-content">
 
-@php
-    // Check if category is set from path parameter or query parameter
-    $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
-@endphp
+            <a href="/dashboard" class="nav-item-custom category-link">
+                <span>All Post</span>
+            </a>
 
-{{-- All Posts Link - এখানে পরিবর্তন --}}
-<a href="{{ url('/' . $user->username) }}" 
-   class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
-    <span>All Posts</span>
-</a>
-
-@if($navCategories->count() > 0)
-    {{-- Show determined post categories --}}
-    @foreach($navCategories as $navCat)
-        <a href="{{ url('/' . $user->username . '/' . $navCat->slug) }}" 
-        class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
-            <span>{{ $navCat->category_name }}</span>
-        </a>
-    @endforeach
-@else
-    {{-- Show all parent post categories --}}
+            @foreach($userPostCategories as $category)
+            <a href="#{{ $category->slug }}" class="nav-item-custom category-link" data-category="{{ $category->id }}" onclick="scrollToCategory('{{ $category->id }}')">
+            <span>{{ $category->category_name }}</span>
+            </a>
+            @endforeach
+         </div>
+      </div>
+      <script>
+         function scrollToCategory(categoryId) {
+             // Remove active class from all category links
+             document.querySelectorAll('.category-link').forEach(link => {
+                 link.classList.remove('active');
+             });
+            
+             // Add active class to clicked category
+             const activeLink = document.querySelector(`[data-category="${categoryId}"]`);
+             if (activeLink) {
+                 activeLink.classList.add('active');
+                 centerActiveLink(activeLink);
+             }
+            
+             // Smooth scroll to category
+             document.getElementById('category-' + categoryId).scrollIntoView({
+                 behavior: 'smooth'
+             });
+         }
+         
+         // Function to center the active link in the horizontal scroll container
+         function centerActiveLink(activeLink) {
+             const scrollContainer = document.querySelector('.scroll-content');
+             const containerWidth = scrollContainer.clientWidth;
+             const linkLeft = activeLink.offsetLeft;
+             const linkWidth = activeLink.offsetWidth;
+             
+             // Calculate the scroll position to center the link
+             const scrollPosition = linkLeft - (containerWidth / 2) + (linkWidth / 2);
+             
+             // Smooth scroll to center the active link
+             scrollContainer.scrollTo({
+                 left: scrollPosition,
+                 behavior: 'smooth'
+             });
+         }
+         
+         // Intersection Observer to automatically set active category based on scroll
+         const observerOptions = {
+             root: null,
+             rootMargin: '-100px 0px -50% 0px',
+             threshold: 0
+         };
+         
+         const observer = new IntersectionObserver((entries) => {
+             entries.forEach(entry => {
+                 if (entry.isIntersecting) {
+                     const categoryId = entry.target.id.replace('category-', '');
+                    
+                     // Remove active class from all
+                     document.querySelectorAll('.category-link').forEach(link => {
+                         link.classList.remove('active');
+                     });
+                    
+                     // Add active class to current category
+                     const activeLink = document.querySelector(`[data-category="${categoryId}"]`);
+                     if (activeLink) {
+                         activeLink.classList.add('active');
+                         // Center the active link in scroll container
+                         centerActiveLink(activeLink);
+                     }
+                 }
+             });
+         }, observerOptions);
+         
+         // Observe all category sections
+         document.addEventListener('DOMContentLoaded', function() {
+             document.querySelectorAll('[id^="category-"]').forEach(section => {
+                 observer.observe(section);
+             });
+         });
+         
+         function sortBy(type) {
+             console.log('Sorting by:', type);
+             // Add your sorting logic here
+         }
+      </script>
     @php
-        $parentCategories = \App\Models\Category::where('cat_type', 'post')
-                            ->whereNull('parent_cat_id')
-                            ->get();
+        $new_category_posts = \App\Models\Post::where('user_id', $user->id)
+        ->whereNotNull('new_category')
+        ->latest()
+        ->get();
+
+        $discount_wise_produts = \App\Models\Post::where('user_id', $user->id)
+        ->whereNotNull('discount_price')
+        ->latest()
+        ->get();
     @endphp
 
-    @foreach($parentCategories as $parentCat)
-        @php
-            $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
-                                ->where('cat_type', 'post')
-                                ->get();
-        @endphp
-        
-        @if($subCategories->count() > 0)
-            <div class="dropdown nav-item-custom">
-                <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span>{{ $parentCat->category_name }}</span>
-                </a>
-                <ul class="dropdown-menu">
-                    @foreach($subCategories as $subCat)
-                        <li>
-                            <a class="dropdown-item" href="{{ url('/' . $user->username . '/' . $subCat->slug) }}">
-                                {{ $subCat->category_name }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
+    @if($discount_wise_produts->count() > 0)
+    <section class="grid-section mb-4">
+        <div class="">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4 class="fw-bold text-dark mb-0">Discount</h4>
+                </div>
             </div>
-        @else
-            {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
-            <a href="{{ url('/' . $user->username . '/' . $parentCat->slug) }}" 
-               class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
-                <span>
-                    <i class="bi {{ $parentCat->image }}"></i>
-                </span>
-                <span>{{ $parentCat->category_name }}</span>
-            </a>
+            <div class="row g-3 g-md-4 mb-4">
+                @foreach($discount_wise_produts as $item)
+                @php
+                $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
+                $categoryType = $item->category->cat_type ?? 'product';
+                $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                    ->where('user_id', Auth::id())
+                                    ->exists();
+                @endphp
+                <div class="col-4">
+                    <div class="card shadow-sm border-0">
+
+                        @if($hasAlreadyReviewed)
+                            {{-- Rating Badge --}}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#reviewModal{{ $item->id }}" 
+                                style="cursor: pointer; z-index: 10; font-size:10px;">
+                                <div class="user-rating">
+                                    <div class="stars">
+                                        <span class="rating-text">
+                                            <i class="bi bi-star-fill"></i> 
+                                            {{ number_format($item->averageRating(), 1) }}
+                                            ({{ $item->reviewCount() }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </span>
+                            @endif
+
+                        @if($item->image)
+                        <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
+                        @else
+                        <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
+                        @endif
+                        <div class="card-body p-2">
+                                <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
+                                @if($item->price && $item->discount_price)
+                                    <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                    <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                                @elseif($item->price)
+                                    <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                                @else
+                                    <small class="price-tag text-success">No price</small>
+                                @endif
+                                <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
+                                @if(!$isOwnPost)
+                                onclick="addToCart(
+                                    '{{ $item->id }}', 
+                                    '{{ $item->title }}', 
+                                    '{{ $item->price ?? 0 }}', 
+                                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', 
+                                    '{{ $categoryType }}',
+                                    '{{ $item->discount_price ?? 0 }}'
+                                )"
+                                style="cursor: pointer;"
+                                data-category-type="{{ $categoryType }}"
+                                @endif>
+                                @if($categoryType == 'service')                            
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-calendar-check"></i>
+                                    @endif
+                                @else
+                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-cart-plus"></i>
+                                    @endif
+                                @endif
+                                </span>
+                            </div>
+                    </div>
+                </div>
+                @include('frontend.body.review-modal')
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
+    @foreach($userPostCategories as $category)
+        @php
+        $posts = \App\Models\Post::where('user_id', $user->id)
+            ->where('category_id', $category->id)
+            ->with(['user', 'category'])
+            ->latest()
+            ->get();
+        @endphp
+
+        @if($posts->count() > 0)
+        <section class="grid-section mb-4" id="category-{{ $category->id }}">
+            <div class="">
+                <!-- Category Title -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4 class="fw-bold text-dark mb-0">{{ $category->category_name }}</h4>
+                    </div>
+                </div>
+                <!-- Posts Section -->
+                <div class="row g-3 g-md-4 mb-4" id="posts-container-{{ $category->id }}">
+                    @foreach($posts as $item)
+                    
+                    @php
+                    $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
+                    $isUserProfile = !isset($item->title);
+                    $categoryType = $item->category->cat_type ?? 'product';
+                    @endphp
+                    <div class="col-4">
+                        <div class="card shadow-sm border-0">
+            
+                            @php
+                                $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                    ->where('user_id', Auth::id())
+                                    ->exists();
+                            @endphp
+                            @if($hasAlreadyReviewed)
+                            {{-- Rating Badge --}}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#reviewModal{{ $item->id }}" 
+                                style="cursor: pointer; z-index: 10; font-size:10px;">
+                                <div class="user-rating">
+                                    <div class="stars">
+                                        <span class="rating-text">
+                                            <i class="bi bi-star-fill"></i> 
+                                            {{ number_format($item->averageRating(), 1) }}
+                                            ({{ $item->reviewCount() }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </span>
+                            @endif
+                            @if($item->image)
+                            <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
+                            @else
+                            <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
+                            @endif
+                            <div class="card-body p-2">
+                                <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
+                                @if($item->price && $item->discount_price)
+                                    <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                    <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                                @elseif($item->price)
+                                    <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                                @else
+                                    <small class="price-tag text-success">No price</small>
+                                @endif
+                                <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
+                                @if(!$isOwnPost)
+                                onclick="addToCart(
+                                    '{{ $item->id }}', 
+                                    '{{ $item->title }}', 
+                                    '{{ $item->price ?? 0 }}', 
+                                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', 
+                                    '{{ $categoryType }}',
+                                    '{{ $item->discount_price ?? 0 }}'
+                                )"
+                                style="cursor: pointer;"
+                                data-category-type="{{ $categoryType }}"
+                                @endif>
+                                @if($categoryType == 'service')                            
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-calendar-check"></i>
+                                    @endif
+                                @elseif($categoryType == 'post')                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-eye"></i>
+                                    @endif
+                                @else                                
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-cart-plus"></i>
+                                    @endif
+                                @endif
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    @include('frontend.body.review-modal')
+
+                    @endforeach
+                </div>
+            </div>
+        </section>
         @endif
     @endforeach
-@endif
 
+
+
+
+    {{-- Others Section --}}
+    @if($new_category_posts->count() > 0)
+    <section class="grid-section mb-4">
+        <div class="">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4 class="fw-bold text-dark mb-0">Others</h4>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4 mb-4">
+                @foreach($new_category_posts as $item)
+                @php
+                $isOwnPost = auth()->check() && auth()->id() == $item->user_id;
+                $categoryType = $item->category->cat_type ?? 'product';
+                $hasAlreadyReviewed = \App\Models\Review::where('product_id', $item->id)
+                                    ->where('user_id', Auth::id())
+                                    ->exists();
+                @endphp
+                <div class="col-4">
+                    <div class="card shadow-sm border-0">
+
+                        @if($hasAlreadyReviewed)
+                            {{-- Rating Badge --}}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#reviewModal{{ $item->id }}" 
+                                style="cursor: pointer; z-index: 10; font-size:10px;">
+                                <div class="user-rating">
+                                    <div class="stars">
+                                        <span class="rating-text">
+                                            <i class="bi bi-star-fill"></i> 
+                                            {{ number_format($item->averageRating(), 1) }}
+                                            ({{ $item->reviewCount() }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </span>
+                            @endif
+
+                        @if($item->image)
+                        <img src="{{ asset('uploads/'.$item->image) }}" class="card-img-top" alt="Post Image">
+                        @else
+                        <img src="{{ asset('profile-image/no-image.jpeg') }}" class="card-img-top" alt="No Image">
+                        @endif
+                        <div class="card-body p-2">
+                                <h5 class="card-title mb-0">{{ $item->title ? Str::limit($item->title, 20) : 'No Title' }}</h5>
+                                @if($item->price && $item->discount_price)
+                                    <small class="price-tag text-danger text-decoration-line-through">{{ number_format($item->price, 2) }}</small>
+                                    <small class="price-tag text-success">{{ number_format($item->price - $item->discount_price, 2) }}</small>
+                                @elseif($item->price)
+                                    <small class="price-tag text-success">{{ number_format($item->price, 2) }}</small>
+                                @else
+                                    <small class="price-tag text-success">No price</small>
+                                @endif
+                                <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
+                                @if(!$isOwnPost)
+                                onclick="addToCart(
+                                    '{{ $item->id }}', 
+                                    '{{ $item->title }}', 
+                                    '{{ $item->price ?? 0 }}', 
+                                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}', 
+                                    '{{ $categoryType }}',
+                                    '{{ $item->discount_price ?? 0 }}'
+                                )"
+                                style="cursor: pointer;"
+                                data-category-type="{{ $categoryType }}"
+                                @endif>
+                                @if($categoryType == 'service')                            
+                                    @if($isOwnPost)
+                                        <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                    @else
+                                        <i class="bi bi-calendar-check"></i>
+                                    @endif
+                                @else
+                                
+                                @if($isOwnPost)
+                                    <i class="bi bi-pencil" onclick="editPost({{ $item->id }})" style="cursor: pointer;"></i>
+                                @else
+                                    <i class="bi bi-cart-plus"></i>
+                                @endif
+                                @endif
+                                </span>
+                            </div>
+                    </div>
+                </div>
+                @include('frontend.body.review-modal')
+                @endforeach
+            </div>
         </div>
-    </div>
-
-
-
-    <div class="row">
-        <div class="col-12" id="posts-container">
-            @include('frontend.posts-partial', ['posts' => $posts])
-        </div>
-    </div>
-    
-    {{-- Loading Spinner --}}
-    @if(isset($posts) && $posts->hasMorePages())
-    <div class="text-center my-4" id="loading-spinner" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2 text-muted">Loading more posts...</p>
-    </div>
-    
-    <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
-    <input type="hidden" id="current-page" value="1">
+    </section>
     @endif
-</div>
-
-
-
-
-
-
-
-
-
-
-
+      {{-- If user has no posts --}}
+      @if($userPostCategories->count() == 0)
+      <div class="container">
+         <div class="row">
+            <div class="col-12">
+               <div class="text-center py-5">
+                  <p class="text-muted">{{ $user->name }} has no posts yet!</p>
+               </div>
+            </div>
+         </div>
+      </div>
+      @endif
+   </div>
+   {{-- Cart JavaScript --}}
+   <script>
+      function addToCart(id, title, price, image, categoryType, discountPrice = 0) {
+          console.log('Adding to cart:', {id, title, price, image, categoryType, discountPrice});
+          if (window.cartManager) {
+              window.cartManager.addToCart(id, title, price, image, categoryType, discountPrice);
+          } else {
+              alert('Cart system not available');
+          }
+      }
+   </script>
 </div>
 {{-- Create Post Modal (Only for Own Profile) --}}
 @auth

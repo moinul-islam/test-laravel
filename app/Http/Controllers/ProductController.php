@@ -9,14 +9,107 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         //
     }
 
+    public function userProductServices(Request $request, $username)
+    {
+        $path = $username;
+        $userIds = [];
+        $user = null;
+        
+        if ($path == 'international') {
+            $userIds = User::where(function($query) {
+                $query->where('phone_verified', 0)
+                      ->orWhere('email_verified', 0);
+            })->pluck('id')->toArray();
+            
+            $user = new \stdClass();
+            $user->id = 0;
+            $user->username = 'international';
+            $user->name = 'International';
+            $user->profile_image = null;
+            $user->service_hr = null;
+        } else {
+            $country = Country::where('username', $path)->first();
+            if ($country) {
+                $userIds = User::where('country_id', $country->id)
+                    ->where(function($query) {
+                        $query->where('phone_verified', 0)
+                              ->orWhere('email_verified', 0);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                
+                $user = new \stdClass();
+                $user->id = 0;
+                $user->username = $country->username;
+                $user->name = $country->name;
+                $user->profile_image = null;
+                $user->service_hr = null;
+            } else {
+                $city = City::where('username', $path)->first();
+                if ($city) {
+                    $userIds = User::where('city_id', $city->id)
+                        ->where(function($query) {
+                            $query->where('phone_verified', 0)
+                                  ->orWhere('email_verified', 0);
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                    
+                    $user = new \stdClass();
+                    $user->id = 0;
+                    $user->username = $city->username;
+                    $user->name = $city->name;
+                    $user->profile_image = null;
+                    $user->service_hr = null;
+                } else {
+                    $user = User::where('username', $path)->first();
+                    if ($user) {
+                        $userIds = [$user->id];
+                    } else {
+                        return redirect('/');
+                    }
+                }
+            }
+        }
+        
+        $products_services = Post::whereIn('user_id', $userIds)
+            ->whereHas('category', function($q) {
+                $q->whereIn('cat_type', ['product', 'service']);
+            })
+            ->with(['user', 'category'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+        
+        // Profile card এর জন্য posts count
+        if ($user && $user->id > 0) {
+            $posts = Post::where('user_id', $user->id)
+                        ->with(['user', 'category'])
+                        ->latest()
+                        ->paginate(10);
+        } else {
+            // Location based এর জন্য dummy posts object
+            $posts = new \Illuminate\Pagination\LengthAwarePaginator(
+                [],
+                0,
+                10,
+                1
+            );
+        }
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'posts' => view('frontend.products-partial', compact('products_services'))->render(),
+                'hasMore' => $products_services->hasMorePages()
+            ]);
+        }
+        
+        return view('frontend.product-services', compact('products_services', 'path', 'user', 'posts'));
+    }
 
     public function discount_wise_product(Request $request, $username)
     {
@@ -54,11 +147,10 @@ class ProductController extends Controller
             }
         }
     
-        // ✅ এখানে discount_until ও check করুন
         $discount_wise_products = Post::whereNotNull('discount_price')
             ->where(function($query) {
-                $query->whereNull('discount_until') // যদি কোন expiry না থাকে
-                      ->orWhere('discount_until', '>', now()); // অথবা এখনো valid
+                $query->whereNull('discount_until')
+                      ->orWhere('discount_until', '>', now());
             })
             ->whereIn('user_id', $userIds)
             ->with(['user', 'category'])
@@ -111,10 +203,9 @@ class ProductController extends Controller
             }
         }
         
-        // ✅ শুধুমাত্র cat_type = 'post' এর posts (discount_price থাকুক বা না থাকুক)
         $discount_wise_products = Post::whereIn('user_id', $userIds)
             ->whereHas('category', function($q) {
-                $q->where('cat_type', 'post'); // শুধুমাত্র post টাইপ
+                $q->where('cat_type', 'post');
             })
             ->with(['user', 'category'])
             ->orderBy('created_at', 'desc')
@@ -130,51 +221,31 @@ class ProductController extends Controller
         return view('frontend.notice_wise_product', compact('discount_wise_products', 'path'));
     }
 
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         //

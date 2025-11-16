@@ -197,7 +197,10 @@ Route::get('/contribute', [ProfileController::class, 'ContributeCreate'])->name(
 Route::post('/account-check', [ProfileController::class, 'accountCheck'])->name('account.check');
 
 
+
+
 require __DIR__.'/auth.php';
+Route::get('/{username}/products-services', [ProductController::class, 'userProductServices'])->name('user.products.services');
 // agula sob somoy niche thakbe
 // Products category route - check first if it's a product/service category
 Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
