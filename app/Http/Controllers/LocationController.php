@@ -35,18 +35,41 @@ class LocationController extends Controller
         return redirect('/')->with('error', 'Page not found');
     }
     
-    // যদি user হয়
+    // যদি user হয় (Dashboard)
     if ($isUser) {
         $user = User::where('username', $username)->first();
         
-        $posts = Post::with(['user', 'category'])
-                    ->where('user_id', $user->id)
-                    ->latest()
-                    ->paginate(3);
+        // Posts query start
+        $postsQuery = Post::with(['user', 'category'])
+                    ->where('user_id', $user->id);
+        
+        // Category filter
+        $category = null;
+        if ($categorySlug) {
+            $category = Category::where('slug', $categorySlug)
+                              ->where('cat_type', 'post')
+                              ->first();
+            
+            if ($category) {
+                $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+                $categoryIds[] = $category->id;
+                $postsQuery->whereIn('category_id', $categoryIds);
+            }
+        }
+        
+        $posts = $postsQuery->latest()->paginate(10);
+        
+        // AJAX request এর জন্য
+        if (request()->ajax()) {
+            return response()->json([
+                'posts' => view('frontend.posts-partial', compact('posts'))->render(),
+                'hasMore' => $posts->hasMorePages()
+            ]);
+        }
         
         $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
         
-        return view("dashboard", compact('posts', 'user', 'categories'));
+        return view("dashboard", compact('posts', 'user', 'categories', 'category'));
     }
     
     // Location based posts (country/city/international)
@@ -96,14 +119,7 @@ class LocationController extends Controller
         if (!$category) {
             abort(404, 'Category not found');
         }
-    } elseif (request()->has('category') && request()->get('category')) {
-        $categorySlug = request()->get('category');
-        $category = Category::where('slug', $categorySlug)
-                          ->where('cat_type', 'post')
-                          ->first();
-    }
-    
-    if ($category) {
+        
         $categoryIds = $this->getAllDescendantCategoryIds($category->id);
         $categoryIds[] = $category->id;
         $postsQuery->whereIn('category_id', $categoryIds);
@@ -122,6 +138,24 @@ class LocationController extends Controller
     return view("frontend.index", compact('posts', 'category'));
 }
 
+/**
+ * Get all descendant category IDs recursively
+ */
+private function getAllDescendantCategoryIds($categoryId)
+{
+    $ids = [];
+    
+    // Get direct children
+    $children = Category::where('parent_cat_id', $categoryId)->pluck('id')->toArray();
+    
+    foreach ($children as $childId) {
+        $ids[] = $childId;
+        // Recursively get descendants of each child
+        $ids = array_merge($ids, $this->getAllDescendantCategoryIds($childId));
+    }
+    
+    return $ids;
+}
     public function getCities($countryId)
     {
         $cities = City::where('country_id', $countryId)
@@ -331,22 +365,5 @@ class LocationController extends Controller
         //
     }
     
-    /**
-     * Get all descendant category IDs recursively
-     */
-    private function getAllDescendantCategoryIds($categoryId)
-    {
-        $ids = [];
-        
-        // Get direct children
-        $children = Category::where('parent_cat_id', $categoryId)->pluck('id')->toArray();
-        
-        foreach ($children as $childId) {
-            $ids[] = $childId;
-            // Recursively get descendants of each child
-            $ids = array_merge($ids, $this->getAllDescendantCategoryIds($childId));
-        }
-        
-        return $ids;
-    }
+   
 }

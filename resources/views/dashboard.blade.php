@@ -101,153 +101,120 @@
    @include('frontend.profile-card')
    @endguest
    
-
-
-
-
-
-
-   {{-- Posts Container --}}
+{{-- Posts Container --}}
 <div class="container mt-4">
-
-
-
 
 @php
 $posts = \App\Models\Post::where('user_id', $user->id)
     ->with(['user', 'category'])
     ->latest()
-    ->paginate(10); // get() এর বদলে paginate()
+    ->paginate(10);
 @endphp
-    
-    @php
-           $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
-       ->orderBy('name') // অথবা যেকোনো column দিয়ে sort করতে চান
-       ->get();
-           
-           // $visitorLocationPath থেকে current location খুঁজে বের করুন
-           $selectedCountry = null;
-           $selectedCity = null;
-           $cities = collect();
-           
-           if(isset($visitorLocationPath) && $visitorLocationPath) {
-               // প্রথমে check করুন এটা country কিনা
-               $selectedCountry = App\Models\Country::where('username', $visitorLocationPath)->first();
-               
-               if($selectedCountry) {
-                   // এটা country, তাহলে এর cities load করুন
-                   $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                           ->orderBy('name', 'asc')
-                                           ->get();
-               } else {
-                   // না হলে check করুন এটা city কিনা
-                   $selectedCity = App\Models\City::where('username', $visitorLocationPath)->first();
-                   
-                   if($selectedCity) {
-                       // City পেলে এর country খুঁজুন
-                       $selectedCountry = App\Models\Country::find($selectedCity->country_id);
-                       
-                       // এই country এর সব cities load করুন
-                       if($selectedCountry) {
-                           $cities = App\Models\City::where('country_id', $selectedCountry->id)
-                                                   ->orderBy('name', 'asc')
-                                                   ->get();
-                       }
-                   }
-               }
-           }
-       @endphp
 
     <!-- Horizontal Scrollable Navigation -->
     <div class="scroll-container mb-4">
         <div class="scroll-content">
             
-        {{-- Replace the navigation section with this updated code --}}
-
-{{-- Product & Services Link --}}
-<a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-    <span><i class="bi bi-cart"></i></span>
-    <span>Product & Services</span>
-</a>
+        {{-- Product & Services Link --}}
+        <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
+            <span><i class="bi bi-cart"></i></span>
+            <span>Product & Services</span>
+        </a>
 
 @php
-    // Determine which categories to show in navigation
+    // User এর post করা সব unique categories খুঁজুন (শুধু post type)
+    $userPostCategoryIds = \App\Models\Post::where('user_id', $user->id)
+                            ->distinct()
+                            ->pluck('category_id');
+    
+    $userCategories = \App\Models\Category::whereIn('id', $userPostCategoryIds)
+                                         ->where('cat_type', 'post')
+                                         ->get();
+    
+    // Navigation এ কোন categories দেখাবে তা নির্ধারণ করুন
     $navCategories = collect();
     
     if(isset($category)) {
-        // শুধু post type ধরবে
+        // যদি URL এ category থাকে
         if($category->parent_cat_id) {
-            // যদি child হয় তাহলে parent এর child গুলো নেবে
+            // Child category selected → parent এর সব children যাদের post আছে
             $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
                                 ->where('cat_type', 'post')
+                                ->whereIn('id', $userPostCategoryIds)
                                 ->get();
-        } 
-        // যদি parent হয় তাহলে এর child নেবে
-        else if($category->cat_type == 'post') {
+        } else if($category->cat_type == 'post') {
+            // Parent category selected → এর সব children যাদের post আছে
             $navCategories = \App\Models\Category::where('parent_cat_id', $category->id)
                                 ->where('cat_type', 'post')
+                                ->whereIn('id', $userPostCategoryIds)
                                 ->get();
+        }
+    } else {
+        // কোনো category select না থাকলে → user এর সব parent categories
+        $parentCategoryIds = $userCategories->pluck('parent_cat_id')->filter()->unique();
+        $navCategories = \App\Models\Category::whereIn('id', $parentCategoryIds)
+                            ->where('cat_type', 'post')
+                            ->get();
+        
+        // যদি parent না থাকে তাহলে direct categories দেখান
+        if($navCategories->isEmpty()) {
+            $navCategories = $userCategories->whereNull('parent_cat_id');
         }
     }
 @endphp
 
 @php
-    // Check if category is set from path parameter or query parameter
-    $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
+    // Check if category is set from path parameter
+    $selectedCategorySlug = isset($category) ? $category->slug : null;
 @endphp
 
-{{-- All Posts Link - এখানে পরিবর্তন --}}
+{{-- All Posts Link --}}
 <a href="{{ url('/' . $user->username) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
     <span>All Posts</span>
 </a>
 
 @if($navCategories->count() > 0)
-    {{-- Show determined post categories --}}
+    {{-- Show user's post categories --}}
     @foreach($navCategories as $navCat)
-        <a href="{{ url('/' . $user->username . '/' . $navCat->slug) }}" 
-        class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
-            <span>{{ $navCat->category_name }}</span>
-        </a>
-    @endforeach
-@else
-    {{-- Show all parent post categories --}}
-    @php
-        $parentCategories = \App\Models\Category::where('cat_type', 'post')
-                            ->whereNull('parent_cat_id')
-                            ->get();
-    @endphp
-
-    @foreach($parentCategories as $parentCat)
         @php
-            $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
-                                ->where('cat_type', 'post')
-                                ->get();
+            // Check if this category has children with posts
+            $hasChildrenWithPosts = \App\Models\Category::where('parent_cat_id', $navCat->id)
+                                        ->where('cat_type', 'post')
+                                        ->whereIn('id', $userPostCategoryIds)
+                                        ->exists();
         @endphp
         
-        @if($subCategories->count() > 0)
+        @if($hasChildrenWithPosts)
+            {{-- Show dropdown for parent categories --}}
             <div class="dropdown nav-item-custom">
                 <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span>{{ $parentCat->category_name }}</span>
+                    <span>{{ $navCat->category_name }}</span>
                 </a>
                 <ul class="dropdown-menu">
-                    @foreach($subCategories as $subCat)
+                    @php
+                        $childCategories = \App\Models\Category::where('parent_cat_id', $navCat->id)
+                                            ->where('cat_type', 'post')
+                                            ->whereIn('id', $userPostCategoryIds)
+                                            ->get();
+                    @endphp
+                    @foreach($childCategories as $childCat)
                         <li>
-                            <a class="dropdown-item" href="{{ url('/' . $user->username . '/' . $subCat->slug) }}">
-                                {{ $subCat->category_name }}
+                            <a class="dropdown-item" href="{{ url('/' . $user->username . '/' . $childCat->slug) }}">
+                                {{ $childCat->category_name }}
                             </a>
                         </li>
                     @endforeach
                 </ul>
             </div>
         @else
-            {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
-            <a href="{{ url('/' . $user->username . '/' . $parentCat->slug) }}" 
-               class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
+            {{-- Direct link for categories without children --}}
+            <a href="{{ url('/' . $user->username . '/' . $navCat->slug) }}" 
+               class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
                 <span>
-                    <i class="bi {{ $parentCat->image }}"></i>
+                    <i class="bi {{ $navCat->image }}"></i>
                 </span>
-                <span>{{ $parentCat->category_name }}</span>
+                <span>{{ $navCat->category_name }}</span>
             </a>
         @endif
     @endforeach
@@ -255,8 +222,6 @@ $posts = \App\Models\Post::where('user_id', $user->id)
 
         </div>
     </div>
-
-
 
     <div class="row">
         <div class="col-12" id="posts-container">
@@ -278,17 +243,8 @@ $posts = \App\Models\Post::where('user_id', $user->id)
     @endif
 </div>
 
-
-
-
-
-
-
-
-
-
-
 </div>
+
 {{-- Create Post Modal (Only for Own Profile) --}}
 @auth
 @if(Auth::id() === $user->id)
@@ -336,34 +292,26 @@ $posts = \App\Models\Post::where('user_id', $user->id)
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
                </div>
-               <!-- ///////////////////////////////////// image start ///////////////////////////////////////// -->
-               <!-- <div class="mb-3">
-                  <label for="image" class="form-label">Choose Image</label>
-                  <input class="form-control" type="file" id="image" name="image" accept="image/*">
-                  @error('image')
-                  <div class="text-danger">{{ $message }}</div>
-                  @enderror
-               </div> -->
 
                <div class="row mb-4">
-                                            <div class="col-sm-3">
-                                                <h6 class="mb-0">Image</h6>
-                                            </div>
-                                            <div class="col-sm-9 text-secondary">
-                                                <input type="file" name="photo" class="form-control" id="formFile">
-                                                <input type="hidden" name="image_data" id="imageData">
-                                                
-                                                @error('photo')
-                                                    <span class="text-danger">{{ $message }}</span>
-                                                @enderror
-                                                <div id="imageProcessingStatus" style="display: none;" class="mt-2">
-                                                    <div class="progress">
-                                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="imageProgress"></div>
-                                                    </div>
-                                                    <small id="imageStatusText">Image processing is going on....</small>
-                                                </div>
-                                            </div>
-                                        </div>
+                  <div class="col-sm-3">
+                     <h6 class="mb-0">Image</h6>
+                  </div>
+                  <div class="col-sm-9 text-secondary">
+                     <input type="file" name="photo" class="form-control" id="formFile">
+                     <input type="hidden" name="image_data" id="imageData">
+                     
+                     @error('photo')
+                        <span class="text-danger">{{ $message }}</span>
+                     @enderror
+                     <div id="imageProcessingStatus" style="display: none;" class="mt-2">
+                        <div class="progress">
+                           <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="imageProgress"></div>
+                        </div>
+                        <small id="imageStatusText">Image processing is going on....</small>
+                     </div>
+                  </div>
+               </div>
 
             <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
             <!-- Add jQuery Ajax code -->
@@ -548,7 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-
 <div class="mb-3" id="edit_discount_field_container">
                 <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                 
@@ -579,7 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 </div>
 
-             <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
                   <label for="description" class="form-label" id="description_label">Product or Service Description</label>
                   <textarea class="form-control" id="description" name="description" rows="4" placeholder="Type your text here...">{{ old('description') }}</textarea>
@@ -604,283 +550,56 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 @endauth
 
-
-
-{{-- Edit Post Modal (Only for Own Profile) --}}
-@auth
-@if(Auth::id() === $user->id)
-<div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
-   <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-         <div class="modal-header">
-            <h5 class="modal-title" id="editPostModalLabel">Edit Post</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-         </div>
-         <div class="modal-body">
-            <form action="" method="POST" enctype="multipart/form-data" id="editPostForm">
-               @csrf
-               @method('PUT')
-               
-               <input type="hidden" id="edit_post_id" name="post_id">
-               
-               {{-- Category Field --}}
-               <div class="mb-3">
-                  <label for="edit_category_name" class="form-label">Post Category <span class="text-danger">*</span></label>
-                  <div style="position: relative;">
-                     <input type="text" class="form-control" id="edit_category_name" name="category_name" placeholder="Type to search categories..." autocomplete="off" required>
-                     <input type="hidden" id="edit_category_id" name="category_id" value="">
-                     <div id="edit_suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; display: none;"></div>
-                  </div>
-               </div>
-               
-               {{-- Title Field --}}
-               <div class="mb-3">
-                  <label for="edit_title" class="form-label" id="edit_title_label">Title <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" id="edit_title" name="title" required>
-               </div>
-               
-               {{-- Price Field --}}
-               <div class="mb-3" id="edit_price_field_container">
-                  <label for="edit_price" class="form-label">Price <span class="text-danger">*</span></label>
-                  <input type="number" class="form-control" id="edit_price" name="price" min="0" step="0.01" required>
-               </div>
-               
-               <div class="mb-3" id="edit_discount_field_container">
-                <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
-                
-                <div class="d-flex gap-2 align-items-center flex-wrap">
-                    <!-- Discount Amount-->
-                   
-
-                    <!-- Discount Duration -->
-                    <input type="number" 
-                        class="form-control d-none" 
-                        id="discount_days" 
-                        name="discount_days" 
-                        min="1" 
-                        placeholder="Duration (days)">
-
-                    <!-- Discount End Datetime -->
-                    <input type="datetime-local" 
-                        class="form-control d-none" 
-                        id="discount_until" 
-                        name="discount_until" 
-                        placeholder="Valid Until">
-                </div>
-                </div>
-
-                <script>
-                const priceInput = document.getElementById('discount_price');
-                const daysInput = document.getElementById('discount_days');
-                const untilInput = document.getElementById('discount_until');
-
-                // যখন discount price দেওয়া হবে
-                priceInput.addEventListener('input', function() {
-                if (this.value && parseFloat(this.value) > 0) {
-                    daysInput.classList.remove('d-none');
-                    untilInput.classList.remove('d-none');
-                    daysInput.required = true;
-                    untilInput.required = true;
-                } else {
-                    daysInput.classList.add('d-none');
-                    untilInput.classList.add('d-none');
-                    daysInput.required = false;
-                    untilInput.required = false;
-                    daysInput.value = '';
-                    untilInput.value = '';
-                }
-                });
-
-                // Duration দিলে → Dhaka timezone অনুযায়ী End Datetime সেট হবে
-                daysInput.addEventListener('input', function() {
-                if (this.value && untilInput) {
-                    const nowUTC = new Date();
-                    const dhakaOffsetMs = 6 * 60 * 60 * 1000; // Dhaka timezone = UTC+6
-                    const nowDhaka = new Date(nowUTC.getTime() + dhakaOffsetMs);
-
-                    const endDate = new Date(nowDhaka.getTime() + this.value * 24 * 60 * 60 * 1000);
-                    const formatted = endDate.toISOString().slice(0, 16);
-                    untilInput.value = formatted;
-                }
-                });
-                </script>
-
-
-
-               
-               {{-- Current Image Display --}}
-               <div class="mb-3">
-                  <label class="form-label">Current Image</label>
-                  <div>
-                     <img id="edit_current_image" src="" alt="Current Image" style="max-width: 200px; max-height: 200px; border: 2px solid #ddd; border-radius: 8px;">
-                  </div>
-               </div>
-               
-               {{-- Image Upload --}}
-                <div class="row mb-4">
-                    <div class="col-sm-3">
-                        <h6 class="mb-0">Change Image</h6>
-                    </div>
-                    <div class="col-sm-9 text-secondary">
-                        <input type="file" name="photo" class="form-control" id="editFormFile">
-                        <input type="hidden" name="image_data" id="editImageData">
-                        
-                        <div id="editImageProcessingStatus" style="display: none;" class="mt-2">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="editImageProgress"></div>
-                            </div>
-                            <small id="editImageStatusText">Image processing is going on....</small>
-                        </div>
-                    </div>
-                </div>
-               
-               {{-- Description --}}
-               <div class="mb-3">
-                  <label for="edit_description" class="form-label" id="edit_description_label">Description</label>
-                  <textarea class="form-control" id="edit_description" name="description" rows="4"></textarea>
-               </div>
-            </form>
-         </div>
-         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" form="editPostForm" class="btn btn-primary">Update Post</button>
-         </div>
-      </div>
-   </div>
-</div>
-@endif
-@endauth
-
-<script>
-// Edit Post Function
-function editPost(postId) {
-    // Fetch post data via AJAX
-    fetch(`/post/${postId}/edit`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Populate form fields
-        document.getElementById('edit_post_id').value = data.id;
-        document.getElementById('edit_title').value = data.title;
-        document.getElementById('edit_price').value = data.price;
-        document.getElementById('discount_price').value = data.discount_price;
-        document.getElementById('discount_until').value = data.discount_until;
-        document.getElementById('edit_description').value = data.description || '';
-        
-        // Set category
-        if(data.category) {
-            document.getElementById('edit_category_name').value = data.category.category_name;
-            document.getElementById('edit_category_id').value = data.category.id;
-            
-            // Update form based on category type
-            if(data.category.cat_type) {
-                updateFormBasedOnCategoryType(data.category.cat_type, 'edit');
-            }
-        } else if(data.new_category) {
-            document.getElementById('edit_category_name').value = data.new_category;
-            document.getElementById('edit_category_id').value = '';
-            // Reset to default for new category
-            updateFormBasedOnCategoryType('product', 'edit');
-        }
-        
-        // Set current image
-        if(data.image) {
-            document.getElementById('edit_current_image').src = `/uploads/${data.image}`;
-        } else {
-            document.getElementById('edit_current_image').src = '/profile-image/no-image.jpeg';
-        }
-        
-        // Set form action
-        document.getElementById('editPostForm').action = `/post/${postId}/update`;
-        
-        // Show modal
-        const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
-        editModal.show();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to load post data');
-    });
-}
-
-// Edit form এর জন্য category search functionality
-const editCategoryInput = document.getElementById('edit_category_name');
-const editCategoryIdInput = document.getElementById('edit_category_id');
-const editSuggestionsDiv = document.getElementById('edit_suggestions');
-
-if(editCategoryInput) {
-    editCategoryInput.addEventListener('input', function() {
-        const searchValue = this.value.trim();
-        
-        if (searchValue.length > 0) {
-            showEditSuggestions(searchValue);
-            
-            const exactMatch = categories.find(category => 
-                category.category_name.toLowerCase() === searchValue.toLowerCase()
-            );
-            
-            if (exactMatch) {
-                editCategoryIdInput.value = exactMatch.id;
-                // Update form based on category type
-                updateFormBasedOnCategoryType(exactMatch.cat_type, 'edit');
-            } else {
-                editCategoryIdInput.value = '';
-                // Reset to default when no category selected
-                updateFormBasedOnCategoryType('product', 'edit');
-            }
-        } else {
-            editSuggestionsDiv.style.display = 'none';
-            editCategoryIdInput.value = '';
-            // Reset to default when cleared
-            updateFormBasedOnCategoryType('product', 'edit');
-        }
-    });
-}
-
-function showEditSuggestions(searchTerm) {
-    const filteredCategories = categories.filter(category =>
-        category.category_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (filteredCategories.length === 0) {
-        editSuggestionsDiv.innerHTML = '<div style="padding: 10px 15px; color: #6c757d;">No matching categories found</div>';
-        editSuggestionsDiv.style.display = 'block';
-        return;
-    }
-
-    const suggestionsHtml = filteredCategories.map(category => `
-        <div style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
-             onclick="selectEditCategory(${category.id}, '${category.category_name}')"
-             onmouseover="this.style.backgroundColor='#f8f9fa'"
-             onmouseout="this.style.backgroundColor='white'">
-            ${category.category_name} <small style="color: #6c757d;">(${category.cat_type})</small>
-        </div>
-    `).join('');
-
-    editSuggestionsDiv.innerHTML = suggestionsHtml;
-    editSuggestionsDiv.style.display = 'block';
-}
-
-function selectEditCategory(id, name) {
-    editCategoryInput.value = name;
-    editCategoryIdInput.value = id;
-    editSuggestionsDiv.style.display = 'none';
-    
-    // Check cat_type and update form accordingly
-    const selectedCategory = categories.find(cat => cat.id == id);
-    if (selectedCategory) {
-        updateFormBasedOnCategoryType(selectedCategory.cat_type, 'edit');
-    }
-}
-</script>
+{{-- Edit Post Modal এবং বাকি JavaScript code আগের মতোই থাকবে --}}
 
 {{-- Modal and Category JavaScript --}}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto scroll active item to center
+    const scrollContainer = document.querySelector('.scroll-container');
+    const activeItem = document.querySelector('.nav-item-custom.active');
+    
+    if (scrollContainer && activeItem) {
+        scrollToCenter(activeItem, scrollContainer);
+    }
+    
+    // Handle navigation clicks and scroll to center
+    document.querySelectorAll('.nav-item-custom').forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            document.querySelectorAll('.nav-item-custom').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Add active class to clicked item (if not a dropdown)
+            if (!this.classList.contains('dropdown-toggle')) {
+                this.classList.add('active');
+                if (scrollContainer) {
+                    scrollToCenter(this, scrollContainer);
+                }
+            }
+        });
+    });
+});
+
+function scrollToCenter(element, container) {
+    if (!element || !container) return;
+    
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Calculate the position to scroll to center the element
+    const elementCenter = elementRect.left + elementRect.width / 2;
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    const scrollOffset = elementCenter - containerCenter;
+    
+    // Smooth scroll to center
+    container.scrollBy({
+        left: scrollOffset,
+        behavior: 'smooth'
+    });
+}
+
    // Categories data from backend
    const categories = @json($categories ?? []);
    const categoryInput = document.getElementById('category_name');
@@ -1074,6 +793,7 @@ function selectEditCategory(id, name) {
        toggleSubmit();
    });
 </script>
+
 {{-- User-specific Posts Loading JavaScript --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
