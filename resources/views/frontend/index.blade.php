@@ -178,7 +178,7 @@
     </div>
     
     {{-- Loading Spinner --}}
-    @if(isset($posts) && $posts->hasMorePages())
+    
     <div class="text-center my-4" id="loading-spinner" style="display: none;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -186,9 +186,9 @@
         <p class="mt-2 text-muted">Loading more posts...</p>
     </div>
     
-    <!-- <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
-    <input type="hidden" id="current-page" value="1"> -->
-    @endif
+    <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
+    <input type="hidden" id="current-page" value="1">
+    
 </div>
 
 @include('frontend.location')
