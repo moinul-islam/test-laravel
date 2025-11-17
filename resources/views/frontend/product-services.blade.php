@@ -161,7 +161,7 @@
       <div class="scroll-container pt-5 mb-5">
          <div class="scroll-content">
 
-            <a href="/dashboard" class="nav-item-custom category-link">
+            <a href="{{ url('/' . $user->username) }}" class="nav-item-custom category-link">
                 <span>All Post</span>
             </a>
 
