@@ -102,9 +102,11 @@
    @endguest
    <div class="">
       @php
-      // Get categories that have posts from this specific user
+      // Get categories that have posts from this specific user (শুধু product ও service type)
       $userPostCategories = \App\Models\Post::where('user_id', $user->id)
-      ->with('category')
+      ->with(['category' => function($query) {
+          $query->whereIn('cat_type', ['product', 'service']); // post type বাদ
+      }])
       ->get()
       ->pluck('category')
       ->unique('id')
@@ -248,13 +250,21 @@
          }
       </script>
     @php
+        // শুধু product ও service type posts (post type বাদ)
         $new_category_posts = \App\Models\Post::where('user_id', $user->id)
         ->whereNotNull('new_category')
+        ->whereHas('category', function($query) {
+            $query->whereIn('cat_type', ['product', 'service']);
+        })
         ->latest()
         ->get();
 
+        // শুধু product ও service type discount products (post type বাদ)
         $discount_wise_produts = \App\Models\Post::where('user_id', $user->id)
         ->whereNotNull('discount_price')
+        ->whereHas('category', function($query) {
+            $query->whereIn('cat_type', ['product', 'service']);
+        })
         ->latest()
         ->get();
     @endphp
@@ -628,6 +638,7 @@
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
                </div>
+               
                <!-- ///////////////////////////////////// image start ///////////////////////////////////////// -->
                <!-- <div class="mb-3">
                   <label for="image" class="form-label">Choose Image</label>
