@@ -280,9 +280,6 @@
    <i class="bi bi-info-circle me-2"></i>
    <strong>No posts available</strong> at the moment.
 </div>
-@endif
-
-
 {{-- Loading Spinner --}}
 <div id="loading-spinner" style="display: none; text-align: center; margin: 20px 0;">
    <div class="spinner-border text-primary" role="status">
@@ -290,6 +287,9 @@
    </div>
    <p class="mt-2">Loading more posts...</p>
 </div>
+@endif
+
+
 {{-- Hidden inputs for pagination --}}
 <input type="hidden" id="current-page" value="1">
 <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
