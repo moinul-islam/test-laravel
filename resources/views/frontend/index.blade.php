@@ -177,7 +177,7 @@
         </div>
     </div>
     
-    <!-- {{-- Loading Spinner --}}
+    {{-- Loading Spinner --}}
     @if(isset($posts) && $posts->hasMorePages())
     <div class="text-center my-4" id="loading-spinner" style="display: none;">
         <div class="spinner-border text-primary" role="status">
@@ -188,7 +188,7 @@
     
     <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
     <input type="hidden" id="current-page" value="1">
-    @endif -->
+    @endif
 </div>
 
 @include('frontend.location')
