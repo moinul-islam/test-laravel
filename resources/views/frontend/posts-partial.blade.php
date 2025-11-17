@@ -99,8 +99,107 @@
                </button>
                <button class="btn text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
                <i class="bi bi-share me-1"></i> 
-               <span class="action-count">3</span>
+               
                </button>
+
+               <script>
+                // Share button click event handler
+document.querySelectorAll('.share-btn').forEach(button => {
+    button.addEventListener('click', async function() {
+        const postId = this.getAttribute('data-post-id');
+        const shareUrl = window.location.origin + '/post/' + postId; // Post URL
+        const shareTitle = document.querySelector(`[data-post-id="${postId}"]`).closest('.post').querySelector('.post-title')?.textContent || 'Check this out!';
+        
+        // Check if Web Share API is supported
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: shareTitle,
+                    text: 'Check out this post!',
+                    url: shareUrl
+                });
+                console.log('Shared successfully');
+            } catch (err) {
+                // If user cancels or error occurs, show fallback modal
+                if (err.name !== 'AbortError') {
+                    showShareModal(shareUrl, shareTitle);
+                }
+            }
+        } else {
+            // Fallback: Show custom share modal
+            showShareModal(shareUrl, shareTitle);
+        }
+    });
+});
+
+// Function to show custom share modal
+function showShareModal(url, title) {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="shareModalLabel">Share Post</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-grid gap-2">
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" 
+                               target="_blank" 
+                               class="btn btn-primary">
+                                <i class="bi bi-facebook me-2"></i> Share on Facebook
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}" 
+                               target="_blank" 
+                               class="btn btn-info text-white">
+                                <i class="bi bi-twitter me-2"></i> Share on Twitter
+                            </a>
+                            <a href="https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}" 
+                               target="_blank" 
+                               class="btn btn-success">
+                                <i class="bi bi-whatsapp me-2"></i> Share on WhatsApp
+                            </a>
+                            <button class="btn btn-secondary copy-link-btn" data-url="${url}">
+                                <i class="bi bi-clipboard me-2"></i> Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('shareModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    shareModal.show();
+    
+    // Copy link functionality
+    document.querySelector('.copy-link-btn').addEventListener('click', function() {
+        const urlToCopy = this.getAttribute('data-url');
+        navigator.clipboard.writeText(urlToCopy).then(() => {
+            this.innerHTML = '<i class="bi bi-check-circle me-2"></i> Copied!';
+            setTimeout(() => {
+                this.innerHTML = '<i class="bi bi-clipboard me-2"></i> Copy Link';
+            }, 2000);
+        });
+    });
+    
+    // Clean up modal after it's hidden
+    document.getElementById('shareModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+               </script>
             </div>
          </div>
          {{-- Comments Section --}}
