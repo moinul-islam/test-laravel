@@ -166,6 +166,7 @@
 {{-- All Posts Link --}}
 <a href="{{ url('/' . $user->username) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
+   <span><i class="bi bi-file-post"></i></span>
     <span>All Posts</span>
 </a>
 

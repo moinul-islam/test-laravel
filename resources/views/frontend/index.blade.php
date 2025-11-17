@@ -79,93 +79,93 @@
 
 
             
+            @php
+    // Determine which categories to show in navigation
+    $navCategories = collect();
+    
+    if(isset($category)) {
+        // শুধু post type ধরবে
+        if($category->parent_cat_id) {
+            // যদি child হয় তাহলে parent এর child গুলো নেবে (যেগুলোতে post আছে)
+            $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
+                                ->where('cat_type', 'post')
+                                ->whereHas('posts') // শুধু যেগুলোতে post আছে
+                                ->get();
+        } 
+        // যদি parent হয় তাহলে এর child নেবে
+        else if($category->cat_type == 'post') {
+            $navCategories = \App\Models\Category::where('parent_cat_id', $category->id)
+                                ->where('cat_type', 'post')
+                                ->whereHas('posts') // শুধু যেগুলোতে post আছে
+                                ->get();
+        }
+    }
+@endphp
+
+@php
+    // Check if category is set from path parameter or query parameter
+    $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
+@endphp
+
+{{-- All Posts Link --}}
+<a href="{{ url('/' . $visitorLocationPath) }}" 
+   class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
+   <span><i class="bi bi-file-post"></i></span>
+   <span>All Posts</span>
+</a>
+
+@if($navCategories->count() > 0)
+    {{-- Show determined post categories --}}
+    @foreach($navCategories as $navCat)
+        <a href="{{ url('/' . $visitorLocationPath . '/' . $navCat->slug) }}" 
+        class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
+            <span>{{ $navCat->category_name }}</span>
+        </a>
+    @endforeach
+@else
+    {{-- Show all parent post categories --}}
+    @php
+        $parentCategories = \App\Models\Category::where('cat_type', 'post')
+                            ->whereNull('parent_cat_id')
+                            ->whereHas('posts') // শুধু যেগুলোতে post আছে
+                            ->get();
+    @endphp
+
+    @foreach($parentCategories as $parentCat)
+        @php
+            $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
+                                ->where('cat_type', 'post')
+                                ->whereHas('posts') // শুধু যেগুলোতে post আছে
+                                ->get();
+        @endphp
         
-            @php
-                // Determine which categories to show in navigation
-                $navCategories = collect();
-                
-                if(isset($category)) {
-                    // শুধু post type ধরবে
-                    if($category->parent_cat_id) {
-                        // যদি child হয় তাহলে parent এর child গুলো নেবে
-                        $navCategories = \App\Models\Category::where('parent_cat_id', $category->parent_cat_id)
-                                            ->where('cat_type', 'post')
-                                            ->get();
-                    } 
-                    // যদি parent হয় তাহলে এর child নেবে
-                    else if($category->cat_type == 'post') {
-                        $navCategories = \App\Models\Category::where('parent_cat_id', $category->id)
-                                            ->where('cat_type', 'post')
-                                            ->get();
-                    }
-                }
-            @endphp
-
-            @php
-                // Check if category is set from path parameter or query parameter
-                $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
-            @endphp
-
-            {{-- All Posts Link --}}
-            <a href="{{ url('/' . $visitorLocationPath) }}" 
-               class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
-                <span>All Posts</span>
-            </a>
-
-            @if($navCategories->count() > 0)
-                {{-- Show determined post categories --}}
-                @foreach($navCategories as $navCat)
-                    <a href="{{ url('/' . $visitorLocationPath . '/' . $navCat->slug) }}" 
-                    class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
-                        <span>{{ $navCat->category_name }}</span>
-                    </a>
-                @endforeach
-            @else
-                {{-- Show all parent post categories --}}
-                @php
-                    $parentCategories = \App\Models\Category::where('cat_type', 'post')
-                                        ->whereNull('parent_cat_id')
-                                        ->get();
-                @endphp
-
-                @foreach($parentCategories as $parentCat)
-                    @php
-                        $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
-                                            ->where('cat_type', 'post')
-                                            ->get();
-                    @endphp
-                    
-                    @if($subCategories->count() > 0)
-                        <div class="dropdown nav-item-custom">
-                            <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span>{{ $parentCat->category_name }}</span>
+        @if($subCategories->count() > 0)
+            <div class="dropdown nav-item-custom">
+                <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span>{{ $parentCat->category_name }}</span>
+                </a>
+                <ul class="dropdown-menu">
+                    @foreach($subCategories as $subCat)
+                        <li>
+                            <a class="dropdown-item" href="{{ url('/' . $visitorLocationPath . '/' . $subCat->slug) }}">
+                                {{ $subCat->category_name }}
                             </a>
-                            <ul class="dropdown-menu">
-                                @foreach($subCategories as $subCat)
-                                    <li>
-                                        <a class="dropdown-item" href="{{ url('/' . $visitorLocationPath . '/' . $subCat->slug) }}">
-                                            {{ $subCat->category_name }}
-                                        </a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @else
-                        {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
-                        <a href="{{ url('/' . $visitorLocationPath . '/' . $parentCat->slug) }}" 
-                           class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
-                            <!-- @if($parentCat->image)
-                                <img src="{{ asset('icon/' . $parentCat->image) }}" alt="{{ $parentCat->category_name }}" style="width:24px; height:24px; object-fit:contain; margin-right:6px;">
-                            @endif -->
-                            <span>
-                                <i class="bi {{ $parentCat->image }}"></i>
-                            </span>
-                            <span>{{ $parentCat->category_name }}</span>
-                        </a>
-                    @endif
-                @endforeach
-            @endif
-
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @else
+            {{-- যদি sub না থাকে তাহলে সরাসরি link --}}
+            <a href="{{ url('/' . $visitorLocationPath . '/' . $parentCat->slug) }}" 
+               class="nav-item-custom {{ $selectedCategorySlug == $parentCat->slug ? 'active' : '' }}">
+                <span>
+                    <i class="bi {{ $parentCat->image }}"></i>
+                </span>
+                <span>{{ $parentCat->category_name }}</span>
+            </a>
+        @endif
+    @endforeach
+@endif
         </div>
     </div>
 
