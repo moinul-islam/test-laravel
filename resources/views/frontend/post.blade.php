@@ -420,13 +420,13 @@
          </div>
          @endforelse
       </div>
-      <!-- Loading Spinner -->
+      <!-- Loading Spinner 
       <div id="loading" style="display: none; text-align: center; margin: 20px 0;">
          <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
          </div>
          <p class="mt-2">Loading more posts...</p>
-      </div>
+      </div>-->
       <!-- Load More Button
       @if($posts->hasMorePages())
       <div id="load-more-container" class="text-center mt-3">
