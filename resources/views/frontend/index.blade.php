@@ -221,34 +221,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Variables for load more functionality
-    let currentPage = parseInt(document.getElementById('current-page')?.value || 1);
-    let isLoading = false;
-    const postsContainer = document.getElementById('posts-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    let hasMorePages = document.getElementById('has-more-pages')?.value === '1';
-    
-    // Get current URL path and category parameter
-    const currentPath = window.location.pathname;
-    const urlParams = new URLSearchParams(window.location.search);
-    // Get category from path (e.g., /international/offer) or query parameter
-    const pathParts = currentPath.split('/').filter(part => part);
-    const categoryParam = pathParts.length > 1 ? pathParts[1] : urlParams.get('category');
-    
-    // Only set up load more if we have the necessary elements and are on a location-based page
-    // Allow category filtering in URL (e.g., /international/offer)
-    if (postsContainer && currentPath && !currentPath.includes('/posts/load-more')) {
-        // Auto load on scroll
-        window.addEventListener('scroll', function() {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-                if (!isLoading && hasMorePages && loadingSpinner) {
-                    loadMorePosts();
-                }
-            }
-        });
-        
-       
-    }
 });
 
 function scrollToCenter(element, container) {

@@ -794,82 +794,9 @@ function scrollToCenter(element, container) {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
    document.addEventListener('DOMContentLoaded', function() {
-       let currentPage = 1;
-       let isLoading = false;
        
-       // User ID get করুন (PHP থেকে)
-       const userId = @json($user->id ?? null);
-       
-       const postsContainer = document.getElementById('posts-container');
-       const loadingSpinner = document.getElementById('loading');
-       const loadMoreBtn = document.getElementById('load-more-btn');
-       const loadMoreContainer = document.getElementById('load-more-container');
    
-       // Load More Button Click
-       if (loadMoreBtn && userId) {
-           loadMoreBtn.addEventListener('click', function() {
-               loadMorePosts();
-           });
-       }
-   
-       // Auto Load on Scroll (Optional)
-       window.addEventListener('scroll', function() {
-           if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-               if (!isLoading && loadMoreBtn && loadMoreBtn.style.display !== 'none' && userId) {
-                   loadMorePosts();
-               }
-           }
-       });
-   
-       function loadMorePosts() {
-           if (isLoading || !userId) return;
-           
-           isLoading = true;
-           currentPage++;
-           
-           // Show loading spinner
-           loadingSpinner.style.display = 'block';
-           if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-           
-           // User-specific route ব্যবহার করুন
-           const url = `/posts/load-more/${userId}`;
-           
-           $.ajax({
-               url: url,
-               method: 'GET',
-               data: {
-                   page: currentPage
-               },
-               headers: {
-                   'X-Requested-With': 'XMLHttpRequest'
-               },
-               success: function(response) {
-                   // Hide loading spinner
-                   loadingSpinner.style.display = 'none';
-                   
-                   // Append new posts
-                   postsContainer.insertAdjacentHTML('beforeend', response.posts);
-                   
-                   // Initialize read more functionality for new posts
-                   initReadMore();
-                   
-                   // Show/Hide load more button
-                   if (response.hasMore) {
-                       if (loadMoreBtn) loadMoreBtn.style.display = 'block';
-                   } else {
-                       if (loadMoreContainer) loadMoreContainer.style.display = 'none';
-                   }
-                   
-                   isLoading = false;
-               },
-               error: function(xhr, status, error) {
-                   loadingSpinner.style.display = 'none';
-                   if (loadMoreBtn) loadMoreBtn.style.display = 'block';
-                   console.error('Error loading posts:', error);
-                   isLoading = false;
-               }
-           });
-       }
+      
        
        // Initialize Read More functionality
        function initReadMore() {
