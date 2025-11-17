@@ -125,7 +125,7 @@ class LocationController extends Controller
         $postsQuery->whereIn('category_id', $categoryIds);
     }
     
-    $posts = $postsQuery->latest()->paginate(5);
+    $posts = $postsQuery->latest()->paginate(3);
     
     // AJAX request এর জন্য
     if (request()->ajax()) {

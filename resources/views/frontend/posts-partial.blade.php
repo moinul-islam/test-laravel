@@ -276,7 +276,6 @@
 @endif
 @endforeach
 @else
-
 {{-- Loading Spinner --}}
 <div id="loading-spinner" style="display: none; text-align: center; margin: 20px 0;">
    <div class="spinner-border text-primary" role="status">
@@ -284,11 +283,13 @@
    </div>
    <p class="mt-2">Loading more posts...</p>
 </div>
+
 <div class="alert alert-info text-center my-4">
    <i class="bi bi-info-circle me-2"></i>
    <strong>No posts available</strong> at the moment.
 </div>
 @endif
+
 
 
 {{-- Hidden inputs for pagination --}}
