@@ -186,8 +186,8 @@
         <p class="mt-2 text-muted">Loading more posts...</p>
     </div>
     
-    <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
-    <input type="hidden" id="current-page" value="1">
+    <!-- <input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
+    <input type="hidden" id="current-page" value="1"> -->
     @endif
 </div>
 
