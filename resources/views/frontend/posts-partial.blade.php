@@ -282,11 +282,6 @@
 </div>
 @endif
 
-
-
-{{-- Hidden inputs for pagination --}}
-<input type="hidden" id="current-page" value="1">
-<input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
 <style>
    .comment-item {
    transition: background-color 0.2s ease;
