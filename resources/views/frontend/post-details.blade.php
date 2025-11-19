@@ -145,7 +145,7 @@
             {{-- Comments List --}}
             <div class="comments-list" id="comments-list-{{ $post->id }}">
                @foreach($post->comments as $comment)
-               <div class="comment-item p-3 border-bottom" data-comment-id="{{ $comment->id }}">
+               <div class="comment-item p-3 border-bottom" data-comment-id="{{ $comment->id }}" id="comment-{{ $comment->id }}">
                   <div class="d-flex">
                      <img src="{{ asset('profile-image/' . ($comment->user->image ?? 'default.png')) }}" 
                         class="rounded-circle me-2" 
@@ -210,7 +210,7 @@
                         @if($comment->replies && $comment->replies->count() > 0)
                         <div class="replies mt-2" data-comment-id="{{ $comment->id }}">
                            @foreach($comment->replies as $reply)
-                           <div class="reply-item d-flex mb-2" data-reply-id="{{ $reply->id }}">
+                           <div class="reply-item d-flex mb-2" data-reply-id="{{ $reply->id }}" id="comment-{{ $reply->id }}">
                               <img src="{{ asset('profile-image/' . ($reply->user->image ?? 'default.png')) }}" 
                                  class="rounded-circle me-2" 
                                  style="width:28px; height:28px; object-fit:cover;" 
@@ -864,4 +864,33 @@
        }
        
    });
+</script>
+// আপনার post-details.blade.php এর শেষে এই script যোগ করুন:
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#comment-')) {
+        const commentId = hash.replace('#comment-', '');
+        const commentElement = document.getElementById('comment-' + commentId);
+        
+        if (commentElement) {
+            const postId = commentElement.closest('.card').querySelector('.comment-toggle-btn')?.dataset.postId;
+            if (postId) {
+                const commentsSection = document.getElementById(`comments-section-${postId}`);
+                if (commentsSection) {
+                    commentsSection.style.display = 'block';
+                }
+            }
+            
+            setTimeout(() => {
+                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                commentElement.style.backgroundColor = '#fff3cd';
+                setTimeout(() => {
+                    commentElement.style.transition = 'background-color 1s';
+                    commentElement.style.backgroundColor = '';
+                }, 2000);
+            }, 300);
+        }
+    }
+});
 </script>
