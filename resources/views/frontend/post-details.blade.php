@@ -865,7 +865,6 @@
        
    });
 </script>
-// আপনার post-details.blade.php এর শেষে এই script যোগ করুন:
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash;
