@@ -158,6 +158,8 @@
                 </a>
                 <ul class="dropdown-menu position-absolute" aria-labelledby="userDropdown" style="z-index:1050;">
                     <li><a class="dropdown-item" href="{{ route('dashboard') }}">Profile</a></li>
+
+                    <li><a class="dropdown-item" href="/notification">Notification</a></li>
                     
                     @if($hasPlacedOrders)
                         <li><a class="dropdown-item" href="{{ route('buy') }}">Buy</a></li>

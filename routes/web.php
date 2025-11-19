@@ -130,16 +130,6 @@ Route::get('/products', function () {
     return view('frontend.products');
 });
 
-// // Level 3: Sub-subcategory (সবার আগে থাকতে হবে)
-// Route::get('/products/{category}/{subcategory}/{subsubcategory}', [PostController::class, 'showByCategory'])->name('products.category.subsub');
-
-// // Level 2: Subcategory  
-// Route::get('/products/{category}/{subcategory}', [PostController::class, 'showByCategory'])->name('products.category.sub');
-
-// // Level 1: Main category (সবার শেষে থাকতে হবে)
-// Route::get('/products/{category}', [PostController::class, 'showByCategory'])->name('products.category');
-
-
 
 
 // Add this route for post deletion

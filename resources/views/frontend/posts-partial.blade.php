@@ -282,18 +282,7 @@
 </div>
 @endif
 
-<!-- 
-{{-- Loading Spinner --}}
-<div id="loading-spinner" style="display: none; text-align: center; margin: 20px 0;">
-   <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-   </div>
-   <p class="mt-2">Loading more posts...</p>
-</div>
-{{-- Hidden inputs for pagination --}}
-<input type="hidden" id="current-page" value="1">
-<input type="hidden" id="has-more-pages" value="{{ $posts->hasMorePages() ? '1' : '0' }}">
--->
+
 
 
 <style>
