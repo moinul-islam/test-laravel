@@ -197,8 +197,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/notifications/delete', [NotificationController::class, 'destroy'])->name('notifications.delete');
 });
 
-Route::post('/notifications/mark-as-seen', [NotificationController::class, 'markAsSeen']);
-
 require __DIR__.'/auth.php';
 Route::get('/{username}/products-services', [ProductController::class, 'userProductServices'])->name('user.products.services');
 // agula sob somoy niche thakbe
