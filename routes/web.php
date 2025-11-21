@@ -191,7 +191,7 @@ Route::post('/account-check', [ProfileController::class, 'accountCheck'])->name(
 // Notification routes
 Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/mark-as-seen', [NotificationController::class, 'markAsSeen'])->name('notifications.markAsSeen');
+    // Route::post('/notifications/mark-as-seen', [NotificationController::class, 'markAsSeen'])->name('notifications.markAsSeen');
     Route::post('/notifications/mark-all-seen', [NotificationController::class, 'markAllAsSeen'])->name('notifications.markAllSeen');
     Route::get('/notifications/unseen-count', [NotificationController::class, 'getUnseenCount'])->name('notifications.unseenCount');
     Route::delete('/notifications/delete', [NotificationController::class, 'destroy'])->name('notifications.delete');
