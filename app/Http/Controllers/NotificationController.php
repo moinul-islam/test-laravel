@@ -107,7 +107,42 @@ class NotificationController extends Controller
      */
     public function updateSeen(Request $request)
     {
-        dd($request->all());
+        $request->validate([
+            'user_id' => 'required',
+            'source_id' => 'required',
+            'type' => 'required|string',
+        ]);
+    
+        $userId = $request->user_id;
+        $sourceId = $request->source_id;
+        $type = $request->type;
+    
+        $query = Notification::where('receiver_id', $userId);
+    
+        if ($type === 'post_like' || $type === 'comment') {
+            $query->where('post_id', $sourceId);
+        } elseif ($type === 'comment_reply') {
+            $query->where('comment_id', $sourceId);
+        } elseif ($type === 'follow') {
+            $query->where('sender_id', $sourceId);
+        }
+    
+        $notification = $query->first();
+    
+        if ($notification) {
+            $notification->seen = 1;
+            $notification->seen_at = now();
+            $notification->save();
+    
+            return response()->json([
+                'message' => 'Notification marked as seen',
+                'notification' => $notification
+            ]);
+        }
+    
+        return response()->json([
+            'message' => 'No matching notification found',
+        ], 404);
     }
     
     
