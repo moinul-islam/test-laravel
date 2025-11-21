@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
 
@@ -12,7 +13,6 @@ class CommentController extends Controller
 {
     public function commentStore(Request $request)
     {
-        // Validate the request
         $request->validate([
             'content' => 'required|string|max:1000',
             'user_id' => 'required|exists:users,id',
@@ -20,129 +20,112 @@ class CommentController extends Controller
             'comment_id' => 'nullable|exists:comments,id'
         ]);
         
-        // ✅ Debug log
-        Log::info('Comment store request', [
-            'user_id' => $request->user_id,
-            'post_id' => $request->post_id,
-            'comment_id' => $request->comment_id,
-            'content' => substr($request->content, 0, 50)
-        ]);
-        
         // Create comment
         $comment = new Comment();
         $comment->content = $request->content;
         $comment->user_id = $request->user_id;
         $comment->post_id = $request->post_id;
-        $comment->comment_id = $request->comment_id; // null for main comments, id for replies
+        $comment->comment_id = $request->comment_id;
         $comment->save();
         
-        // Load the user relationship
         $comment->load('user');
         
-        // Get post info
         $post = Post::with('user')->find($request->post_id);
         $totalCommentsCount = $post ? $post->allComments()->count() : 0;
         
-        // ✅ Send Notification - Fixed Logic
+        // Send Notification
         try {
             $commentAuthor = Auth::user();
+            $commentPreview = strlen($request->content) > 50 
+                ? substr($request->content, 0, 50) . '...'
+                : $request->content;
             
             if ($request->comment_id) {
-                // এটি একটি Reply
+                // Reply to comment
                 $parentComment = Comment::with('user')->find($request->comment_id);
                 
-                Log::info('Reply detected', [
-                    'new_comment_id' => $comment->id,
-                    'parent_comment_id' => $request->comment_id,
-                    'parent_comment_found' => !!$parentComment,
-                    'parent_user_id' => $parentComment ? $parentComment->user_id : null,
-                    'current_user_id' => Auth::id()
-                ]);
-                
                 if ($parentComment && $parentComment->user_id != Auth::id()) {
-                    // ✅ URL with comment anchor
-                    $commentUrl = url('/post/' . $post->slug . '#comment-' . $parentComment->id);
+                    // Notification to parent comment owner
+                    $notification = Notification::create([
+                        'receiver_id' => $parentComment->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'comment_reply',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
                     
-                    $commentPreview = strlen($request->content) > 50 
-                        ? substr($request->content, 0, 50) . '...'
-                        : $request->content;
-                    
-                    $notificationSent = $this->sendBrowserNotification(
+                    $this->sendFirebaseNotification(
                         $parentComment->user_id,
                         '💬 Reply from ' . $commentAuthor->name,
                         "{$commentAuthor->name} replied: \"{$commentPreview}\"",
-                        $post->id,
-                        $commentUrl, // ✅ Direct comment link
-                        'comment_reply',
+                        $notification->id,
                         $post->slug,
-                        $parentComment->id // ✅ Parent comment ID
+                        'comment_reply',
+                        $parentComment->id
                     );
                     
-                    Log::info('Reply notification sent', [
-                        'success' => $notificationSent,
-                        'to_user' => $parentComment->user_id,
-                        'comment_url' => $commentUrl
+                    Log::info('Reply notification created', [
+                        'notification_id' => $notification->id
                     ]);
-                } else {
-                    Log::info('Reply notification skipped - self reply or parent not found');
                 }
                 
-                // ✅ BONUS: Post owner কেও জানান (যদি post owner ভিন্ন হয়)
+                // Notify post owner (if different)
                 if ($post->user_id != Auth::id() && $post->user_id != $parentComment->user_id) {
-                    $commentUrl = url('/post/' . $post->slug . '#comment-' . $comment->id);
+                    $notification = Notification::create([
+                        'receiver_id' => $post->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'post_reply',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
                     
-                    $this->sendBrowserNotification(
+                    $this->sendFirebaseNotification(
                         $post->user_id,
                         '💬 New Reply from ' . $commentAuthor->name,
                         "{$commentAuthor->name} replied on your post",
-                        $post->id,
-                        $commentUrl,
-                        'post_reply',
+                        $notification->id,
                         $post->slug,
+                        'post_reply',
                         $comment->id
                     );
-                    
-                    Log::info('Post owner notified about reply');
                 }
                 
             } else {
-                // নতুন Comment (main comment)
+                // New main comment
                 if ($post && $post->user_id != Auth::id()) {
-                    // ✅ URL with comment anchor
-                    $commentUrl = url('/post/' . $post->slug . '#comment-' . $comment->id);
+                    $notification = Notification::create([
+                        'receiver_id' => $post->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'comment',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
                     
-                    $commentPreview = strlen($request->content) > 50 
-                        ? substr($request->content, 0, 50) . '...'
-                        : $request->content;
-                    
-                    $notificationSent = $this->sendBrowserNotification(
+                    $this->sendFirebaseNotification(
                         $post->user_id,
                         '💬 New Comment from ' . $commentAuthor->name,
                         "{$commentAuthor->name} commented: \"{$commentPreview}\"",
-                        $post->id,
-                        $commentUrl, // ✅ Direct comment link
-                        'comment',
+                        $notification->id,
                         $post->slug,
+                        'comment',
                         $comment->id
                     );
                     
-                    Log::info('Comment notification sent', [
-                        'success' => $notificationSent,
-                        'to_user' => $post->user_id,
-                        'comment_url' => $commentUrl
+                    Log::info('Comment notification created', [
+                        'notification_id' => $notification->id
                     ]);
-                } else {
-                    Log::info('Comment notification skipped - own post');
                 }
             }
         } catch (\Exception $e) {
             Log::error('Notification failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
         }
         
-        // Return JSON response
+        // Return response
         if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -169,47 +152,25 @@ class CommentController extends Controller
     /**
      * Send Firebase notification
      */
-    private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'comment', $slug = null, $commentId = null)
+    private function sendFirebaseNotification($userId, $title, $body, $notificationId, $slug, $notificationType, $commentId = null)
     {
         try {
             $user = \App\Models\User::with('fcmTokens')->find($userId);
             
-            if (!$user) {
-                Log::warning('User not found', ['user_id' => $userId]);
-                return false;
-            }
-            
-            if ($user->fcmTokens->isEmpty()) {
-                Log::info('No FCM tokens', [
-                    'user_id' => $userId,
-                    'user_name' => $user->name
-                ]);
+            if (!$user || $user->fcmTokens->isEmpty()) {
                 return false;
             }
             
             $serviceAccountFile = storage_path('app/' . env('FIREBASE_CREDENTIALS'));
             
             if (!file_exists($serviceAccountFile)) {
-                Log::error('Firebase credentials not found', ['path' => $serviceAccountFile]);
                 return false;
             }
             
             $factory = (new Factory)->withServiceAccount($serviceAccountFile);
             $messaging = $factory->createMessaging();
             
-            $timestamp = now()->timestamp;
-            $uniqueId = "{$notificationType}-{$sourceId}-{$timestamp}";
-            
-            // ✅ Use custom link if provided (with comment anchor)
-            $webUrl = $customLink ?? ($slug ? url("/post/{$slug}") : url('/'));
-            $deepLink = $webUrl;
-            
-            $action = 'open_post';
-            $screenName = 'post_detail';
-            
             $sender = Auth::user();
-            
-            $successCount = 0;
             
             foreach ($user->fcmTokens as $tokenModel) {
                 $token = $tokenModel->fcm_token;
@@ -221,46 +182,30 @@ class CommentController extends Controller
                             'image' => $sender && $sender->image ? url('profile-image/' . $sender->image) : '',
                         ])
                         ->withData([
+                            'notification_id' => (string)$notificationId,
                             'user_id' => (string)$userId,
-                            'source_id' => $sourceId ? (string)$sourceId : '',
-                            'comment_id' => $commentId ? (string)$commentId : '', // ✅ Comment ID added
+                            'comment_id' => $commentId ? (string)$commentId : '',
                             'slug' => $slug ?? '',
                             'type' => 'browser_notification',
-                            'seen' => 'false',
                             'notification_type' => $notificationType,
                             'sender_id' => $sender ? (string)$sender->id : '',
                             'sender_name' => $sender ? $sender->name : '',
                             'sender_image' => $sender && $sender->image ? url('profile-image/' . $sender->image) : '',
-                            'action' => $action,
-                            'web_url' => $webUrl, // ✅ URL with anchor
-                            'deep_link' => $deepLink,
-                            'click_action' => $webUrl,
-                            'screen_name' => $screenName,
-                            'timestamp' => date('Y-m-d H:i:s'),
-                            'notification_id' => $uniqueId
+                            'timestamp' => date('Y-m-d H:i:s')
                         ]);
                     
-                    $result = $messaging->send($messageBuilder);
-                    $successCount++;
-                    
-                    Log::info('Notification sent', [
-                        'user_id' => $userId,
-                        'type' => $notificationType,
-                        'url' => $webUrl
-                    ]);
+                    $messaging->send($messageBuilder);
                 } catch (\Exception $ex) {
-                    Log::warning('Token send failed', [
-                        'user_id' => $userId,
+                    Log::warning('Firebase token failed', [
                         'error' => $ex->getMessage()
                     ]);
                 }
             }
             
-            return $successCount > 0;
+            return true;
             
         } catch (\Exception $e) {
-            Log::error('Notification error', [
-                'user_id' => $userId,
+            Log::error('Firebase error', [
                 'error' => $e->getMessage()
             ]);
             return false;

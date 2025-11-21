@@ -13,7 +13,7 @@
                   style="width:40px; height:40px; object-fit:cover;">
                <div>
                   <h6 class="mb-0">
-                     <a href="{{ route('profile.show', $post->user->username) }}" class="text-decoration-none text-dark">
+                     <a href="{{ route('profile.show', $post->user->username) }}" class="text-decoration-none">
                      {{ $post->user->name }}
                      </a>
                   </h6>
