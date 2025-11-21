@@ -197,11 +197,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/notifications/delete', [NotificationController::class, 'destroy'])->name('notifications.delete');
 });
 
-require __DIR__.'/auth.php';
+
 Route::get('/{username}/products-services', [ProductController::class, 'userProductServices'])->name('user.products.services');
-// agula sob somoy niche thakbe
-// Products category route - check first if it's a product/service category
+
 Route::get('/{username}/{slug}', [PostController::class, 'showByCategory'])->name('products.category');
 // Home page with category filter - will handle post categories
 Route::get('/{username}/{category}', [LocationController::class, 'usernameWiseHome'])->name('home.category');
 Route::get('/{username}',  [LocationController::class, 'usernameWiseHome'])->name('profile.show');
+
+require __DIR__.'/auth.php';
