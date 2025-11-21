@@ -106,71 +106,87 @@ class NotificationController extends Controller
      * ✅ Mark notification as seen from APP (API - আপনার route)
      */
     public function updateSeen(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'source_id' => 'required',
-            'type' => 'nullable|string',
-            'seen' => 'nullable|boolean',
-        ]);
-    
-        $userId = $request->user_id;
-        $sourceId = $request->source_id;
-        $seen = $request->input('seen', true); // boolean true
-    
-        // receiver_id use করুন (আপনার table এ এটাই আছে)
-        $query = Notification::where('receiver_id', $userId);
-        
-        // type অনুযায়ী source_id ম্যাচ করুন
-        if ($request->filled('type')) {
-            $type = $request->type;
-            $query->where('type', $type);
-            
-            // type অনুযায়ী সঠিক column এ match করুন
-            if ($type === 'like' || $type === 'comment') {
+{
+    $request->validate([
+        'user_id'   => 'required|exists:users,id',
+        'source_id' => 'required',
+        'type'      => 'nullable|string', // like, comment, reply, follow
+        'seen'      => 'nullable|boolean',
+    ]);
+
+    $userId   = $request->user_id;
+    $sourceId = $request->source_id;
+    $seen     = $request->input('seen', true); // default true মানে seen
+
+    // Base: যার নোটিফিকেশন সে (receiver_id)
+    $query = Notification::where('receiver_id', $userId);
+
+    // Type অনুযায়ী source_id কোন কলামে আছে তা নির্ধারণ করা
+    if ($request->filled('type')) {
+        $type = $request->type;
+
+        $query->where('type', $type);
+
+        switch ($type) {
+            case 'like':
+            case 'comment':
                 $query->where('post_id', $sourceId);
-            } elseif ($type === 'reply') {
+                break;
+
+            case 'reply':
                 $query->where('comment_id', $sourceId);
-            } elseif ($type === 'follow') {
-                $query->where('sender_id', $sourceId); // যে follow করেছে
-            }
-        } else {
-            // type না থাকলে post_id বা comment_id যেকোনো একটায় match করুন
-            $query->where(function($q) use ($sourceId) {
-                $q->where('post_id', $sourceId)
-                  ->orWhere('comment_id', $sourceId);
-            });
+                break;
+
+            case 'follow':
+                $query->where('sender_id', $sourceId);
+                break;
+
+            // আরও টাইপ থাকলে এখানে যোগ করো
+            default:
+                // যদি অজানা টাইপ হয় তাহলে source_id কোনোটাতেই ম্যাচ করবে না
+                $query->whereNull('id'); // force no result
+                break;
         }
-    
-        $notification = $query->first();
-    
-        if ($notification) {
-            $notification->seen = $seen;
-            $notification->seen_at = now(); // seen_at column ও update করুন
-            $notification->save();
-    
-            Log::info('Notification marked as seen (app)', [
-                'notification_id' => $notification->id,
-                'user_id' => $userId
-            ]);
-    
-            return response()->json([
-                'success' => true,
-                'message' => 'Notification marked as seen',
-                'notification' => [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'seen' => $notification->seen,
-                    'seen_at' => $notification->seen_at
-                ]
-            ]);
-        }
-    
-        return response()->json([
-            'success' => false,
-            'message' => 'No matching notification found',
-        ], 404);
+    } else {
+        // Type না দিলে post_id বা comment_id যেকোন একটায় ম্যাচ করতে পারে
+        $query->where(function ($q) use ($sourceId) {
+            $q->where('post_id', $sourceId)
+              ->orWhere('comment_id', $sourceId)
+              ->orWhere('sender_id', $sourceId); // follow ও ধরে নিতে পারো
+        });
     }
+
+    $notification = $query->first();
+
+    if ($notification) {
+        $notification->seen     = $seen ? 1 : 0;
+        $notification->seen_at  = $seen ? now() : null; // seen হলে timestamp, না হলে null
+        $notification->save();
+
+        Log::info('Notification marked as seen', [
+            'notification_id' => $notification->id,
+            'receiver_id'     => $userId,
+            'type'            => $notification->type,
+            'seen'            => $notification->seen
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification marked as seen',
+            'notification' => [
+                'id'       => $notification->id,
+                'type'     => $notification->type,
+                'seen'     => $notification->seen,
+                'seen_at'  => $notification->seen_at?->toDateTimeString(),
+            ]
+        ]);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'No matching notification found',
+    ], 404);
+}
     
     
     /**
