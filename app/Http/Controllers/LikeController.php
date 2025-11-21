@@ -72,7 +72,6 @@ class LikeController extends Controller
                         '👍 ' . $liker->name . ' liked your post',
                         "{$liker->name} liked your post: \"{$post->title}\"",
                         $notification->id,
-                        url('/post/' . $post->slug),
                         $post->slug,
                         'post_like'
                     );
