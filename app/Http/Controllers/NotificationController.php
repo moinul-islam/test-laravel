@@ -103,91 +103,76 @@ class NotificationController extends Controller
     }
     
     /**
-     * ✅ Mark notification as seen from APP (API - আপনার route)
+     * ✅ Mark notification as seen from APP (API - আপনার পুরানো method)
      */
     public function updateSeen(Request $request)
-{
-    $request->validate([
-        'user_id'   => 'required|exists:users,id',
-        'source_id' => 'required',
-        'type'      => 'nullable|string', // like, comment, reply, follow
-        'seen'      => 'nullable|boolean',
-    ]);
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'source_id' => 'required',
+            'type' => 'nullable|string',
+            'seen' => 'nullable|boolean',
+        ]);
 
-    $userId   = $request->user_id;
-    $sourceId = $request->source_id;
-    $seen     = $request->input('seen', true); // default true মানে seen
-
-    // Base: যার নোটিফিকেশন সে (receiver_id)
-    $query = Notification::where('receiver_id', $userId);
-
-    // Type অনুযায়ী source_id কোন কলামে আছে তা নির্ধারণ করা
-    if ($request->filled('type')) {
+        $userId = $request->user_id;
+        $sourceId = $request->source_id;
+        $seen = $request->input('seen', true);
         $type = $request->type;
 
-        $query->where('type', $type);
+        // Query builder
+        $query = Notification::where('receiver_id', $userId);
 
-        switch ($type) {
-            case 'like':
-            case 'comment':
-                $query->where('post_id', $sourceId);
-                break;
-
-            case 'reply':
-                $query->where('comment_id', $sourceId);
-                break;
-
-            case 'follow':
-                $query->where('sender_id', $sourceId);
-                break;
-
-            // আরও টাইপ থাকলে এখানে যোগ করো
-            default:
-                // যদি অজানা টাইপ হয় তাহলে source_id কোনোটাতেই ম্যাচ করবে না
-                $query->whereNull('id'); // force no result
-                break;
+        // Type অনুযায়ী source_id match করো
+        if ($type === 'post_like') {
+            $query->where('post_id', $sourceId)->where('type', 'post_like');
+        } elseif ($type === 'comment') {
+            $query->where('comment_id', $sourceId)->where('type', 'comment');
+        } elseif ($type === 'comment_reply') {
+            $query->where('comment_id', $sourceId)->where('type', 'comment_reply');
+        } elseif ($type === 'comment_like') {
+            $query->where('comment_id', $sourceId)->where('type', 'comment_like');
+        } elseif ($type === 'post_reply') {
+            $query->where('comment_id', $sourceId)->where('type', 'post_reply');
+        } else {
+            // Type না থাকলে post_id বা comment_id যেকোনো একটা match করো
+            $query->where(function($q) use ($sourceId) {
+                $q->where('post_id', $sourceId)
+                  ->orWhere('comment_id', $sourceId);
+            });
         }
-    } else {
-        // Type না দিলে post_id বা comment_id যেকোন একটায় ম্যাচ করতে পারে
-        $query->where(function ($q) use ($sourceId) {
-            $q->where('post_id', $sourceId)
-              ->orWhere('comment_id', $sourceId)
-              ->orWhere('sender_id', $sourceId); // follow ও ধরে নিতে পারো
-        });
-    }
 
-    $notification = $query->first();
+        // সব matching notifications update করো
+        $updated = $query->update([
+            'seen' => $seen,
+            'seen_at' => $seen ? now() : null
+        ]);
 
-    if ($notification) {
-        $notification->seen     = $seen ? 1 : 0;
-        $notification->seen_at  = $seen ? now() : null; // seen হলে timestamp, না হলে null
-        $notification->save();
+        if ($updated > 0) {
+            Log::info('Notifications marked as seen (app)', [
+                'user_id' => $userId,
+                'source_id' => $sourceId,
+                'type' => $type,
+                'count' => $updated
+            ]);
 
-        Log::info('Notification marked as seen', [
-            'notification_id' => $notification->id,
-            'receiver_id'     => $userId,
-            'type'            => $notification->type,
-            'seen'            => $notification->seen
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification marked as seen',
+                'count' => $updated
+            ]);
+        }
+
+        Log::warning('No matching notification found', [
+            'user_id' => $userId,
+            'source_id' => $sourceId,
+            'type' => $type
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Notification marked as seen',
-            'notification' => [
-                'id'       => $notification->id,
-                'type'     => $notification->type,
-                'seen'     => $notification->seen,
-                'seen_at'  => $notification->seen_at?->toDateTimeString(),
-            ]
-        ]);
+            'success' => false,
+            'message' => 'No matching notification found'
+        ], 404);
     }
-
-    return response()->json([
-        'success' => false,
-        'message' => 'No matching notification found',
-    ], 404);
-}
-    
     
     /**
      * Mark all notifications as seen
