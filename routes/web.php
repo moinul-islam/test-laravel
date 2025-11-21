@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PostController;
@@ -16,7 +17,7 @@ use App\Http\Controllers\AdminPostController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
-// use App\Http\Controllers\NotificationController;
+
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/post/like', [LikeController::class, 'togglePostLike'])->name('post.like');
