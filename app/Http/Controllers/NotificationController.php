@@ -116,29 +116,30 @@ class NotificationController extends Controller
     
         $userId = $request->user_id;
         $sourceId = $request->source_id;
-        $seen = $request->input('seen', true); // boolean true
+        $seen = $request->input('seen', 1);
     
-        // receiver_id use করুন (আপনার table এ এটাই আছে)
+        // ✅ user_id → receiver_id change
         $query = Notification::where('receiver_id', $userId);
         
-        // type অনুযায়ী source_id ম্যাচ করুন
+        // ✅ type অনুযায়ী সঠিক column match করুন
         if ($request->filled('type')) {
             $type = $request->type;
             $query->where('type', $type);
             
-            // type অনুযায়ী সঠিক column এ match করুন
+            // ✅ source_id কোন column এ আছে সেটা বলে দিন
             if ($type === 'like' || $type === 'comment') {
                 $query->where('post_id', $sourceId);
             } elseif ($type === 'reply') {
                 $query->where('comment_id', $sourceId);
             } elseif ($type === 'follow') {
-                $query->where('sender_id', $sourceId); // যে follow করেছে
+                $query->where('sender_id', $sourceId);
             }
         } else {
-            // type না থাকলে post_id বা comment_id যেকোনো একটায় match করুন
+            // type না থাকলে সব column এ খুঁজুন
             $query->where(function($q) use ($sourceId) {
                 $q->where('post_id', $sourceId)
-                  ->orWhere('comment_id', $sourceId);
+                  ->orWhere('comment_id', $sourceId)
+                  ->orWhere('sender_id', $sourceId);
             });
         }
     
@@ -146,28 +147,16 @@ class NotificationController extends Controller
     
         if ($notification) {
             $notification->seen = $seen;
-            $notification->seen_at = now(); // seen_at column ও update করুন
+            $notification->seen_at = now(); // ✅ এটাও add করুন
             $notification->save();
     
-            Log::info('Notification marked as seen (app)', [
-                'notification_id' => $notification->id,
-                'user_id' => $userId
-            ]);
-    
             return response()->json([
-                'success' => true,
                 'message' => 'Notification marked as seen',
-                'notification' => [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'seen' => $notification->seen,
-                    'seen_at' => $notification->seen_at
-                ]
+                'notification' => $notification
             ]);
         }
     
         return response()->json([
-            'success' => false,
             'message' => 'No matching notification found',
         ], 404);
     }
