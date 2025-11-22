@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\Comment;
+use App\Models\Notification as NotificationModel;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
 
@@ -67,6 +68,16 @@ class CommentController extends Controller
                         ? substr($request->content, 0, 50) . '...'
                         : $request->content;
                     
+                    // ✅ Database notification
+                    $notification = NotificationModel::create([
+                        'receiver_id' => $parentComment->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'comment_reply',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
+                    
                     $notificationSent = $this->sendBrowserNotification(
                         $parentComment->user_id,
                         '💬 Reply from ' . $commentAuthor->name,
@@ -91,6 +102,15 @@ class CommentController extends Controller
                 if ($post->user_id != Auth::id() && $post->user_id != $parentComment->user_id) {
                     $commentUrl = url('/post/' . $post->slug . '#comment-' . $comment->id);
                     
+                    $notification = NotificationModel::create([
+                        'receiver_id' => $post->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'post_reply',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
+                    
                     $this->sendBrowserNotification(
                         $post->user_id,
                         '💬 New Reply from ' . $commentAuthor->name,
@@ -114,6 +134,16 @@ class CommentController extends Controller
                     $commentPreview = strlen($request->content) > 50 
                         ? substr($request->content, 0, 50) . '...'
                         : $request->content;
+                    
+                    // ✅ Database notification
+                    $notification = NotificationModel::create([
+                        'receiver_id' => $post->user_id,
+                        'sender_id' => Auth::id(),
+                        'type' => 'comment',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
                     
                     $notificationSent = $this->sendBrowserNotification(
                         $post->user_id,
