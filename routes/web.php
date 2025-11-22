@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PostController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\AdminPostController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
+
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/post/like', [LikeController::class, 'togglePostLike'])->name('post.like');
@@ -187,7 +189,14 @@ Route::get('/contribute', [ProfileController::class, 'ContributeCreate'])->name(
 Route::post('/account-check', [ProfileController::class, 'accountCheck'])->name('account.check');
 
 
-
+// Notification routes
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-as-seen', [NotificationController::class, 'markAsSeen'])->name('notifications.markAsSeen');
+    Route::post('/notifications/mark-all-seen', [NotificationController::class, 'markAllAsSeen'])->name('notifications.markAllSeen');
+    Route::get('/notifications/unseen-count', [NotificationController::class, 'getUnseenCount'])->name('notifications.unseenCount');
+    Route::delete('/notifications/delete', [NotificationController::class, 'destroy'])->name('notifications.delete');
+});
 
 require __DIR__.'/auth.php';
 Route::get('/{username}/products-services', [ProductController::class, 'userProductServices'])->name('user.products.services');
