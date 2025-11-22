@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\Comment;
+use App\Models\Notification as NotificationModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,19 @@ class LikeController extends Controller
         if ($existingLike) {
             // Unlike
             $existingLike->delete();
+            
+            // ✅ Remove notification
+            NotificationModel::where('sender_id', $userId)
+                       ->where('type', 'post_like')
+                       ->where('post_id', $postId)
+                       ->delete();
+            
             $liked = false;
+            
+            Log::info('Post unliked and notification removed', [
+                'user_id' => $userId,
+                'post_id' => $postId
+            ]);
         } else {
             // Like
             Like::create([
@@ -46,6 +59,16 @@ class LikeController extends Controller
                 try {
                     $liker = Auth::user();
                     
+                    // ✅ Database notification store
+                    $notification = NotificationModel::create([
+                        'receiver_id' => $post->user_id,
+                        'sender_id' => $userId,
+                        'type' => 'post_like',
+                        'post_id' => $post->id,
+                        'seen' => false
+                    ]);
+                    
+                    // ✅ Send Firebase notification
                     $this->sendBrowserNotification(
                         $post->user_id,
                         '👍 ' . $liker->name . ' liked your post',
@@ -100,7 +123,19 @@ class LikeController extends Controller
         if ($existingLike) {
             // Unlike
             $existingLike->delete();
+            
+            // ✅ Remove notification
+            NotificationModel::where('sender_id', $userId)
+                       ->where('type', 'comment_like')
+                       ->where('comment_id', $commentId)
+                       ->delete();
+            
             $liked = false;
+            
+            Log::info('Comment unliked and notification removed', [
+                'user_id' => $userId,
+                'comment_id' => $commentId
+            ]);
         } else {
             // Like
             Like::create([
@@ -121,6 +156,16 @@ class LikeController extends Controller
                         ? substr($comment->content, 0, 50) . '...'
                         : $comment->content;
                     
+                    // ✅ Database notification
+                    $notification = NotificationModel::create([
+                        'receiver_id' => $comment->user_id,
+                        'sender_id' => $userId,
+                        'type' => 'comment_like',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'seen' => false
+                    ]);
+                    
                     $this->sendBrowserNotification(
                         $comment->user_id,
                         '👍 ' . $liker->name . ' liked your comment',
@@ -128,7 +173,8 @@ class LikeController extends Controller
                         $post->id,
                         url('/post/' . $post->slug),
                         'comment_like',
-                        $post->slug
+                        $post->slug,
+                        $comment->id
                     );
                     
                     Log::info('Comment like notification sent', [
@@ -158,7 +204,7 @@ class LikeController extends Controller
     /**
      * Send Firebase notification
      */
-    private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'post_like', $slug = null)
+    private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'post_like', $slug = null, $commentId = null)
     {
         try {
             Log::info('Starting notification process', ['user_id' => $userId]);
@@ -202,6 +248,7 @@ class LikeController extends Controller
                             'user_id' => (string)$userId,
                             'source_id' => $sourceId ? (string)$sourceId : '',
                             'slug' => $slug ?? '',
+                            'comment_id' => $commentId ? (string)$commentId : '',
                             'type' => 'browser_notification',
                             'seen' => 'false',
                             'notification_type' => $notificationType,
