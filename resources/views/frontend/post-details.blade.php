@@ -381,29 +381,7 @@
            }
        });
        
-       // ===== COMMENT INPUT FOCUS =====
-       document.addEventListener('focus', function(e) {
-           if (e.target.classList.contains('comment-input')) {
-               const tools = e.target.closest('.flex-grow-1').querySelector('.comment-tools');
-               if (tools) {
-                   tools.style.display = 'flex';
-               }
-           }
-       }, true);
        
-       // ===== COMMENT INPUT BLUR =====
-       document.addEventListener('blur', function(e) {
-           if (e.target.classList.contains('comment-input')) {
-               setTimeout(() => {
-                   if (!e.target.value.trim()) {
-                       const tools = e.target.closest('.flex-grow-1').querySelector('.comment-tools');
-                       if (tools) {
-                           tools.style.display = 'none';
-                       }
-                   }
-               }, 200);
-           }
-       }, true);
        
        // ===== LIKE BUTTON (POST) =====
        document.addEventListener('click', function(e) {
