@@ -856,7 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
-<div class="mb-3" id="edit_discount_field_container">
+            <div class="mb-3" id="edit_discount_field_container">
                 <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                 
                 <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -884,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name="discount_until" 
                         placeholder="Valid Until">
                 </div>
-                </div>
+            </div>
 
              <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
@@ -952,7 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <input type="number" class="form-control" id="edit_price" name="price" min="0" step="0.01" required>
                </div>
                
-               <div class="mb-3" id="edit_discount_field_container">
+            <div class="mb-3" id="edit_discount_field_container">
                 <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                 
                 <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -974,7 +974,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name="discount_until" 
                         placeholder="Valid Until">
                 </div>
-                </div>
+            </div>
 
                 <script>
                 const priceInput = document.getElementById('discount_price');
@@ -1188,8 +1188,14 @@ function selectEditCategory(id, name) {
 
 {{-- Modal and Category JavaScript --}}
 <script>
-   // Categories data from backend
-   const categories = @json($categories ?? []);
+
+
+    @if(!isset($categories))
+    const categories = @json(\App\Models\Category::all());
+    @else
+    const categories = @json($categories ?? []);
+    @endif
+   
    const categoryInput = document.getElementById('category_name');
    const categoryIdInput = document.getElementById('category_id');
    const suggestionsDiv = document.getElementById('suggestions');
@@ -1490,3 +1496,5 @@ function selectEditCategory(id, name) {
 @include('frontend.body.review-cdn')
 
 @endsection
+
+
