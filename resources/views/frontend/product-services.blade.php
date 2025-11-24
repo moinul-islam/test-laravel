@@ -110,13 +110,14 @@
          position: sticky;
          top: 0;
          z-index: 1000;
-         background: #fff;
+         background: #f2f2f2;
          /* border-bottom: 1px solid #e0e0e0; */
          }
          /* Dark mode background */
          [data-bs-theme="dark"] .scroll-container {
-         background: #212529;
+         background: #1c1b22;
          }
+         
          .scroll-content {
          display: flex;
          overflow-x: auto;
@@ -263,7 +264,7 @@
          <div class="">
             <div class="row mb-4">
                <div class="col-12">
-                  <h4 class="fw-bold text-dark mb-0">Discount</h4>
+                  <h4 class="fw-bold mb-0">Discount</h4>
                </div>
             </div>
             <div class="row g-3 g-md-4 mb-4">
@@ -359,7 +360,7 @@
             <!-- Category Title -->
             <div class="row mb-4">
                <div class="col-12">
-                  <h4 class="fw-bold text-dark mb-0">{{ $category->category_name }}</h4>
+                  <h4 class="fw-bold mb-0">{{ $category->category_name }}</h4>
                </div>
             </div>
             <!-- Posts Section -->

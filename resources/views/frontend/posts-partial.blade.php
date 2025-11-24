@@ -3,7 +3,7 @@
 {{-- শুধুমাত্র cat_type = 'post' যেগুলোর --}}
 @if($post->category && $post->category->cat_type == 'post')
 <div class="mb-4 post-item" data-post-id="{{ $post->id }}">
-<div class="card">
+<div class="card shadow-sm">
       <div>
          <div class="d-flex align-items-center justify-content-between card-body">
             <div class="d-flex align-items-center">

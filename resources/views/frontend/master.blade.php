@@ -12,6 +12,15 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <style>
+
+body {
+    background-color: #f2f2f2 !important;
+}
+
+[data-bs-theme="dark"] body {
+  background-color: transparent !important;
+}
+
         /* ===== Custom Dark Mode Fix for Post + Comments Section ===== */
 [data-bs-theme="dark"] .card-footer {
   background-color: #2b3035 !important;
