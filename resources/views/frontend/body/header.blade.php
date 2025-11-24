@@ -157,18 +157,18 @@
                     @endif
                 </a>
                 <ul class="dropdown-menu position-absolute" aria-labelledby="userDropdown" style="z-index:1050;">
-                    <li><a class="dropdown-item" href="{{ route('dashboard') }}">Profile</a></li>
+                    <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
 
-                    <li><a class="dropdown-item" href="/notifications">Notification</a></li>
+                    <li><a class="dropdown-item" href="/notifications"><i class="bi bi-bell me-2"></i>Notification</a></li>
                     
                     @if($hasPlacedOrders)
-                        <li><a class="dropdown-item" href="{{ route('buy') }}">Buy</a></li>
+                        <li><a class="dropdown-item" href="{{ route('buy') }}"><i class="bi bi-cart me-2"></i>Buy</a></li>
                     @endif
                     
                     @if($hasReceivedOrders)
                         <li>
-                            <a class="dropdown-item d-flex align-items-center justify-content-between" href="{{ route('sell') }}">
-                                Sell
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('sell') }}">
+                                <i class="bi bi-coin me-2"></i>Sell
                                 @if($newOrdersCount > 0)
                                     <span class="dropdown-badge">{{ $newOrdersCount }}</span>
                                 @endif
@@ -177,20 +177,18 @@
                     @endif
 
                     @if(auth()->check() && auth()->user()->role === 'delivery')
-                        <li><a class="dropdown-item" href="{{ route('delivery.page') }}">Delivery</a></li>
+                        <li><a class="dropdown-item" href="{{ route('delivery.page') }}"><i class="bi bi-truck me-2"></i>Delivery</a></li>
                     @endif
                     
                     @if(auth()->check() && auth()->user()->role === 'admin')
-                        <li><a class="dropdown-item" href="{{ route('delivery.page') }}">Delivery</a></li>
-                        <li><a class="dropdown-item" href="{{ route('contribute') }}">Contribute</a></li>
-                        <li><a class="dropdown-item" href="{{ route('admin.page') }}">Admin</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.page') }}"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
                     @endif
                     
-                    <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Settings</a></li>
+                    <li class="border-bottom"><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-gear me-2"></i>Settings</a></li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}" onsubmit="clearCartOnLogout()">
                             @csrf
-                            <button type="submit" class="dropdown-item text-danger">Logout</button>
+                            <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
                         </form>
                     </li>
                 </ul>

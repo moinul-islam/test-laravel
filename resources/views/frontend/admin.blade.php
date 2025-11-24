@@ -4,6 +4,9 @@
     <div class="mb-4 d-flex">
         <a href="/categories" class="btn btn-outline-success me-2">Categories</a>
         <a href="/admin/create-post" class="btn btn-outline-primary me-2">Add Post</a>
+
+        <a class="btn btn-outline-warning me-2" href="{{ route('delivery.page') }}">Delivery</a>
+        <a class="btn btn-outline-danger me-2" href="{{ route('contribute') }}">Contribute</a>
         
         <!-- Search Form -->
         <form method="GET" action="{{ request()->url() }}" class="d-flex" style="width: 400px;">
