@@ -625,10 +625,10 @@
                   @enderror
                   </div> -->
                <div class="row mb-4">
-                  <div class="col-sm-3">
-                     <h6 class="mb-0">Image</h6>
+                  <div class="col-12">
+                    <label for="image" class="form-label">Choose Image</label>
                   </div>
-                  <div class="col-sm-9 text-secondary">
+                  <div class="col-12 text-secondary">
                      <input type="file" name="photo" class="form-control" id="formFile">
                      <input type="hidden" name="image_data" id="imageData">
                      @error('photo')
@@ -953,10 +953,10 @@
                </div>
                {{-- Image Upload --}}
                <div class="row mb-4">
-                  <div class="col-sm-3">
-                     <h6 class="mb-0">Change Image</h6>
+                  <div class="col-12">
+                     <label for="image" class="form-label">Change Image</label>
                   </div>
-                  <div class="col-sm-9 text-secondary">
+                  <div class="col-12 text-secondary">
                      <input type="file" name="photo" class="form-control" id="editFormFile">
                      <input type="hidden" name="image_data" id="editImageData">
                      <div id="editImageProcessingStatus" style="display: none;" class="mt-2">
