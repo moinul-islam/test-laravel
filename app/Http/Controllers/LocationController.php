@@ -57,7 +57,7 @@ class LocationController extends Controller
             }
         }
         
-        $posts = $postsQuery->latest()->paginate(3);
+        $posts = $postsQuery->latest()->paginate(12);
         
         // AJAX request এর জন্য
         if (request()->ajax()) {
@@ -125,7 +125,7 @@ class LocationController extends Controller
         $postsQuery->whereIn('category_id', $categoryIds);
     }
     
-    $posts = $postsQuery->latest()->paginate(3);
+    $posts = $postsQuery->latest()->paginate(12);
     
     // AJAX request এর জন্য
     if (request()->ajax()) {
@@ -207,7 +207,7 @@ private function getAllDescendantCategoryIds($categoryId)
         $posts = Post::with(['user', 'category'])
                      ->where('user_id', $user->id)
                      ->latest()
-                     ->paginate(3); // get() এর পরিবর্তে paginate() ব্যবহার করুন
+                     ->paginate(12); // get() এর পরিবর্তে paginate() ব্যবহার করুন
         
         // Categories fetch করা (form এর জন্য - শুধুমাত্র নিজের প্রোফাইলে দেখাবে)
         $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service'])->get();
@@ -222,7 +222,7 @@ private function getAllDescendantCategoryIds($categoryId)
         $posts = Post::with(['user', 'category'])
             ->where('user_id', $userId)
             ->latest()
-            ->paginate(3); // প্রতি page এ 3টি post
+            ->paginate(12); // প্রতি page এ 3টি post
         
         // যদি AJAX request হয় (lazy loading এর জন্য)
         if ($request->ajax()) {
