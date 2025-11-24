@@ -824,32 +824,7 @@
                       setupImageProcessing('editFormFile', 'editImageData', 'editImageProcessingStatus', 'editImageProgress', 'editImageStatusText', 'edit_current_image');
                   });
                </script>
-               <div class="mb-3" id="edit_discount_field_container">
-                  <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
-                  <div class="d-flex gap-2 align-items-center flex-wrap">
-                     <!-- Discount Amount-->
-                     <input type="number" 
-                        class="form-control" 
-                        id="discount_price" 
-                        name="discount_price" 
-                        min="0" 
-                        step="0.01" 
-                        placeholder="Discount Amount">
-                     <!-- Discount Duration -->
-                     <input type="number" 
-                        class="form-control d-none" 
-                        id="discount_days" 
-                        name="discount_days" 
-                        min="1" 
-                        placeholder="Duration (days)">
-                     <!-- Discount End Datetime -->
-                     <input type="datetime-local" 
-                        class="form-control d-none" 
-                        id="discount_until" 
-                        name="discount_until" 
-                        placeholder="Valid Until">
-                  </div>
-               </div>
+               
                <!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
                <div class="mb-3">
                   <label for="description" class="form-label" id="description_label">Product or Service Description</label>
@@ -912,6 +887,13 @@
                   <label class="form-label">Discount Offer <span class="text-danger">*</span></label>
                   <div class="d-flex gap-2 align-items-center flex-wrap">
                      <!-- Discount Amount-->
+                     <input type="number" 
+                        class="form-control" 
+                        id="discount_price" 
+                        name="discount_price" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="Discount Amount">
                      <!-- Discount Duration -->
                      <input type="number" 
                         class="form-control d-none" 
