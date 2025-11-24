@@ -53,9 +53,9 @@
     <!-- Horizontal Scrollable Navigation -->
     <div class="scroll-container mb-4">
         <div class="scroll-content">
-            <!-- <button href="" class="nav-item-custom" id="openSidebarBtn">
+            <button href="" class="nav-item-custom" id="openSidebarBtn">
                 <span><i class="bi bi-list"></i></span>
-            </button> -->
+            </button>
             <button class="nav-item-custom" data-bs-toggle="modal" data-bs-target="#fullModal">
                 <span><i class="bi bi-journal-bookmark"></i></span>
             </button>
