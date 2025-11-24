@@ -1113,9 +1113,9 @@
 {{-- Modal and Category JavaScript --}}
 <script>
    @if(!isset($categories))
-   const categories = @json(\App\Models\Category::all());
+   const categories = @json(\App\Models\Category::whereIn('cat_type', ['product', 'service'])->get());
    @else
-   const categories = @json($categories ?? []);
+   const categories = @json(($categories ?? [])->whereIn('cat_type', ['product', 'service']));
    @endif
    
    const categoryInput = document.getElementById('category_name');
