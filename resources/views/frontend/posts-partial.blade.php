@@ -887,8 +887,6 @@
     </div>
 </div>
 <script>
-
-// JavaScript Code
 document.addEventListener('DOMContentLoaded', function() {
     const shareButtons = document.querySelectorAll('.share-btn');
     const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
@@ -909,20 +907,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 url: postUrl
             };
 
-            // Try to use native Web Share API
+            // শুধুমাত্র native share API available থাকলেই চেষ্টা করবে
+            // না থাকলে সরাসরি custom modal দেখাবে
             if (navigator.share) {
                 try {
                     await navigator.share(currentShareData);
-                    console.log('Shared successfully');
+                    console.log('Shared successfully via native share');
                 } catch (err) {
-                    // User cancelled or error occurred
+                    // User যদি cancel করে (AbortError) তাহলে কিছু করবে না
+                    // কিন্তু অন্য কোনো error হলে custom modal দেখাবে
                     if (err.name !== 'AbortError') {
-                        // Show custom modal if share fails
+                        console.log('Native share failed, showing custom modal');
                         showCustomShareModal(postUrl);
                     }
                 }
             } else {
-                // Native share not supported, show custom modal
+                // Native share support নেই, custom modal দেখাও
+                console.log('Native share not supported, showing custom modal');
                 showCustomShareModal(postUrl);
             }
         });
@@ -980,7 +981,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     });
 });
-
 </script>
 <style>
 .share-options {
