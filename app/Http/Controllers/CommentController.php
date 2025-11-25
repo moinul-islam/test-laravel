@@ -11,6 +11,32 @@ use Kreait\Firebase\Factory;
 
 class CommentController extends Controller
 {
+
+    public function delete(Request $request)
+    {
+        try {
+            $comment = Comment::findOrFail($request->comment_id);
+            
+            if (Auth::id() != $comment->user_id) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+            
+            $postId = $comment->post_id;
+            $comment->delete();
+            
+            $post = Post::find($postId);
+            $totalComments = $post ? $post->allComments()->count() : 0;
+            
+            return response()->json([
+                'success' => true,
+                'total_comments_count' => $totalComments
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error'], 500);
+        }
+    }
+
     public function commentStore(Request $request)
     {
         // Validate the request

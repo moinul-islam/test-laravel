@@ -172,10 +172,22 @@
                            <i class="bi {{ $comment->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
                            <span class="action-count">{{ $comment->likesCount() }}</span>
                            </button>
-                           <button class="btn btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="{{ $comment->id }}">
-                           <i class="bi bi-reply me-1"></i>
-                           Reply
-                           </button>
+                           @auth
+                                @if(Auth::id() == $comment->user_id)
+                                    {{-- Delete Button --}}
+                                    <button class="btn btn-sm text-danger p-0 me-2 delete-comment-btn"
+                                        data-comment-id="{{ $comment->id }}">
+                                        <i class="bi bi-trash me-1"></i> Delete
+                                    </button>
+                                @else
+                                    {{-- Reply Button --}}
+                                    <button class="btn btn-sm text-muted p-0 me-2 reply-btn"
+                                        data-comment-id="{{ $comment->id }}">
+                                        <i class="bi bi-reply me-1"></i> Reply
+                                    </button>
+                                @endif
+                            @endauth
+
                            @else
                            <span class="text-muted me-2" style="font-size: 12px;">
                            <i class="bi bi-hand-thumbs-up me-1"></i>
@@ -239,13 +251,24 @@
                                     <i class="bi {{ $reply->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
                                     <span class="action-count">{{ $reply->likesCount() }}</span>
                                     </button>
-                                    <button class="btn btn-sm text-muted p-0 nested-reply-btn" 
-                                       data-reply-to="{{ $reply->user->name }}" 
-                                       data-comment-id="{{ $comment->id }}" 
-                                       style="font-size: 11px;">
-                                    <i class="bi bi-reply me-1"></i>
-                                    Reply
-                                    </button>
+                                    @auth
+                                        @if(Auth::id() == $reply->user_id)
+                                            {{-- Delete Reply Button --}}
+                                            <button class="btn btn-sm text-danger p-0 me-2 delete-reply-btn" 
+                                                data-reply-id="{{ $reply->id }}" style="font-size: 11px;">
+                                                <i class="bi bi-trash me-1"></i> Delete
+                                            </button>
+                                        @else
+                                            {{-- Nested Reply Button --}}
+                                            <button class="btn btn-sm text-muted p-0 nested-reply-btn"
+                                                data-reply-to="{{ $reply->user->name }}" 
+                                                data-comment-id="{{ $comment->id }}" style="font-size: 11px;">
+                                                <i class="bi bi-reply me-1"></i>
+                                                Reply
+                                            </button>
+                                        @endif
+                                    @endauth
+
                                     @else
                                     <span class="text-muted me-2" style="font-size: 11px;">
                                     <i class="bi bi-hand-thumbs-up me-1"></i>
@@ -844,6 +867,39 @@
        }
        
    });
+
+
+
+   // Delete Comment
+$(document).on("click", ".delete-comment-btn", function () {
+    let id = $(this).data("comment-id");
+    let item = $(this).closest(".comment-item");
+
+    $.post("{{ route('comment.delete') }}", {
+        comment_id: id,
+        _token: "{{ csrf_token() }}"
+    }, function (res) {
+        if (res.success) {
+            item.remove();
+        }
+    });
+});
+
+// Delete Reply
+$(document).on("click", ".delete-reply-btn", function () {
+    let id = $(this).data("reply-id");
+    let item = $(this).closest(".reply-item");
+
+    $.post("{{ route('comment.delete') }}", {
+        comment_id: id,
+        _token: "{{ csrf_token() }}"
+    }, function (res) {
+        if (res.success) {
+            item.remove();
+        }
+    });
+});
+
 </script>
 
 

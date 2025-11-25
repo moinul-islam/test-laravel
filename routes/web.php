@@ -126,6 +126,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('/comment/store', [CommentController::class, 'commentStore'])->name('comment.store');
+Route::post('/comment/delete', [CommentController::class, 'delete'])->name('comment.delete')->middleware('auth');
 
 // Products routes - এই order টা important
 Route::get('/products', function () {
