@@ -96,10 +96,12 @@
                <i class="bi bi-chat-left-text me-1"></i> 
                <span class="action-count">{{ $post->allComments()->count() }}</span>
                </button>
-               <button class="btn text-muted d-flex align-items-center share-btn" data-post-id="{{ $post->id }}">
-               <i class="bi bi-share me-1"></i> 
-               <span class="action-count">3</span>
-               </button>
+               <button class="btn text-muted d-flex align-items-center share-btn" 
+                        data-post-id="{{ $post->id }}"
+                        data-post-url="{{ url('/post/' . $post->slug) }}"
+                        data-post-title="{{ $post->title }}">
+                    <i class="bi bi-share me-1"></i>
+                </button>
             </div>
          </div>
          {{-- Comments Section --}}
@@ -871,3 +873,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+@include('frontend.body.share-button')
