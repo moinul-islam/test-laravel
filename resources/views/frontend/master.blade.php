@@ -17,6 +17,10 @@ body {
     background-color: #f2f2f2 !important;
 }
 
+form {
+    margin: 0 !important;
+}
+
 [data-bs-theme="dark"] body {
   background-color: transparent !important;
 }
