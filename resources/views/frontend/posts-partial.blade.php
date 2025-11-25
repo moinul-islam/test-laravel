@@ -854,8 +854,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Share Post</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                <i class="bi bi-x-lg" style="font-size: 1.25rem; cursor: pointer;" data-bs-dismiss="modal" aria-label="Close"></i>
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg" style="font-size: 1.25rem; cursor: pointer;" data-bs-dismiss="modal" aria-label="Close"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="share-options">
