@@ -18,7 +18,7 @@
                      </a>
                   </h6>
                   @if($post->category)
-                  <small class="text-muted"><i class="bi bi-grid"></i> {{ $post->category->category_name }}</small>
+                  <small class="text-muted"><i class="{{ $post->category->image }}"></i> {{ $post->category->category_name }}</small>
                   @endif
                   <small class="text-muted"><i class="bi bi-clock"></i> {{ $post->created_at->diffForHumans() }}</small>
                </div>
