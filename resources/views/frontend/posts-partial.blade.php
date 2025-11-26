@@ -88,14 +88,27 @@
          <div class="bg-white rounded-bottom border-0 pt-0">
             {{-- Action Buttons --}}
             <div class="d-flex justify-content-around text-muted border-top pt-2 pb-2">
-               <button class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
-                  data-post-id="{{ $post->id }}">
-               <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
-               <span class="action-count">{{ $post->likesCount() }}</span>
+                
+               <button 
+                  class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
+                  data-post-id="{{ $post->id }}"
+                  @guest
+                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('userNavagateModal')); modal.show();"
+                  @endguest
+               >
+                  <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
+                  <span class="action-count">{{ $post->likesCount() }}</span>
                </button>
-               <button class="btn text-muted d-flex align-items-center comment-toggle-btn" data-post-id="{{ $post->id }}">
-               <i class="bi bi-chat-left-text me-1"></i> 
-               <span class="action-count">{{ $post->allComments()->count() }}</span>
+               
+               <button 
+                  class="btn text-muted d-flex align-items-center comment-toggle-btn" 
+                  data-post-id="{{ $post->id }}"
+                  @guest
+                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('userNavagateModal')); modal.show();"
+                  @endguest
+               >
+                  <i class="bi bi-chat-left-text me-1"></i> 
+                  <span class="action-count">{{ $post->allComments()->count() }}</span>
                </button>
          
                 <button class="btn text-muted d-flex align-items-center share-btn" 
