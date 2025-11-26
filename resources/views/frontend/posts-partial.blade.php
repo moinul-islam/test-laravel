@@ -160,7 +160,7 @@
                      <div class="flex-grow-1">
                         <div class="comment-content">
                            <h6 class="mb-1" style="font-size: 13px; font-weight: 600;">
-                              {{ $comment->user->name }}
+                              <a href="/{{ $comment->user->username }}">{{ $comment->user->name }}</a>
                            </h6>
                            <p class="mb-0" style="font-size: 14px;">{{ $comment->content }}</p>
                         </div>
@@ -265,7 +265,7 @@
                               <div class="flex-grow-1">
                                  <div class="comment-content" style="font-size: 13px;">
                                     <h6 class="mb-1" style="font-size: 12px; font-weight: 600;">
-                                       {{ $reply->user->name }}
+                                       <a href="/{{ $reply->user->username }}">{{ $reply->user->name }}</a>
                                     </h6>
                                     <p class="mb-0">{{ $reply->content }}</p>
                                  </div>
@@ -988,7 +988,6 @@ $(document).on('click', '.delete-reply-btn', function() {
     let modal = bootstrap.Modal.getInstance(modalElement);
     
     $.ajax({
-        
         success: function(response) {
             // Modal properly বন্ধ করুন
             modal.hide();
