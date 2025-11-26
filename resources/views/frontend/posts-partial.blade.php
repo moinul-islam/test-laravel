@@ -175,8 +175,8 @@
                            @auth
                                 @if(Auth::id() == $comment->user_id)
                                     {{-- Delete Button --}}
-                                    <button class="btn btn-sm text-danger p-0 me-2 delete-comment-btn"
-                                        data-comment-id="{{ $comment->id }}">
+                                    <button class="btn btn-sm text-danger p-0 me-2"
+                                         data-bs-toggle="modal" data-bs-target="#commentModal{{ $comment->id }}">
                                         <i class="bi bi-trash me-1"></i> Delete
                                     </button>
                                 @else
@@ -199,6 +199,30 @@
                            </a>
                            @endauth
                         </div>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="commentModal{{ $comment->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-danger">Delete Comment</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    Are you sure, you want to delete this comment?
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-danger delete-comment-btn" data-comment-id="{{ $comment->id }}">Delete</button>
+                                </div>
+
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Reply Input --}}
                         @auth
                         <div class="reply-input mt-2" style="display: none;" data-comment-id="{{ $comment->id }}">
@@ -224,6 +248,11 @@
                            </div>
                         </div>
                         @endauth
+
+
+
+                        
+
                         {{-- Replies --}}
                         @if($comment->replies && $comment->replies->count() > 0)
                         <div class="replies mt-2" data-comment-id="{{ $comment->id }}">
@@ -254,8 +283,8 @@
                                     @auth
                                         @if(Auth::id() == $reply->user_id)
                                             {{-- Delete Reply Button --}}
-                                            <button class="btn btn-sm text-danger p-0 me-2 delete-reply-btn" 
-                                                data-reply-id="{{ $reply->id }}" style="font-size: 11px;">
+                                            <button class="btn btn-sm text-danger p-0 me-2" 
+                                                 style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#replyModal{{ $reply->id }}">
                                                 <i class="bi bi-trash me-1"></i> Delete
                                             </button>
                                         @else
@@ -280,13 +309,42 @@
                                     </a>
                                     @endauth
                                  </div>
+
+                        <div class="modal fade" id="replyModal{{ $reply->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-danger">Delete Reply</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    Are you sure, you want to delete this reply?
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-danger delete-reply-btn" data-reply-id="{{ $reply->id }}">Delete</button>
+                                </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+
                               </div>
                            </div>
+
+                         
+                        
+
                            @endforeach
                         </div>
                         @endif
                      </div>
                   </div>
+                  
                </div>
                @endforeach
             </div>
@@ -900,6 +958,51 @@ $(document).on("click", ".delete-reply-btn", function () {
     });
 });
 
+
+$(document).on('click', '.delete-comment-btn', function() {
+    let commentId = $(this).data('comment-id');
+    let modalElement = document.getElementById('commentModal' + commentId);
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    
+    $.ajax({
+        
+        success: function(response) {
+            // Modal properly বন্ধ করুন
+            modal.hide();
+            
+            // Comment remove করুন
+            $('.comment-item[data-comment-id="' + commentId + '"]').fadeOut(function() {
+                $(this).remove();
+            });
+        },
+        error: function(xhr) {
+            modal.hide();
+        }
+    });
+});
+
+
+$(document).on('click', '.delete-reply-btn', function() {
+    let replyId = $(this).data('reply-id');
+    let modalElement = document.getElementById('replyModal' + replyId);
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    
+    $.ajax({
+        
+        success: function(response) {
+            // Modal properly বন্ধ করুন
+            modal.hide();
+            
+            // reply remove করুন
+            $('.reply-item[data-reply-id="' + replyId + '"]').fadeOut(function() {
+                $(this).remove();
+            });
+        },
+        error: function(xhr) {
+            modal.hide();
+        }
+    });
+});
 </script>
 
 
