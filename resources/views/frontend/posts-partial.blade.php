@@ -29,7 +29,7 @@
                </button>
                <ul class="dropdown-menu dropdown-menu-end">
                   @if(auth()->id() == $post->user_id)
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
+                  <!-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil-square me-2"></i>Edit</a></li> -->
                   <li>
                      <a class="dropdown-item text-danger delete-post-btn" 
                         href="#" 
@@ -41,7 +41,7 @@
                   </li>
                   @else
                   <li><a class="dropdown-item" href="#"><i class="bi bi-flag me-2"></i>Report</a></li>
-                  <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-person-x me-2"></i>Block</a></li>
+                  <!-- <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-person-x me-2"></i>Block</a></li> -->
                   @endif
                </ul>
             </div>

@@ -976,6 +976,11 @@
             </form>
          </div>
          <div class="modal-footer">
+         
+         <button type="button" class="btn btn-danger me-auto" id="simpleDeleteBtn" style="display:none;">
+            <i class="bi bi-trash me-2"></i>Delete
+        </button>
+
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" form="editPostForm" class="btn btn-primary">Update Post</button>
          </div>
@@ -987,59 +992,88 @@
 <script>
    // Edit Post Function
    function editPost(postId) {
-       // Fetch post data via AJAX
-       fetch(`/post/${postId}/edit`, {
-           method: 'GET',
-           headers: {
-               'X-Requested-With': 'XMLHttpRequest',
-               'Accept': 'application/json'
-           }
-       })
-       .then(response => response.json())
-       .then(data => {
-           // Populate form fields
-           document.getElementById('edit_post_id').value = data.id;
-           document.getElementById('edit_title').value = data.title;
-           document.getElementById('edit_price').value = data.price;
-           document.getElementById('discount_price').value = data.discount_price;
-           document.getElementById('discount_until').value = data.discount_until;
-           document.getElementById('edit_description').value = data.description || '';
-           
-           // Set category
-           if(data.category) {
-               document.getElementById('edit_category_name').value = data.category.category_name;
-               document.getElementById('edit_category_id').value = data.category.id;
-               
-               // Update form based on category type
-               if(data.category.cat_type) {
-                   updateFormBasedOnCategoryType(data.category.cat_type, 'edit');
-               }
-           } else if(data.new_category) {
-               document.getElementById('edit_category_name').value = data.new_category;
-               document.getElementById('edit_category_id').value = '';
-               // Reset to default for new category
-               updateFormBasedOnCategoryType('product', 'edit');
-           }
-           
-           // Set current image
-           if(data.image) {
-               document.getElementById('edit_current_image').src = `/uploads/${data.image}`;
-           } else {
-               document.getElementById('edit_current_image').src = '/profile-image/no-image.jpeg';
-           }
-           
-           // Set form action
-           document.getElementById('editPostForm').action = `/post/${postId}/update`;
-           
-           // Show modal
-           const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
-           editModal.show();
-       })
-       .catch(error => {
-           console.error('Error:', error);
-           alert('Failed to load post data');
-       });
-   }
+    // Fetch post data via AJAX
+    fetch(`/post/${postId}/edit`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Populate form fields
+        document.getElementById('edit_post_id').value = data.id;
+        document.getElementById('edit_title').value = data.title;
+        document.getElementById('edit_price').value = data.price;
+        document.getElementById('discount_price').value = data.discount_price;
+        document.getElementById('discount_until').value = data.discount_until;
+        document.getElementById('edit_description').value = data.description || '';
+        
+        // Set category
+        if(data.category) {
+            document.getElementById('edit_category_name').value = data.category.category_name;
+            document.getElementById('edit_category_id').value = data.category.id;
+            
+            // Update form based on category type
+            if(data.category.cat_type) {
+                updateFormBasedOnCategoryType(data.category.cat_type, 'edit');
+            }
+        } else if(data.new_category) {
+            document.getElementById('edit_category_name').value = data.new_category;
+            document.getElementById('edit_category_id').value = '';
+            // Reset to default for new category
+            updateFormBasedOnCategoryType('product', 'edit');
+        }
+        
+        // Set current image
+        if(data.image) {
+            document.getElementById('edit_current_image').src = `/uploads/${data.image}`;
+        } else {
+            document.getElementById('edit_current_image').src = '/profile-image/no-image.jpeg';
+        }
+        
+        // Set form action
+        document.getElementById('editPostForm').action = `/post/${postId}/update`;
+        
+        // DELETE BUTTON LOGIC (ভিতরে রাখতে হবে)
+        const deleteBtn = document.getElementById('simpleDeleteBtn');
+        const currentUserId = {{ auth()->id() ?? 'null' }};
+        
+        if (currentUserId && currentUserId == data.user_id) {
+            deleteBtn.style.display = 'inline-block';
+            
+            deleteBtn.onclick = function() {
+                if (confirm('Are you sure you want to delete this post?')) {
+                    fetch(`/posts/${data.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Post deleted successfully!');
+                            location.reload();
+                        }
+                    });
+                }
+            };
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+        
+        // Show modal
+        const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
+        editModal.show();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load post data');
+    });
+}
    
    // Edit form এর জন্য category search functionality
    const editCategoryInput = document.getElementById('edit_category_name');
