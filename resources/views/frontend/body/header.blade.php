@@ -144,6 +144,32 @@
                 
                 $newOrdersCount = $query->count();
             @endphp
+
+            @php
+                $userId = Auth::id();
+                $hasPlacedOrders = \App\Models\Order::where('user_id', $userId)->exists();
+                $hasReceivedOrders = \App\Models\Order::where('vendor_id', $userId)->exists();
+                
+                $lastSeenKey = 'vendor_orders_seen_' . $userId;
+                $lastSeen = session($lastSeenKey);
+                
+                $query = \App\Models\Order::where('vendor_id', $userId)
+                    ->where('status', 'pending');
+                    
+                if ($lastSeen) {
+                    $query->where('created_at', '>', $lastSeen);
+                }
+                
+                $newOrdersCount = $query->count();
+                
+                // Notification count যোগ করুন
+                $unseenNotificationsCount = \App\Models\Notification::where('receiver_id', $userId)
+                    ->where('seen', false)
+                    ->count();
+                
+                // মোট unseen count
+                $totalUnseenCount = $newOrdersCount + $unseenNotificationsCount;
+            @endphp
             
             <li class="nav-item dropdown">
                 <a class="nav-link d-flex align-items-center position-relative" href="javascript:void(0)" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -155,11 +181,22 @@
                     @if($newOrdersCount > 0)
                         <span class="notification-badge">{{ $newOrdersCount > 99 ? '99+' : $newOrdersCount }}</span>
                     @endif
+
+                    @if($totalUnseenCount > 0)
+                        <span class="notification-badge">{{ $totalUnseenCount > 99 ? '99+' : $totalUnseenCount }}</span>
+                    @endif
                 </a>
                 <ul class="dropdown-menu position-absolute" aria-labelledby="userDropdown" style="z-index:1050;">
                     <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
 
-                    <li><a class="dropdown-item" href="/notifications"><i class="bi bi-bell me-2"></i>Notification</a></li>
+                    <li>
+                        <a class="dropdown-item" href="/notifications">
+                        <i class="bi bi-bell me-2"></i>Notification
+                        @if($unseenNotificationsCount > 0)
+                            <span class="dropdown-badge">{{ $unseenNotificationsCount }}</span>
+                        @endif
+                        </a>
+                    </li>
                     
                     @if($hasPlacedOrders)
                         <li><a class="dropdown-item" href="{{ route('buy') }}"><i class="bi bi-cart me-2"></i>Buy</a></li>

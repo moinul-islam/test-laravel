@@ -72,7 +72,7 @@
 
 .sender-images {
     display: flex;
-    margin-left: -0.5rem;
+    /* margin-left: -0.5rem; */
 }
 
 .sender-images img {
