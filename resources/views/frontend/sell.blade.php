@@ -146,7 +146,12 @@
                               <i class="bi bi-check-circle me-1"></i>Confirm Order
                               </button>
                               @else
-                              <button class="btn btn-success btn-sm" onclick="showDeliveryOptionsModal({{ $order->id }})">
+
+                            <!-- ----------------------------------------------------------------------------------------------------- -->
+                            <!-- onclick="showDeliveryOptionsModal({{ $order->id }})" eta chilo akon amader delevery off tai self dese -->
+                            <!-- ----------------------------------------------------------------------------------------------------- -->
+
+                              <button class="btn btn-success btn-sm" onclick="confirmOrderWithDelivery('self', {{ $order->id }})">
                               <i class="bi bi-check-circle me-1"></i>Confirm Order
                               </button>
                               @endif
