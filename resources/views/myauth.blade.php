@@ -160,7 +160,8 @@
 <script>
 $(document).ready(function() {
     let currentEmail = '';
-    let registrationData = {};
+    let registrationData = null; // ✅ null দিয়ে initialize করুন
+    let isNewUser = false; // ✅ Track করুন new user কিনা
 
     // Reset modal on close
     $('#authModal').on('hidden.bs.modal', function () {
@@ -174,7 +175,8 @@ $(document).ready(function() {
         $('.invalid-feedback').text('');
         $('form').trigger('reset');
         currentEmail = '';
-        registrationData = {};
+        registrationData = null;
+        isNewUser = false;
     }
 
     function showStep(stepId) {
@@ -197,7 +199,7 @@ $(document).ready(function() {
     $('#emailForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
-        const email = $('#auth_email').val();
+        const email = $('#auth_email').val().trim();
         currentEmail = email;
 
         $.ajax({
@@ -210,14 +212,17 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.exists && response.has_password) {
                     // User exists with password - show login
+                    isNewUser = false;
                     $('#display-email').text(email);
                     $('#login_email').val(email);
                     showStep('step-login');
                 } else if (response.exists && !response.has_password) {
-                    // User exists without password - send OTP
+                    // User exists without password - send OTP for reset
+                    isNewUser = false;
                     sendOTP(email, 'reset');
                 } else {
                     // New user - show registration
+                    isNewUser = true;
                     $('#display-email-register').text(email);
                     $('#register_email').val(email);
                     showStep('step-register');
@@ -256,16 +261,22 @@ $(document).ready(function() {
 
     // Forgot Password
     $('#forgotPasswordBtn').on('click', function() {
+        isNewUser = false;
         sendOTP(currentEmail, 'reset');
     });
 
-    // Step 3: Registration Form
+    // Step 3: Registration Form - Store data and send OTP
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
 
-        // Store form data
+        // ✅ FormData তে সব data store করুন
         registrationData = new FormData(this);
+        
+        console.log('Registration data stored:');
+        for (let [key, value] of registrationData.entries()) {
+            console.log(key + ':', value);
+        }
         
         // Send OTP
         sendOTP(currentEmail, 'register');
@@ -300,6 +311,7 @@ $(document).ready(function() {
                 type: type
             },
             success: function(response) {
+                console.log('OTP sent successfully');
                 $('#display-email-otp').text(email);
                 $('#otp_email').val(email);
                 showStep('step-otp');
@@ -314,12 +326,21 @@ $(document).ready(function() {
     $('#otpForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        
+        const formData = {
+            _token: '{{ csrf_token() }}',
+            email: currentEmail,
+            otp: $('#otp_code').val().trim()
+        };
+        
+        console.log('Verifying OTP with data:', formData);
 
         $.ajax({
-            url: '/verify-otp',
+            url: '/myauth/verify-otp',
             method: 'POST',
-            data: $(this).serialize(),
+            data: formData,
             success: function(response) {
+                console.log('OTP verified:', response);
                 if (response.verified) {
                     $('#password_email').val(currentEmail);
                     $('#password_otp').val($('#otp_code').val());
@@ -327,6 +348,7 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
+                console.error('OTP verify error:', xhr);
                 const error = xhr.responseJSON?.error || 'Invalid or expired OTP. Please try again.';
                 showError('otp_code', error);
             }
@@ -335,11 +357,12 @@ $(document).ready(function() {
 
     // Resend OTP
     $('#resendOtpBtn').on('click', function() {
-        sendOTP(currentEmail, 'register');
+        const type = isNewUser ? 'register' : 'reset';
+        sendOTP(currentEmail, type);
         alert('OTP sent successfully!');
     });
 
-    // Step 5: Set Password
+    // Step 5: Set Password and Complete Registration
     $('#passwordForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
@@ -352,28 +375,31 @@ $(document).ready(function() {
             return;
         }
 
-        // Prepare final data
+        // ✅ Prepare final data
         let finalData;
-        if (Object.keys(registrationData).length > 0) {
-            // Registration flow - FormData already exists
+        
+        if (isNewUser && registrationData) {
+            // NEW USER - Use stored FormData
             finalData = registrationData;
             finalData.set('password', password);
             finalData.set('password_confirmation', confirmPassword);
             
-            // Make sure email is in FormData
-            if (!finalData.has('email')) {
-                finalData.set('email', currentEmail);
-            }
+            console.log('Submitting NEW USER registration:');
         } else {
-            // Password reset flow - create new FormData
+            // PASSWORD RESET - Create new FormData
             finalData = new FormData();
             finalData.append('_token', '{{ csrf_token() }}');
             finalData.append('email', currentEmail);
             finalData.append('password', password);
             finalData.append('password_confirmation', confirmPassword);
+            
+            console.log('Submitting PASSWORD RESET:');
         }
-
-        console.log('Submitting registration with email:', currentEmail);
+        
+        console.log('Final data being sent:');
+        for (let [key, value] of finalData.entries()) {
+            console.log(key + ':', value);
+        }
 
         $.ajax({
             url: '/complete-registration',
@@ -393,16 +419,8 @@ $(document).ready(function() {
             error: function(xhr) {
                 console.error('Registration error:', xhr.responseJSON);
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON?.errors;
                     const error = xhr.responseJSON?.error;
-                    
-                    if (error) {
-                        alert(error);
-                    } else if (errors?.password) {
-                        showError('new_password', errors.password[0]);
-                    } else {
-                        alert('Validation failed. Please check your inputs.');
-                    }
+                    alert(error || 'Validation failed. Please check your inputs.');
                 } else if (xhr.status === 403) {
                     alert('Please verify OTP first');
                     showStep('step-otp');
@@ -413,6 +431,7 @@ $(document).ready(function() {
         });
     });
 });
+
 </script>
 
 <style>

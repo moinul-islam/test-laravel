@@ -19,14 +19,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\AuthController;
 
-// এই লাইনটা change করুন
 Route::get('/myauth', [AuthController::class, 'showAuthPage'])->name('myauth');
-
-// এই routes গুলো already আছে - ঠিক আছে
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
 Route::post('/send-otp', [AuthController::class, 'sendOTP']);
-Route::post('/verify-otp', [AuthController::class, 'verifyOTP']);
+Route::post('/myauth/verify-otp', [AuthController::class, 'verifyOTP']); // ✅ AuthController
 Route::post('/complete-registration', [AuthController::class, 'completeRegistration']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 // City route এ conflict আছে - এইটা AuthController এ যাবে
 // Route::get('/get-cities/{country_id}', [AuthController::class, 'getCities']);

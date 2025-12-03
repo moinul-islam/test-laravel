@@ -63,59 +63,86 @@ class AuthController extends Controller
     }
 
     /**
-     * Send OTP - Store in Session for 5 minutes
-     */
-    public function sendOTP(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string',
-            'type' => 'required|in:register,reset'
-        ]);
+ * Send OTP - Store in Session for 5 minutes
+ */
+public function sendOTP(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|string',
+        'type' => 'required|in:register,reset'
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first()], 422);
-        }
-
-        $loginId = $request->email;
-        $otp = rand(100000, 999999);
-        
-        // Session te store - 5 minutes hold korbe
-        session([
-            'otp_' . $loginId => $otp,
-            'otp_time_' . $loginId => now()->timestamp
-        ]);
-        
-        \Log::info('=== OTP SENT ===');
-        \Log::info('Email: ' . $loginId);
-        \Log::info('OTP: ' . $otp);
-        \Log::info('Time: ' . now());
-        
-        try {
-            if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-                // Email OTP
-                Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($loginId) {
-                    $message->to($loginId)->subject('Email Verification - eINFO');
-                });
-                \Log::info('OTP email sent successfully');
-            } else {
-                // SMS OTP
-                $phone = preg_replace('/\D/', '', $loginId);
-                $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
-                \Log::info('OTP SMS sent successfully');
-            }
-
-            return response()->json(['success' => true, 'message' => 'OTP sent successfully']);
-        } catch (\Exception $e) {
-            \Log::error('OTP send failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to send OTP'], 500);
-        }
+    if ($validator->fails()) {
+        return response()->json(['error' => $validator->errors()->first()], 422);
     }
 
-    /**
-     * Verify OTP and Store Registration Data in Session
-     */
-    public function verifyOTP(Request $request)
-    {
+    // ✅ Email/Phone normalize করুন - IMPORTANT
+    $loginId = trim($request->email);
+    
+    // Email হলে lowercase করুন
+    if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+        $loginId = strtolower($loginId);
+    } else {
+        // Phone হলে শুধু numbers রাখুন
+        $loginId = preg_replace('/\D/', '', $loginId);
+    }
+    
+    $otp = rand(100000, 999999);
+    
+    // ✅ Session te store - 5 minutes (300 seconds)
+    session([
+        'otp_' . $loginId => $otp,
+        'otp_time_' . $loginId => now()->timestamp,
+        'otp_type_' . $loginId => $request->type
+    ]);
+    
+    // ✅ Session force save করুন
+    session()->save();
+    
+    \Log::info('=== OTP SENT ===');
+    \Log::info('Login ID (normalized): ' . $loginId);
+    \Log::info('Session Key: otp_' . $loginId);
+    \Log::info('OTP: ' . $otp);
+    \Log::info('Time: ' . now()->timestamp);
+    \Log::info('Type: ' . $request->type);
+    \Log::info('Session ID: ' . session()->getId());
+    
+    try {
+        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            // Email OTP
+            Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($request) {
+                $message->to($request->email)->subject('Email Verification - eINFO');
+            });
+            \Log::info('✓ OTP email sent successfully to: ' . $request->email);
+        } else {
+            // SMS OTP
+            $phone = preg_replace('/\D/', '', $request->email);
+            $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
+            \Log::info('✓ OTP SMS sent successfully to: ' . $phone);
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'OTP sent successfully',
+            'debug' => [
+                'session_id' => session()->getId(),
+                'login_id' => $loginId
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('OTP send failed: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        return response()->json(['error' => 'Failed to send OTP. Please try again.'], 500);
+    }
+}
+
+   /**
+ * Verify OTP and Mark as Verified
+ */
+public function verifyOTP(Request $request)
+{
+    try {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string',
             'otp' => 'required|digits:6'
@@ -125,47 +152,88 @@ class AuthController extends Controller
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        $loginId = $request->email;
-        $inputOtp = $request->otp;
+        // ✅ Normalize করুন
+        $loginId = trim($request->email);
         
-        // Session theke OTP ber koro
+        if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+            $loginId = strtolower($loginId);
+        } else {
+            $loginId = preg_replace('/\D/', '', $loginId);
+        }
+        
+        $inputOtp = trim($request->otp);
+        
+        // Session data retrieve
         $sessionOtp = session('otp_' . $loginId);
         $otpTime = session('otp_time_' . $loginId);
         
-        \Log::info('=== OTP VERIFY ===');
-        \Log::info('Email: ' . $loginId);
+        \Log::info('=== OTP VERIFY ATTEMPT ===');
+        \Log::info('Login ID: ' . $loginId);
+        \Log::info('Session Key: otp_' . $loginId);
         \Log::info('Input OTP: ' . $inputOtp);
         \Log::info('Session OTP: ' . $sessionOtp);
         \Log::info('OTP Time: ' . $otpTime);
         \Log::info('Current Time: ' . now()->timestamp);
         
-        if (!$sessionOtp || !$otpTime) {
-            \Log::error('OTP not found in session');
-            return response()->json(['error' => 'OTP expired. Please request a new one.'], 422);
+        // Check 1: OTP exists?
+        if (empty($sessionOtp) || empty($otpTime)) {
+            \Log::error('❌ OTP not found in session');
+            \Log::error('Available keys: ' . json_encode(array_keys(session()->all())));
+            
+            return response()->json([
+                'error' => 'OTP not found or expired. Please request a new one.'
+            ], 422);
         }
 
-        // 5 minutes = 300 seconds check
+        // Check 2: Time check (5 minutes = 300 seconds)
         $timeDiff = now()->timestamp - $otpTime;
         \Log::info('Time difference: ' . $timeDiff . ' seconds');
         
         if ($timeDiff > 300) {
-            session()->forget(['otp_' . $loginId, 'otp_time_' . $loginId]);
-            \Log::error('OTP expired - More than 5 minutes');
-            return response()->json(['error' => 'OTP expired. Please request a new one.'], 422);
+            session()->forget([
+                'otp_' . $loginId, 
+                'otp_time_' . $loginId,
+                'otp_type_' . $loginId
+            ]);
+            
+            \Log::error('❌ OTP expired (' . $timeDiff . ' seconds)');
+            return response()->json([
+                'error' => 'OTP expired. Please request a new one.'
+            ], 422);
         }
 
+        // Check 3: OTP match
         if ($sessionOtp != $inputOtp) {
-            \Log::error('Invalid OTP');
-            return response()->json(['error' => 'Invalid OTP. Please try again.'], 422);
+            \Log::error('❌ Invalid OTP. Expected: ' . $sessionOtp . ', Got: ' . $inputOtp);
+            return response()->json([
+                'error' => 'Invalid OTP. Please try again.'
+            ], 422);
         }
 
-        // OTP correct - Mark as verified for 5 more minutes
-        session(['otp_verified_' . $loginId => true]);
+        // ✅ Success - Mark as verified
+        session([
+            'otp_verified_' . $loginId => true,
+            'otp_verified_time_' . $loginId => now()->timestamp
+        ]);
+        session()->save();
         
-        \Log::info('✓ OTP VERIFIED SUCCESSFULLY');
+        \Log::info('✅ OTP VERIFIED SUCCESSFULLY');
         
-        return response()->json(['verified' => true, 'message' => 'OTP verified successfully']);
+        return response()->json([
+            'verified' => true, 
+            'message' => 'OTP verified successfully'
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('❌ VERIFY OTP EXCEPTION: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'error' => 'Verification failed. Please try again.',
+            'debug' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
     }
+}
 
     /**
      * Complete Registration - Only if OTP verified
