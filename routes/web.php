@@ -19,13 +19,18 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\AuthController;
 
-Route::view('/myauth', 'myauth');
-// Auth Popup Routes
+// এই লাইনটা change করুন
+Route::get('/myauth', [AuthController::class, 'showAuthPage'])->name('myauth');
+
+// এই routes গুলো already আছে - ঠিক আছে
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
 Route::post('/send-otp', [AuthController::class, 'sendOTP']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOTP']);
 Route::post('/complete-registration', [AuthController::class, 'completeRegistration']);
-Route::get('/get-cities/{country_id}', [AuthController::class, 'getCities']);
+
+// City route এ conflict আছে - এইটা AuthController এ যাবে
+// Route::get('/get-cities/{country_id}', [AuthController::class, 'getCities']);
+
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/post/like', [LikeController::class, 'togglePostLike'])->name('post.like');
