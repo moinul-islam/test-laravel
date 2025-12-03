@@ -25,8 +25,10 @@
                     <form id="emailForm">
                         @csrf
                         <div class="mb-3">
-                            <label for="auth_email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="auth_email" name="email" required>
+                            <label for="auth_email" class="form-label">Email or Phone Number</label>
+                            <input type="text" class="form-control" id="auth_email" name="email" 
+                                   pattern="(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)|(^\+?\d{10,15}$)"
+                                   title="Please enter a valid email address or phone number" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Continue</button>
@@ -76,7 +78,11 @@
                             <label for="register_country" class="form-label">Country</label>
                             <select id="register_country" name="country_id" class="form-select" required>
                                 <option value="">Select Country</option>
-                                
+                                @if(isset($countries))
+                                    @foreach($countries as $country)
+                                        <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                    @endforeach
+                                @endif
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
