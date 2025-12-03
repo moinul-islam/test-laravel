@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -23,7 +25,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Show auth page with countries (register page er moto)
+     * Show auth page with countries
      */
     public function showAuthPage()
     {
@@ -41,21 +43,15 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => 'Invalid input'
-            ], 422);
+            return response()->json(['error' => 'Invalid input'], 422);
         }
 
         $loginId = $request->email;
         $user = null;
 
-        // Check if email or phone (register page er logic)
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-            // Email check
-            $email = strtolower($loginId);
-            $user = User::where('email', $email)->first();
+            $user = User::where('email', strtolower($loginId))->first();
         } else {
-            // Phone check - shudhu number rakhbo
             $phone = preg_replace('/\D/', '', $loginId);
             $user = User::where('phone_number', $phone)->first();
         }
@@ -67,7 +63,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Send OTP to email or phone (register page er moto)
+     * Send OTP - Store in Cache for 5 minutes (CONTROLLER MEMORY)
      */
     public function sendOTP(Request $request)
     {
@@ -77,54 +73,40 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()->first()
-            ], 422);
+            return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        // Generate 6 digit OTP
-        $otp = rand(100000, 999999);
         $loginId = $request->email;
+        $otp = rand(100000, 999999);
         
-        // Store OTP in session (register page er moto)
-        session(['otp_' . $loginId => [
-            'code' => $otp,
-            'time' => now()->toDateTimeString()
-        ]]);
+        // CACHE te store - 5 minutes hold korbe (DB te na)
+        Cache::put('otp_' . $loginId, $otp, now()->addMinutes(5));
         
-        \Log::info('OTP stored in session for: ' . $loginId . ' | OTP: ' . $otp);
+        \Log::info('OTP generated and cached for 5 min: ' . $loginId . ' | OTP: ' . $otp);
         
         try {
-            // Check if email or phone
             if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-                // Send Email OTP (register page er exact code)
-                Mail::raw("Your OTP code is: $otp", function($message) use ($loginId) {
-                    $message->to($loginId)
-                            ->subject('Email Verification - eINFO');
+                // Email OTP
+                Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($loginId) {
+                    $message->to($loginId)->subject('Email Verification - eINFO');
                 });
-                \Log::info('Email OTP sent to: ' . $loginId);
+                \Log::info('OTP email sent to: ' . $loginId);
             } else {
-                // Send SMS OTP (register page er exact code)
+                // SMS OTP
                 $phone = preg_replace('/\D/', '', $loginId);
-                $response = $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
-                \Log::info('SMS OTP sent to: ' . $phone);
+                $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
+                \Log::info('OTP SMS sent to: ' . $phone);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'OTP sent successfully'
-            ]);
+            return response()->json(['success' => true, 'message' => 'OTP sent successfully']);
         } catch (\Exception $e) {
             \Log::error('OTP send failed: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Failed to send OTP. Please try again.',
-                'details' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Failed to send OTP'], 500);
         }
     }
 
     /**
-     * Verify OTP
+     * Verify OTP and Store Registration Data in Cache
      */
     public function verifyOTP(Request $request)
     {
@@ -134,89 +116,63 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()->first()
-            ], 422);
+            return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
         $loginId = $request->email;
-        $sessionData = session('otp_' . $loginId);
+        $inputOtp = $request->otp;
         
-        \Log::info('Verifying OTP for: ' . $loginId);
-        \Log::info('Session data: ' . json_encode($sessionData));
-        \Log::info('Input OTP: ' . $request->otp);
+        // Cache theke OTP check koro
+        $cachedOtp = Cache::get('otp_' . $loginId);
         
-        if (!$sessionData) {
-            \Log::error('OTP not found in session for: ' . $loginId);
-            return response()->json([
-                'error' => 'OTP not found. Please request a new one.'
-            ], 422);
+        \Log::info('Verifying OTP for: ' . $loginId . ' | Input: ' . $inputOtp . ' | Cached: ' . $cachedOtp);
+        
+        if (!$cachedOtp) {
+            \Log::error('OTP expired or not found for: ' . $loginId);
+            return response()->json(['error' => 'OTP expired. Please request a new one.'], 422);
         }
 
-        $storedOTP = $sessionData['code'];
-        $otpTime = \Carbon\Carbon::parse($sessionData['time']);
+        if ($cachedOtp != $inputOtp) {
+            \Log::error('Invalid OTP for: ' . $loginId);
+            return response()->json(['error' => 'Invalid OTP. Please try again.'], 422);
+        }
+
+        // OTP correct - Mark as verified in cache for 5 more minutes
+        Cache::put('otp_verified_' . $loginId, true, now()->addMinutes(5));
         
-        // Check if OTP expired (10 minutes)
-        if (now()->diffInMinutes($otpTime) > 10) {
-            session()->forget('otp_' . $loginId);
-            \Log::error('OTP expired for: ' . $loginId);
-            return response()->json([
-                'error' => 'OTP expired. Please request a new one.'
-            ], 422);
-        }
-
-        if ($storedOTP != $request->otp) {
-            \Log::error('Invalid OTP. Expected: ' . $storedOTP . ', Got: ' . $request->otp);
-            return response()->json([
-                'error' => 'Invalid OTP. Please try again.'
-            ], 422);
-        }
-
-        // Mark OTP as verified
-        session(['otp_verified_' . $loginId => true]);
         \Log::info('OTP verified successfully for: ' . $loginId);
         
-        return response()->json([
-            'verified' => true,
-            'message' => 'OTP verified successfully'
-        ]);
+        return response()->json(['verified' => true, 'message' => 'OTP verified successfully']);
     }
 
     /**
-     * Complete registration or password reset (register page er moto logic)
+     * Complete Registration - Only if OTP verified
      */
     public function completeRegistration(Request $request)
     {
         $loginId = $request->email;
 
-        // SECURITY: Check if OTP was verified
-        if (!session('otp_verified_' . $loginId)) {
-            \Log::error('Unauthorized registration attempt without OTP verification for: ' . $loginId);
-            return response()->json([
-                'error' => 'Please verify OTP first'
-            ], 422);
+        // SECURITY CHECK: OTP verify hoiche kina check koro
+        if (!Cache::get('otp_verified_' . $loginId)) {
+            \Log::error('Unauthorized attempt - OTP not verified for: ' . $loginId);
+            return response()->json(['error' => 'Please verify OTP first'], 403);
         }
 
-        \Log::info('Starting registration/password reset for: ' . $loginId);
+        \Log::info('Starting registration for verified user: ' . $loginId);
 
-        // Determine if email or phone (register page logic)
+        // Email or Phone determine koro
         $email = null;
         $phone = null;
-
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-            // Email input
             $email = strtolower($loginId);
             $user = User::where('email', $email)->first();
         } else {
-            // Phone input - shudhu number rakhbo
             $phone = preg_replace('/\D/', '', $loginId);
             $user = User::where('phone_number', $phone)->first();
         }
 
         if (!$user) {
-            // NEW USER REGISTRATION
-            \Log::info('New user registration for: ' . $loginId);
-            
+            // NEW USER - Registration
             $validator = Validator::make($request->all(), [
                 'email' => 'required|string',
                 'name' => 'required|string|max:255',
@@ -227,109 +183,85 @@ class AuthController extends Controller
             ]);
 
             if ($validator->fails()) {
-                \Log::error('Validation failed: ' . json_encode($validator->errors()));
-                return response()->json([
-                    'error' => $validator->errors()->first(),
-                    'errors' => $validator->errors()
-                ], 422);
+                return response()->json(['error' => $validator->errors()->first()], 422);
             }
 
             try {
-                // Generate unique username (register page theke newa)
                 $username = $this->generateUniqueUsername($request->name);
-                \Log::info('Generated username: ' . $username);
-
-                // Handle image upload (register page er exact code)
+                
                 $imageName = null;
                 if ($request->hasFile('image')) {
                     $imageName = time().'.'.$request->image->extension();  
                     $request->image->move(public_path('profile-image'), $imageName);
-                    \Log::info('Image uploaded: ' . $imageName);
                 }
 
-                // User create (register page er moto)
                 $user = User::create([
                     'image' => $imageName,
                     'name' => $request->name,
                     'username' => $username,
-                    'email' => $email,           // jodi email hoy
-                    'phone_number' => $phone,    // jodi phone hoy
+                    'email' => $email,
+                    'phone_number' => $phone,
                     'country_id' => $request->country_id,
                     'city_id' => $request->city_id,
                     'password' => Hash::make($request->password),
                     'fcm_token' => $request->fcm_token ?? null,
                 ]);
 
-                \Log::info('New user created successfully with ID: ' . $user->id);
+                \Log::info('New user created: ' . $user->id . ' | Username: ' . $username);
 
             } catch (\Exception $e) {
                 \Log::error('User creation failed: ' . $e->getMessage());
-                return response()->json([
-                    'error' => 'Registration failed. Please try again.'
-                ], 500);
+                return response()->json(['error' => 'Registration failed'], 500);
             }
 
         } else {
-            // EXISTING USER - PASSWORD UPDATE
-            \Log::info('Password update for existing user: ' . $loginId);
-            
+            // EXISTING USER - Password Reset
             $validator = Validator::make($request->all(), [
                 'email' => 'required|string',
                 'password' => 'required|string|min:8|confirmed'
             ]);
 
             if ($validator->fails()) {
-                \Log::error('Password validation failed: ' . json_encode($validator->errors()));
-                return response()->json([
-                    'error' => $validator->errors()->first(),
-                    'errors' => $validator->errors()
-                ], 422);
+                return response()->json(['error' => $validator->errors()->first()], 422);
             }
 
             try {
                 $user->password = Hash::make($request->password);
                 $user->save();
-                \Log::info('Password updated successfully for user ID: ' . $user->id);
+                \Log::info('Password updated for user: ' . $user->id);
             } catch (\Exception $e) {
                 \Log::error('Password update failed: ' . $e->getMessage());
-                return response()->json([
-                    'error' => 'Password update failed. Please try again.'
-                ], 500);
+                return response()->json(['error' => 'Password update failed'], 500);
             }
         }
 
-        // Clear ALL OTP sessions for security
-        session()->forget([
-            'otp_' . $loginId,
-            'otp_verified_' . $loginId
-        ]);
-        \Log::info('OTP sessions cleared for security');
+        // Clear cache - Security
+        Cache::forget('otp_' . $loginId);
+        Cache::forget('otp_verified_' . $loginId);
+        \Log::info('Cache cleared for security: ' . $loginId);
 
-        // Login user (register page er moto)
+        // Login user
         Auth::login($user);
-        \Log::info('User logged in successfully: ' . $user->username);
+        \Log::info('User logged in: ' . $user->username);
         
         return response()->json([
             'success' => true,
             'message' => 'Registration completed successfully',
-            'redirect' => url('/') // Change to your home route
+            'redirect' => url('/')
         ]);
     }
 
     /**
-     * Get cities by country ID (register page theke)
+     * Get cities by country
      */
     public function getCities($country_id)
     {
-        $cities = City::where('country_id', $country_id)
-                      ->orderBy('name', 'asc')
-                      ->get(['id', 'name']);
-        
+        $cities = City::where('country_id', $country_id)->orderBy('name')->get(['id', 'name']);
         return response()->json($cities);
     }
 
     /**
-     * Handle login (existing login logic)
+     * Login
      */
     public function login(Request $request)
     {
@@ -339,58 +271,40 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()->first()
-            ], 422);
+            return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
         $loginId = $request->email;
         $credentials = [];
 
-        // Determine if email or phone
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-            $credentials = [
-                'email' => strtolower($loginId),
-                'password' => $request->password
-            ];
+            $credentials = ['email' => strtolower($loginId), 'password' => $request->password];
         } else {
             $phone = preg_replace('/\D/', '', $loginId);
-            $credentials = [
-                'phone_number' => $phone,
-                'password' => $request->password
-            ];
+            $credentials = ['phone_number' => $phone, 'password' => $request->password];
         }
 
-        // Attempt to login
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'redirect' => url('/') // Change to your home route
-            ]);
+            return response()->json(['success' => true, 'redirect' => url('/')]);
         }
 
-        return response()->json([
-            'error' => 'Invalid credentials'
-        ], 422);
+        return response()->json(['error' => 'Invalid credentials'], 422);
     }
 
     /**
-     * Logout user
+     * Logout
      */
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
         return redirect()->route('login');
     }
 
     /**
-     * Generate a unique username (register page theke exact code)
+     * Generate unique username
      */
     private function generateUniqueUsername($baseName = null)
     {
@@ -416,13 +330,12 @@ class AuthController extends Controller
     }
 
     /**
-     * Transliterate name to ASCII (register page theke)
+     * Transliterate name
      */
     private function transliterateName($name)
     {
         $name = trim(strtolower($name));
         
-        // Try iconv first
         if (function_exists('iconv')) {
             $transliterated = @iconv('UTF-8', 'ASCII//TRANSLIT', $name);
             if (!empty($transliterated) && $transliterated !== false) {
@@ -433,7 +346,6 @@ class AuthController extends Controller
             }
         }
 
-        // Manual transliteration
         $result = $this->manualTransliterate($name);
         $cleaned = preg_replace('/[^a-zA-Z0-9]/', '', $result);
         
@@ -441,40 +353,21 @@ class AuthController extends Controller
             return $cleaned;
         }
 
-        // Fallback
         return 'user' . Str::random(6) . rand(100, 999);
     }
 
     /**
-     * Manual transliteration mapping (register page theke exact code)
+     * Manual transliteration
      */
     private function manualTransliterate($name)
     {
         $charMap = [
-            // Bangla
             "আ" => "a", "ই" => "i", "উ" => "u", "এ" => "e", "ও" => "o", "অ" => "a",
             "ক" => "k", "খ" => "kh", "গ" => "g", "ঘ" => "gh", "চ" => "ch", "ছ" => "chh", 
             "জ" => "j", "ঝ" => "jh", "ট" => "t", "ঠ" => "th", "ড" => "d", "ঢ" => "dh", 
             "ত" => "t", "থ" => "th", "দ" => "d", "ধ" => "dh", "ন" => "n", "প" => "p", 
             "ফ" => "ph", "ব" => "b", "ভ" => "bh", "ম" => "m", "য" => "j", "র" => "r", 
             "ল" => "l", "শ" => "sh", "ষ" => "sh", "স" => "s", "হ" => "h",
-
-            // Arabic
-            "أ" => "a", "ا" => "a", "ب" => "b", "ت" => "t", "ث" => "th", "ج" => "j", 
-            "ح" => "h", "خ" => "kh", "د" => "d", "ذ" => "th", "ر" => "r", "ز" => "z", 
-            "س" => "s", "ش" => "sh", "ص" => "s", "ض" => "d", "ط" => "t", "ظ" => "z", 
-            "ع" => "a", "غ" => "gh", "ف" => "f", "ق" => "q", "ك" => "k", "ل" => "l", 
-            "م" => "m", "ن" => "n", "ه" => "h", "و" => "w", "ي" => "y",
-
-            // Hindi/Devanagari
-            "अ" => "a", "आ" => "aa", "इ" => "i", "ई" => "ii", "उ" => "u", "ऊ" => "uu", 
-            "ए" => "e", "ओ" => "o", "क" => "k", "ख" => "kh", "ग" => "g", "घ" => "gh", 
-            "च" => "ch", "छ" => "chh", "ज" => "j", "झ" => "jh", "ट" => "t", "ठ" => "th", 
-            "ड" => "d", "ढ" => "dh", "त" => "t", "थ" => "th", "द" => "d", "ध" => "dh", 
-            "न" => "n", "प" => "p", "फ" => "ph", "ब" => "b", "भ" => "bh", "म" => "m", 
-            "य" => "y", "र" => "r", "ल" => "l", "व" => "v", "श" => "sh", "स" => "s", "ह" => "h",
-
-            // Remove symbols
             " " => "", "-" => "", "_" => "", "." => "", "," => ""
         ];
 
