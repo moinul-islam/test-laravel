@@ -235,17 +235,18 @@ $(document).ready(function() {
         clearErrors();
 
         $.ajax({
-            url: '{{ route("login") }}',
+            url: '/login',
             method: 'POST',
             data: $(this).serialize(),
             success: function(response) {
                 if (response.success) {
-                    window.location.href = response.redirect || '/dashboard';
+                    window.location.href = response.redirect || '/';
                 }
             },
             error: function(xhr) {
                 if (xhr.status === 422) {
-                    showError('login_password', 'Invalid password. Please try again.');
+                    const error = xhr.responseJSON.error || 'Invalid credentials';
+                    showError('login_password', error);
                 } else {
                     showError('login_password', 'Login failed. Please try again.');
                 }
@@ -326,7 +327,8 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
-                showError('otp_code', 'Invalid or expired OTP. Please try again.');
+                const error = xhr.responseJSON?.error || 'Invalid or expired OTP. Please try again.';
+                showError('otp_code', error);
             }
         });
     });
@@ -353,20 +355,25 @@ $(document).ready(function() {
         // Prepare final data
         let finalData;
         if (Object.keys(registrationData).length > 0) {
-            // Registration flow
+            // Registration flow - FormData already exists
             finalData = registrationData;
-            finalData.append('password', password);
-            finalData.append('password_confirmation', confirmPassword);
-            finalData.append('otp', $('#password_otp').val());
+            finalData.set('password', password);
+            finalData.set('password_confirmation', confirmPassword);
+            
+            // Make sure email is in FormData
+            if (!finalData.has('email')) {
+                finalData.set('email', currentEmail);
+            }
         } else {
-            // Password reset flow
+            // Password reset flow - create new FormData
             finalData = new FormData();
             finalData.append('_token', '{{ csrf_token() }}');
             finalData.append('email', currentEmail);
             finalData.append('password', password);
             finalData.append('password_confirmation', confirmPassword);
-            finalData.append('otp', $('#password_otp').val());
         }
+
+        console.log('Submitting registration with email:', currentEmail);
 
         $.ajax({
             url: '/complete-registration',
@@ -375,19 +382,30 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
+                console.log('Registration success:', response);
                 if (response.success) {
                     showStep('step-success');
                     setTimeout(function() {
-                        window.location.href = response.redirect || '/dashboard';
+                        window.location.href = response.redirect || '/';
                     }, 2000);
                 }
             },
             error: function(xhr) {
+                console.error('Registration error:', xhr.responseJSON);
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
-                    if (errors.password) {
+                    const errors = xhr.responseJSON?.errors;
+                    const error = xhr.responseJSON?.error;
+                    
+                    if (error) {
+                        alert(error);
+                    } else if (errors?.password) {
                         showError('new_password', errors.password[0]);
+                    } else {
+                        alert('Validation failed. Please check your inputs.');
                     }
+                } else if (xhr.status === 403) {
+                    alert('Please verify OTP first');
+                    showStep('step-otp');
                 } else {
                     alert('Registration failed. Please try again.');
                 }
