@@ -87,9 +87,12 @@ class AuthController extends Controller
         $loginId = $request->email;
         
         // Store OTP in session (register page er moto)
-        session(['otp' => $otp]);
-        session(['otp_' . $loginId => $otp]);
-        session(['otp_time_' . $loginId => now()]);
+        session(['otp_' . $loginId => [
+            'code' => $otp,
+            'time' => now()->toDateTimeString()
+        ]]);
+        
+        \Log::info('OTP stored in session for: ' . $loginId . ' | OTP: ' . $otp);
         
         try {
             // Check if email or phone
@@ -99,10 +102,12 @@ class AuthController extends Controller
                     $message->to($loginId)
                             ->subject('Email Verification - eINFO');
                 });
+                \Log::info('Email OTP sent to: ' . $loginId);
             } else {
                 // Send SMS OTP (register page er exact code)
                 $phone = preg_replace('/\D/', '', $loginId);
                 $response = $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
+                \Log::info('SMS OTP sent to: ' . $phone);
             }
 
             return response()->json([
@@ -110,6 +115,7 @@ class AuthController extends Controller
                 'message' => 'OTP sent successfully'
             ]);
         } catch (\Exception $e) {
+            \Log::error('OTP send failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to send OTP. Please try again.',
                 'details' => $e->getMessage()
@@ -134,24 +140,33 @@ class AuthController extends Controller
         }
 
         $loginId = $request->email;
-        $storedOTP = session('otp_' . $loginId);
-        $otpTime = session('otp_time_' . $loginId);
+        $sessionData = session('otp_' . $loginId);
         
-        if (!$storedOTP) {
+        \Log::info('Verifying OTP for: ' . $loginId);
+        \Log::info('Session data: ' . json_encode($sessionData));
+        \Log::info('Input OTP: ' . $request->otp);
+        
+        if (!$sessionData) {
+            \Log::error('OTP not found in session for: ' . $loginId);
             return response()->json([
                 'error' => 'OTP not found. Please request a new one.'
             ], 422);
         }
 
+        $storedOTP = $sessionData['code'];
+        $otpTime = \Carbon\Carbon::parse($sessionData['time']);
+        
         // Check if OTP expired (10 minutes)
-        if ($otpTime && now()->diffInMinutes($otpTime) > 10) {
-            session()->forget(['otp_' . $loginId, 'otp_time_' . $loginId]);
+        if (now()->diffInMinutes($otpTime) > 10) {
+            session()->forget('otp_' . $loginId);
+            \Log::error('OTP expired for: ' . $loginId);
             return response()->json([
                 'error' => 'OTP expired. Please request a new one.'
             ], 422);
         }
 
         if ($storedOTP != $request->otp) {
+            \Log::error('Invalid OTP. Expected: ' . $storedOTP . ', Got: ' . $request->otp);
             return response()->json([
                 'error' => 'Invalid OTP. Please try again.'
             ], 422);
@@ -159,6 +174,7 @@ class AuthController extends Controller
 
         // Mark OTP as verified
         session(['otp_verified_' . $loginId => true]);
+        \Log::info('OTP verified successfully for: ' . $loginId);
         
         return response()->json([
             'verified' => true,
@@ -173,12 +189,15 @@ class AuthController extends Controller
     {
         $loginId = $request->email;
 
-        // Check if OTP was verified
+        // SECURITY: Check if OTP was verified
         if (!session('otp_verified_' . $loginId)) {
+            \Log::error('Unauthorized registration attempt without OTP verification for: ' . $loginId);
             return response()->json([
                 'error' => 'Please verify OTP first'
             ], 422);
         }
+
+        \Log::info('Starting registration/password reset for: ' . $loginId);
 
         // Determine if email or phone (register page logic)
         $email = null;
@@ -187,19 +206,17 @@ class AuthController extends Controller
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
             // Email input
             $email = strtolower($loginId);
-            
-            // Email unique check (register page logic)
             $user = User::where('email', $email)->first();
         } else {
             // Phone input - shudhu number rakhbo
             $phone = preg_replace('/\D/', '', $loginId);
-            
-            // Phone unique check (register page logic)
             $user = User::where('phone_number', $phone)->first();
         }
 
         if (!$user) {
-            // New user registration (register page er logic follow kore)
+            // NEW USER REGISTRATION
+            \Log::info('New user registration for: ' . $loginId);
+            
             $validator = Validator::make($request->all(), [
                 'email' => 'required|string',
                 'name' => 'required|string|max:255',
@@ -210,63 +227,87 @@ class AuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Validation failed: ' . json_encode($validator->errors()));
                 return response()->json([
                     'error' => $validator->errors()->first(),
                     'errors' => $validator->errors()
                 ], 422);
             }
 
-            // Generate unique username (register page theke newa)
-            $username = $this->generateUniqueUsername($request->name);
+            try {
+                // Generate unique username (register page theke newa)
+                $username = $this->generateUniqueUsername($request->name);
+                \Log::info('Generated username: ' . $username);
 
-            // Handle image upload (register page er exact code)
-            $imageName = null;
-            if ($request->hasFile('image')) {
-                $imageName = time().'.'.$request->image->extension();  
-                $request->image->move(public_path('profile-image'), $imageName);
+                // Handle image upload (register page er exact code)
+                $imageName = null;
+                if ($request->hasFile('image')) {
+                    $imageName = time().'.'.$request->image->extension();  
+                    $request->image->move(public_path('profile-image'), $imageName);
+                    \Log::info('Image uploaded: ' . $imageName);
+                }
+
+                // User create (register page er moto)
+                $user = User::create([
+                    'image' => $imageName,
+                    'name' => $request->name,
+                    'username' => $username,
+                    'email' => $email,           // jodi email hoy
+                    'phone_number' => $phone,    // jodi phone hoy
+                    'country_id' => $request->country_id,
+                    'city_id' => $request->city_id,
+                    'password' => Hash::make($request->password),
+                    'fcm_token' => $request->fcm_token ?? null,
+                ]);
+
+                \Log::info('New user created successfully with ID: ' . $user->id);
+
+            } catch (\Exception $e) {
+                \Log::error('User creation failed: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Registration failed. Please try again.'
+                ], 500);
             }
 
-            // User create (register page er moto)
-            $user = User::create([
-                'image' => $imageName,
-                'name' => $request->name,
-                'username' => $username,
-                'email' => $email,           // jodi email hoy
-                'phone_number' => $phone,    // jodi phone hoy
-                'country_id' => $request->country_id,
-                'city_id' => $request->city_id,
-                'password' => Hash::make($request->password),
-                'fcm_token' => $request->fcm_token ?? null,
-            ]);
-
         } else {
-            // Existing user - password update (jodi user ache but password nai)
+            // EXISTING USER - PASSWORD UPDATE
+            \Log::info('Password update for existing user: ' . $loginId);
+            
             $validator = Validator::make($request->all(), [
                 'email' => 'required|string',
                 'password' => 'required|string|min:8|confirmed'
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Password validation failed: ' . json_encode($validator->errors()));
                 return response()->json([
                     'error' => $validator->errors()->first(),
                     'errors' => $validator->errors()
                 ], 422);
             }
 
-            $user->password = Hash::make($request->password);
-            $user->save();
+            try {
+                $user->password = Hash::make($request->password);
+                $user->save();
+                \Log::info('Password updated successfully for user ID: ' . $user->id);
+            } catch (\Exception $e) {
+                \Log::error('Password update failed: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Password update failed. Please try again.'
+                ], 500);
+            }
         }
 
-        // Clear OTP sessions
+        // Clear ALL OTP sessions for security
         session()->forget([
-            'otp',
-            'otp_' . $loginId, 
-            'otp_time_' . $loginId, 
+            'otp_' . $loginId,
             'otp_verified_' . $loginId
         ]);
+        \Log::info('OTP sessions cleared for security');
 
         // Login user (register page er moto)
         Auth::login($user);
+        \Log::info('User logged in successfully: ' . $user->username);
         
         return response()->json([
             'success' => true,
