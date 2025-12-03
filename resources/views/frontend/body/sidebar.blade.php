@@ -1,7 +1,7 @@
 <!-- Sidebar -->
 <div class="category-sidebar" id="categorySidebar">
     <div class="sidebar-header">
-        <h5>All Categories</h5>
+        <h5>Business Categories</h5>
         <button class="btn-close" id="closeSidebarBtn">&times;</button>
     </div>
     
@@ -39,6 +39,19 @@
                 
                 @if($allSubCategories->count() > 0)
                 <div class="accordion-item">
+
+                    <!-- @if ($loop->first)
+                        <h2 class="accordion-header" id="headingHome">
+                            <a href="{{ url('/') }}" 
+                               class="accordion-button home-btn {{ (!request()->route('slug') || request()->route('slug') == null) ? 'active' : '' }}"
+                               style="display: flex; align-items: center;"
+                               type="button">
+                                <i class="bi bi-house-door" style="font-size: 1.2rem; margin-right: 8px;"></i>
+                                @t('Home')
+                            </a>
+                        </h2>
+                    @endif -->
+
                     <h2 class="accordion-header" id="heading{{ $universalCategory->id }}">
                         <button class="accordion-button {{ $isActiveParent ? '' : 'collapsed' }}" type="button" 
                                 data-bs-toggle="collapse" 
