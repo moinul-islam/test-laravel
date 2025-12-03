@@ -63,7 +63,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Send OTP - Store in Cache for 5 minutes (CONTROLLER MEMORY)
+     * Send OTP - Store in Session for 5 minutes
      */
     public function sendOTP(Request $request)
     {
@@ -79,10 +79,16 @@ class AuthController extends Controller
         $loginId = $request->email;
         $otp = rand(100000, 999999);
         
-        // CACHE te store - 5 minutes hold korbe (DB te na)
-        Cache::put('otp_' . $loginId, $otp, now()->addMinutes(5));
+        // Session te store - 5 minutes hold korbe
+        session([
+            'otp_' . $loginId => $otp,
+            'otp_time_' . $loginId => now()->timestamp
+        ]);
         
-        \Log::info('OTP generated and cached for 5 min: ' . $loginId . ' | OTP: ' . $otp);
+        \Log::info('=== OTP SENT ===');
+        \Log::info('Email: ' . $loginId);
+        \Log::info('OTP: ' . $otp);
+        \Log::info('Time: ' . now());
         
         try {
             if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
@@ -90,12 +96,12 @@ class AuthController extends Controller
                 Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($loginId) {
                     $message->to($loginId)->subject('Email Verification - eINFO');
                 });
-                \Log::info('OTP email sent to: ' . $loginId);
+                \Log::info('OTP email sent successfully');
             } else {
                 // SMS OTP
                 $phone = preg_replace('/\D/', '', $loginId);
                 $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
-                \Log::info('OTP SMS sent to: ' . $phone);
+                \Log::info('OTP SMS sent successfully');
             }
 
             return response()->json(['success' => true, 'message' => 'OTP sent successfully']);
@@ -106,7 +112,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Verify OTP and Store Registration Data in Cache
+     * Verify OTP and Store Registration Data in Session
      */
     public function verifyOTP(Request $request)
     {
@@ -122,25 +128,41 @@ class AuthController extends Controller
         $loginId = $request->email;
         $inputOtp = $request->otp;
         
-        // Cache theke OTP check koro
-        $cachedOtp = Cache::get('otp_' . $loginId);
+        // Session theke OTP ber koro
+        $sessionOtp = session('otp_' . $loginId);
+        $otpTime = session('otp_time_' . $loginId);
         
-        \Log::info('Verifying OTP for: ' . $loginId . ' | Input: ' . $inputOtp . ' | Cached: ' . $cachedOtp);
+        \Log::info('=== OTP VERIFY ===');
+        \Log::info('Email: ' . $loginId);
+        \Log::info('Input OTP: ' . $inputOtp);
+        \Log::info('Session OTP: ' . $sessionOtp);
+        \Log::info('OTP Time: ' . $otpTime);
+        \Log::info('Current Time: ' . now()->timestamp);
         
-        if (!$cachedOtp) {
-            \Log::error('OTP expired or not found for: ' . $loginId);
+        if (!$sessionOtp || !$otpTime) {
+            \Log::error('OTP not found in session');
             return response()->json(['error' => 'OTP expired. Please request a new one.'], 422);
         }
 
-        if ($cachedOtp != $inputOtp) {
-            \Log::error('Invalid OTP for: ' . $loginId);
+        // 5 minutes = 300 seconds check
+        $timeDiff = now()->timestamp - $otpTime;
+        \Log::info('Time difference: ' . $timeDiff . ' seconds');
+        
+        if ($timeDiff > 300) {
+            session()->forget(['otp_' . $loginId, 'otp_time_' . $loginId]);
+            \Log::error('OTP expired - More than 5 minutes');
+            return response()->json(['error' => 'OTP expired. Please request a new one.'], 422);
+        }
+
+        if ($sessionOtp != $inputOtp) {
+            \Log::error('Invalid OTP');
             return response()->json(['error' => 'Invalid OTP. Please try again.'], 422);
         }
 
-        // OTP correct - Mark as verified in cache for 5 more minutes
-        Cache::put('otp_verified_' . $loginId, true, now()->addMinutes(5));
+        // OTP correct - Mark as verified for 5 more minutes
+        session(['otp_verified_' . $loginId => true]);
         
-        \Log::info('OTP verified successfully for: ' . $loginId);
+        \Log::info('✓ OTP VERIFIED SUCCESSFULLY');
         
         return response()->json(['verified' => true, 'message' => 'OTP verified successfully']);
     }
@@ -153,12 +175,15 @@ class AuthController extends Controller
         $loginId = $request->email;
 
         // SECURITY CHECK: OTP verify hoiche kina check koro
-        if (!Cache::get('otp_verified_' . $loginId)) {
-            \Log::error('Unauthorized attempt - OTP not verified for: ' . $loginId);
+        if (!session('otp_verified_' . $loginId)) {
+            \Log::error('=== UNAUTHORIZED ATTEMPT ===');
+            \Log::error('Email: ' . $loginId);
+            \Log::error('OTP not verified');
             return response()->json(['error' => 'Please verify OTP first'], 403);
         }
 
-        \Log::info('Starting registration for verified user: ' . $loginId);
+        \Log::info('=== REGISTRATION START ===');
+        \Log::info('Email: ' . $loginId);
 
         // Email or Phone determine koro
         $email = null;
@@ -183,6 +208,7 @@ class AuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Validation failed: ' . json_encode($validator->errors()));
                 return response()->json(['error' => $validator->errors()->first()], 422);
             }
 
@@ -207,7 +233,9 @@ class AuthController extends Controller
                     'fcm_token' => $request->fcm_token ?? null,
                 ]);
 
-                \Log::info('New user created: ' . $user->id . ' | Username: ' . $username);
+                \Log::info('✓ NEW USER CREATED');
+                \Log::info('User ID: ' . $user->id);
+                \Log::info('Username: ' . $username);
 
             } catch (\Exception $e) {
                 \Log::error('User creation failed: ' . $e->getMessage());
@@ -222,27 +250,32 @@ class AuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Password validation failed: ' . json_encode($validator->errors()));
                 return response()->json(['error' => $validator->errors()->first()], 422);
             }
 
             try {
                 $user->password = Hash::make($request->password);
                 $user->save();
-                \Log::info('Password updated for user: ' . $user->id);
+                \Log::info('✓ PASSWORD UPDATED');
+                \Log::info('User ID: ' . $user->id);
             } catch (\Exception $e) {
                 \Log::error('Password update failed: ' . $e->getMessage());
                 return response()->json(['error' => 'Password update failed'], 500);
             }
         }
 
-        // Clear cache - Security
-        Cache::forget('otp_' . $loginId);
-        Cache::forget('otp_verified_' . $loginId);
-        \Log::info('Cache cleared for security: ' . $loginId);
+        // Clear session - Security
+        session()->forget([
+            'otp_' . $loginId,
+            'otp_time_' . $loginId,
+            'otp_verified_' . $loginId
+        ]);
+        \Log::info('Session cleared for security');
 
         // Login user
         Auth::login($user);
-        \Log::info('User logged in: ' . $user->username);
+        \Log::info('✓ USER LOGGED IN: ' . $user->username);
         
         return response()->json([
             'success' => true,
