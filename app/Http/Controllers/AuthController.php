@@ -63,184 +63,194 @@ class AuthController extends Controller
     }
 
     /**
- * Send OTP - Store in Session for 5 minutes
- */
-public function sendOTP(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|string',
-        'type' => 'required|in:register,reset'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['error' => $validator->errors()->first()], 422);
-    }
-
-    // ✅ Email/Phone normalize করুন - IMPORTANT
-    $loginId = trim($request->email);
-    
-    // Email হলে lowercase করুন
-    if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-        $loginId = strtolower($loginId);
-    } else {
-        // Phone হলে শুধু numbers রাখুন
-        $loginId = preg_replace('/\D/', '', $loginId);
-    }
-    
-    $otp = rand(100000, 999999);
-    
-    // ✅ Session te store - 5 minutes (300 seconds)
-    session([
-        'otp_' . $loginId => $otp,
-        'otp_time_' . $loginId => now()->timestamp,
-        'otp_type_' . $loginId => $request->type
-    ]);
-    
-    // ✅ Session force save করুন
-    session()->save();
-    
-    \Log::info('=== OTP SENT ===');
-    \Log::info('Login ID (normalized): ' . $loginId);
-    \Log::info('Session Key: otp_' . $loginId);
-    \Log::info('OTP: ' . $otp);
-    \Log::info('Time: ' . now()->timestamp);
-    \Log::info('Type: ' . $request->type);
-    \Log::info('Session ID: ' . session()->getId());
-    
-    try {
-        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
-            // Email OTP
-            Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($request) {
-                $message->to($request->email)->subject('Email Verification - eINFO');
-            });
-            \Log::info('✓ OTP email sent successfully to: ' . $request->email);
-        } else {
-            // SMS OTP
-            $phone = preg_replace('/\D/', '', $request->email);
-            $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
-            \Log::info('✓ OTP SMS sent successfully to: ' . $phone);
-        }
-
-        return response()->json([
-            'success' => true, 
-            'message' => 'OTP sent successfully',
-            'debug' => [
-                'session_id' => session()->getId(),
-                'login_id' => $loginId
-            ]
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('OTP send failed: ' . $e->getMessage());
-        \Log::error('Stack trace: ' . $e->getTraceAsString());
-        return response()->json(['error' => 'Failed to send OTP. Please try again.'], 500);
-    }
-}
-
-   /**
- * Verify OTP and Mark as Verified
- */
-public function verifyOTP(Request $request)
-{
-    try {
+     * Send OTP - Store in Session for 5 minutes
+     */
+    public function sendOTP(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string',
-            'otp' => 'required|digits:6'
+            'type' => 'required|in:register,reset'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        // ✅ Normalize করুন
+        // ✅ Email/Phone normalize করুন - IMPORTANT
         $loginId = trim($request->email);
         
+        // Email হলে lowercase করুন
+        if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+            $loginId = strtolower($loginId);
+        } else {
+            // Phone হলে শুধু numbers রাখুন
+            $loginId = preg_replace('/\D/', '', $loginId);
+        }
+        
+        $otp = rand(100000, 999999);
+        
+        // ✅ Session te store - 5 minutes (300 seconds)
+        session([
+            'otp_' . $loginId => $otp,
+            'otp_time_' . $loginId => now()->timestamp,
+            'otp_type_' . $loginId => $request->type
+        ]);
+        
+        // ✅ Session force save করুন
+        session()->save();
+        
+        \Log::info('=== OTP SENT ===');
+        \Log::info('Login ID (normalized): ' . $loginId);
+        \Log::info('Session Key: otp_' . $loginId);
+        \Log::info('OTP: ' . $otp);
+        \Log::info('Time: ' . now()->timestamp);
+        \Log::info('Type: ' . $request->type);
+        \Log::info('Session ID: ' . session()->getId());
+        
+        try {
+            if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+                // Email OTP
+                Mail::raw("Your OTP code is: $otp\n\nThis OTP will expire in 5 minutes.", function($message) use ($request) {
+                    $message->to($request->email)->subject('Email Verification - eINFO');
+                });
+                \Log::info('✓ OTP email sent successfully to: ' . $request->email);
+            } else {
+                // SMS OTP
+                $phone = preg_replace('/\D/', '', $request->email);
+                $this->smsService->sendSms($phone, "Your eINFO OTP is: " . $otp);
+                \Log::info('✓ OTP SMS sent successfully to: ' . $phone);
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'OTP sent successfully',
+                'debug' => [
+                    'session_id' => session()->getId(),
+                    'login_id' => $loginId
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('OTP send failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['error' => 'Failed to send OTP. Please try again.'], 500);
+        }
+    }
+
+    /**
+     * Verify OTP and Mark as Verified
+     */
+    public function verifyOTP(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|string',
+                'otp' => 'required|digits:6'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()->first()], 422);
+            }
+
+            // ✅ Normalize করুন
+            $loginId = trim($request->email);
+            
+            if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+                $loginId = strtolower($loginId);
+            } else {
+                $loginId = preg_replace('/\D/', '', $loginId);
+            }
+            
+            $inputOtp = trim($request->otp);
+            
+            // Session data retrieve
+            $sessionOtp = session('otp_' . $loginId);
+            $otpTime = session('otp_time_' . $loginId);
+            
+            \Log::info('=== OTP VERIFY ATTEMPT ===');
+            \Log::info('Login ID: ' . $loginId);
+            \Log::info('Session Key: otp_' . $loginId);
+            \Log::info('Input OTP: ' . $inputOtp);
+            \Log::info('Session OTP: ' . $sessionOtp);
+            \Log::info('OTP Time: ' . $otpTime);
+            \Log::info('Current Time: ' . now()->timestamp);
+            
+            // Check 1: OTP exists?
+            if (empty($sessionOtp) || empty($otpTime)) {
+                \Log::error('❌ OTP not found in session');
+                \Log::error('Available keys: ' . json_encode(array_keys(session()->all())));
+                
+                return response()->json([
+                    'error' => 'OTP not found or expired. Please request a new one.'
+                ], 422);
+            }
+
+            // Check 2: Time check (5 minutes = 300 seconds)
+            $timeDiff = now()->timestamp - $otpTime;
+            \Log::info('Time difference: ' . $timeDiff . ' seconds');
+            
+            if ($timeDiff > 300) {
+                session()->forget([
+                    'otp_' . $loginId, 
+                    'otp_time_' . $loginId,
+                    'otp_type_' . $loginId
+                ]);
+                
+                \Log::error('❌ OTP expired (' . $timeDiff . ' seconds)');
+                return response()->json([
+                    'error' => 'OTP expired. Please request a new one.'
+                ], 422);
+            }
+
+            // Check 3: OTP match
+            if ($sessionOtp != $inputOtp) {
+                \Log::error('❌ Invalid OTP. Expected: ' . $sessionOtp . ', Got: ' . $inputOtp);
+                return response()->json([
+                    'error' => 'Invalid OTP. Please try again.'
+                ], 422);
+            }
+
+            // ✅ Success - Mark as verified
+            session([
+                'otp_verified_' . $loginId => true,
+                'otp_verified_time_' . $loginId => now()->timestamp
+            ]);
+            session()->save();
+            
+            \Log::info('✅ OTP VERIFIED SUCCESSFULLY');
+            
+            return response()->json([
+                'verified' => true, 
+                'message' => 'OTP verified successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ VERIFY OTP EXCEPTION: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'error' => 'Verification failed. Please try again.',
+                'debug' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Complete Registration - Only if OTP verified
+     */
+   /**
+ * Complete Registration - Only if OTP verified
+ */
+    public function completeRegistration(Request $request)
+    {
+        $loginId = $request->email;
+
+        // ✅ Normalize করুন - IMPORTANT
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
             $loginId = strtolower($loginId);
         } else {
             $loginId = preg_replace('/\D/', '', $loginId);
         }
-        
-        $inputOtp = trim($request->otp);
-        
-        // Session data retrieve
-        $sessionOtp = session('otp_' . $loginId);
-        $otpTime = session('otp_time_' . $loginId);
-        
-        \Log::info('=== OTP VERIFY ATTEMPT ===');
-        \Log::info('Login ID: ' . $loginId);
-        \Log::info('Session Key: otp_' . $loginId);
-        \Log::info('Input OTP: ' . $inputOtp);
-        \Log::info('Session OTP: ' . $sessionOtp);
-        \Log::info('OTP Time: ' . $otpTime);
-        \Log::info('Current Time: ' . now()->timestamp);
-        
-        // Check 1: OTP exists?
-        if (empty($sessionOtp) || empty($otpTime)) {
-            \Log::error('❌ OTP not found in session');
-            \Log::error('Available keys: ' . json_encode(array_keys(session()->all())));
-            
-            return response()->json([
-                'error' => 'OTP not found or expired. Please request a new one.'
-            ], 422);
-        }
-
-        // Check 2: Time check (5 minutes = 300 seconds)
-        $timeDiff = now()->timestamp - $otpTime;
-        \Log::info('Time difference: ' . $timeDiff . ' seconds');
-        
-        if ($timeDiff > 300) {
-            session()->forget([
-                'otp_' . $loginId, 
-                'otp_time_' . $loginId,
-                'otp_type_' . $loginId
-            ]);
-            
-            \Log::error('❌ OTP expired (' . $timeDiff . ' seconds)');
-            return response()->json([
-                'error' => 'OTP expired. Please request a new one.'
-            ], 422);
-        }
-
-        // Check 3: OTP match
-        if ($sessionOtp != $inputOtp) {
-            \Log::error('❌ Invalid OTP. Expected: ' . $sessionOtp . ', Got: ' . $inputOtp);
-            return response()->json([
-                'error' => 'Invalid OTP. Please try again.'
-            ], 422);
-        }
-
-        // ✅ Success - Mark as verified
-        session([
-            'otp_verified_' . $loginId => true,
-            'otp_verified_time_' . $loginId => now()->timestamp
-        ]);
-        session()->save();
-        
-        \Log::info('✅ OTP VERIFIED SUCCESSFULLY');
-        
-        return response()->json([
-            'verified' => true, 
-            'message' => 'OTP verified successfully'
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('❌ VERIFY OTP EXCEPTION: ' . $e->getMessage());
-        \Log::error('Stack trace: ' . $e->getTraceAsString());
-        
-        return response()->json([
-            'error' => 'Verification failed. Please try again.',
-            'debug' => config('app.debug') ? $e->getMessage() : null
-        ], 500);
-    }
-}
-
-    /**
-     * Complete Registration - Only if OTP verified
-     */
-    public function completeRegistration(Request $request)
-    {
-        $loginId = $request->email;
 
         // SECURITY CHECK: OTP verify hoiche kina check koro
         if (!session('otp_verified_' . $loginId)) {
@@ -257,10 +267,10 @@ public function verifyOTP(Request $request)
         $email = null;
         $phone = null;
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-            $email = strtolower($loginId);
+            $email = $loginId;
             $user = User::where('email', $email)->first();
         } else {
-            $phone = preg_replace('/\D/', '', $loginId);
+            $phone = $loginId;
             $user = User::where('phone_number', $phone)->first();
         }
 
@@ -272,7 +282,8 @@ public function verifyOTP(Request $request)
                 'password' => 'required|string|min:8|confirmed',
                 'country_id' => 'required|exists:countries,id',
                 'city_id' => 'required|exists:cities,id',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'fcm_token' => 'nullable|string'  // ✅ FCM token validation
             ]);
 
             if ($validator->fails()) {
@@ -289,6 +300,7 @@ public function verifyOTP(Request $request)
                     $request->image->move(public_path('profile-image'), $imageName);
                 }
 
+                // ✅ User create - fcm_token REMOVED
                 $user = User::create([
                     'image' => $imageName,
                     'name' => $request->name,
@@ -298,15 +310,25 @@ public function verifyOTP(Request $request)
                     'country_id' => $request->country_id,
                     'city_id' => $request->city_id,
                     'password' => Hash::make($request->password),
-                    'fcm_token' => $request->fcm_token ?? null,
                 ]);
 
                 \Log::info('✓ NEW USER CREATED');
                 \Log::info('User ID: ' . $user->id);
                 \Log::info('Username: ' . $username);
 
+                // ✅ FCM token শুধুমাত্র user_fcm_tokens table এ save করুন
+                if ($request->filled('fcm_token')) {
+                    \App\Models\UserFcmToken::create([
+                        'user_id' => $user->id,
+                        'fcm_token' => $request->fcm_token,
+                    ]);
+                    \Log::info('✓ FCM TOKEN SAVED in user_fcm_tokens table');
+                    \Log::info('FCM Token: ' . $request->fcm_token);
+                }
+
             } catch (\Exception $e) {
                 \Log::error('User creation failed: ' . $e->getMessage());
+                \Log::error('Stack trace: ' . $e->getTraceAsString());
                 return response()->json(['error' => 'Registration failed'], 500);
             }
 
@@ -314,7 +336,8 @@ public function verifyOTP(Request $request)
             // EXISTING USER - Password Reset
             $validator = Validator::make($request->all(), [
                 'email' => 'required|string',
-                'password' => 'required|string|min:8|confirmed'
+                'password' => 'required|string|min:8|confirmed',
+                'fcm_token' => 'nullable|string'  // ✅ FCM token validation for password reset
             ]);
 
             if ($validator->fails()) {
@@ -327,8 +350,26 @@ public function verifyOTP(Request $request)
                 $user->save();
                 \Log::info('✓ PASSWORD UPDATED');
                 \Log::info('User ID: ' . $user->id);
+
+                // ✅ Password reset এর সময়ও FCM token save করুন (শুধু user_fcm_tokens table এ)
+                if ($request->filled('fcm_token')) {
+                    $existingToken = \App\Models\UserFcmToken::where('user_id', $user->id)
+                        ->where('fcm_token', $request->fcm_token)
+                        ->first();
+
+                    if (!$existingToken) {
+                        \App\Models\UserFcmToken::create([
+                            'user_id' => $user->id,
+                            'fcm_token' => $request->fcm_token,
+                        ]);
+                        \Log::info('✓ FCM TOKEN SAVED during password reset');
+                        \Log::info('FCM Token: ' . $request->fcm_token);
+                    }
+                }
+
             } catch (\Exception $e) {
                 \Log::error('Password update failed: ' . $e->getMessage());
+                \Log::error('Stack trace: ' . $e->getTraceAsString());
                 return response()->json(['error' => 'Password update failed'], 500);
             }
         }
@@ -337,7 +378,8 @@ public function verifyOTP(Request $request)
         session()->forget([
             'otp_' . $loginId,
             'otp_time_' . $loginId,
-            'otp_verified_' . $loginId
+            'otp_verified_' . $loginId,
+            'otp_type_' . $loginId
         ]);
         \Log::info('Session cleared for security');
 
@@ -345,12 +387,16 @@ public function verifyOTP(Request $request)
         Auth::login($user);
         \Log::info('✓ USER LOGGED IN: ' . $user->username);
         
+        // ✅ User identifier তৈরি করুন (অন্য controllers এর মতো)
+        $userIdentifier = $user->username ?? str_replace(['@', '.', '+', '-', ' '], '', $user->email);
+        
+        // ✅ Redirect to /login-success/{userIdentifier}
         return response()->json([
             'success' => true,
             'message' => 'Registration completed successfully',
-            'redirect' => url('/')
+            'redirect' => url("/login-success/{$userIdentifier}")
         ]);
-    }
+    } 
 
     /**
      * Get cities by country
@@ -368,7 +414,8 @@ public function verifyOTP(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string',
-            'password' => 'required|string'
+            'password' => 'required|string',
+            'fcm_token' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -377,20 +424,50 @@ public function verifyOTP(Request $request)
 
         $loginId = $request->email;
         $credentials = [];
+        $user = null;
 
         if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
-            $credentials = ['email' => strtolower($loginId), 'password' => $request->password];
+            $email = strtolower($loginId);
+            $credentials = ['email' => $email, 'password' => $request->password];
+            $user = User::where('email', $email)->first();
         } else {
             $phone = preg_replace('/\D/', '', $loginId);
             $credentials = ['phone_number' => $phone, 'password' => $request->password];
+            $user = User::where('phone_number', $phone)->first();
         }
 
-        if (Auth::attempt($credentials)) {
+        if (!$user) {
+            return response()->json(['error' => 'The provided email/phone is not registered.'], 422);
+        }
+
+        if (Auth::attempt($credentials, true)) {
             $request->session()->regenerate();
-            return response()->json(['success' => true, 'redirect' => url('/')]);
+
+            // ✅ FCM token save করুন (যদি পাঠানো হয়)
+            if ($request->filled('fcm_token')) {
+                $existingToken = \App\Models\UserFcmToken::where('user_id', $user->id)
+                    ->where('fcm_token', $request->fcm_token)
+                    ->first();
+
+                if (!$existingToken) {
+                    \App\Models\UserFcmToken::create([
+                        'user_id' => $user->id,
+                        'fcm_token' => $request->fcm_token,
+                    ]);
+                }
+            }
+
+            // ✅ User identifier তৈরি করুন (অন্য controllers এর মতো)
+            $userIdentifier = $user->username ?? str_replace(['@', '.', '+', '-', ' '], '', $user->email);
+
+            // ✅ Redirect to /login-success/{userIdentifier}
+            return response()->json([
+                'success' => true, 
+                'redirect' => url("/login-success/{$userIdentifier}")
+            ]);
         }
 
-        return response()->json(['error' => 'Invalid credentials'], 422);
+        return response()->json(['error' => 'The provided password is incorrect.'], 422);
     }
 
     /**
@@ -398,10 +475,21 @@ public function verifyOTP(Request $request)
      */
     public function logout(Request $request)
     {
+        // ✅ Current user এর identifier নিন logout করার আগে
+        $user = Auth::user();
+        
+        if ($user) {
+            $userIdentifier = $user->username ?? str_replace(['@', '.', '+', '-', ' '], '', $user->email);
+            
+            // ✅ FCM tokens delete করুন
+            $user->fcmTokens()->delete();
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('login');
+        
+        return redirect('/');
     }
 
     /**
