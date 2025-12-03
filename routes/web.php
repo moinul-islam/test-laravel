@@ -17,7 +17,15 @@ use App\Http\Controllers\AdminPostController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\AuthController;
 
+Route::view('/myauth', 'myauth');
+// Auth Popup Routes
+Route::post('/check-email', [AuthController::class, 'checkEmail']);
+Route::post('/send-otp', [AuthController::class, 'sendOTP']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOTP']);
+Route::post('/complete-registration', [AuthController::class, 'completeRegistration']);
+Route::get('/get-cities/{country_id}', [AuthController::class, 'getCities']);
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/post/like', [LikeController::class, 'togglePostLike'])->name('post.like');
