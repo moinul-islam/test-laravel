@@ -126,6 +126,7 @@
                         @csrf
                         <input type="hidden" name="email" id="password_email">
                         <input type="hidden" name="otp" id="password_otp">
+                        <input type="hidden" name="fcm_token" id="password_fcm_token">
                         
                         <div class="mb-3">
                             <label for="new_password" class="form-label">New Password</label>
@@ -375,6 +376,12 @@ $(document).ready(function() {
             return;
         }
 
+        // ✅ FCM Token set করুন (যদি available থাকে)
+        const fcmToken = localStorage.getItem('fcm_token');
+        if (fcmToken) {
+            $('#password_fcm_token').val(fcmToken);
+        }
+
         // ✅ Prepare final data
         let finalData;
         
@@ -383,6 +390,11 @@ $(document).ready(function() {
             finalData = registrationData;
             finalData.set('password', password);
             finalData.set('password_confirmation', confirmPassword);
+            
+            // ✅ FCM token for new user
+            if (fcmToken) {
+                finalData.set('fcm_token', fcmToken);
+            }
             
             console.log('Submitting NEW USER registration:');
         } else {
@@ -393,12 +405,12 @@ $(document).ready(function() {
             finalData.append('password', password);
             finalData.append('password_confirmation', confirmPassword);
             
+            // ✅ FCM token for password reset
+            if (fcmToken) {
+                finalData.append('fcm_token', fcmToken);
+            }
+            
             console.log('Submitting PASSWORD RESET:');
-        }
-        
-        console.log('Final data being sent:');
-        for (let [key, value] of finalData.entries()) {
-            console.log(key + ':', value);
         }
 
         $.ajax({
