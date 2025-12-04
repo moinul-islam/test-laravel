@@ -415,7 +415,7 @@ function copyProfileLink(e) {
         function checkProfileAndOpenModal() {
             const alertDiv = document.getElementById('myProfileAlert');
             if (alertDiv && window.getComputedStyle(alertDiv).display !== 'none') {
-                window.location.href = '/profile';
+                window.location.href = '/profile#businessProfile';
                 return;
             }
             
@@ -424,7 +424,7 @@ function copyProfileLink(e) {
                 const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
                 modal.show();
             } else {
-                window.location.href = '/profile';
+                window.location.href = '/profile#businessProfile';
             }
         }
         

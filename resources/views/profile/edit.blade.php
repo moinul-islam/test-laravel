@@ -152,14 +152,7 @@
                   @enderror
                </div>
                
-               <!-- Phone Number -->
-               <div class="mb-3">
-                  <label for="phone_number" class="form-label">Phone Number</label>
-                  <input type="text" name="phone_number" id="phone_number" class="form-control @error('phone_number') is-invalid @enderror" value="{{ old('phone_number', auth()->user()->phone_number) }}" placeholder="Enter your phone number">
-                  @error('phone_number')
-                  <div class="text-danger mt-1">{{ $message }}</div>
-                  @enderror
-               </div>
+               
               
                
              
@@ -229,9 +222,9 @@
 
         <!-- Area -->
         <div class="col-12 col-area">
-            <input type="text" name="area" id="area" class="form-control @error('area') is-invalid @enderror"
-                   value="{{ old('area', auth()->user()->area) }}" placeholder="Enter area/locality">
-            @error('area')
+            <input type="text" name="area_id" id="area_id" class="form-control @error('area_id') is-invalid @enderror"
+                   value="{{ old('area_id', auth()->user()->area_id) }}" placeholder="Enter Area">
+            @error('area_id')
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
         </div>
@@ -411,9 +404,9 @@
 
 
        <!-- Switch to Business -->
-       <div class="card mb-4">
+       <div class="card mb-4" id="businessProfile">
          <div class="card-body">
-            <h5 class="card-title">Switch to Business</h5>
+            <h5 class="card-title">Update Business Profile Information</h5>
             <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                @csrf
                <input type="hidden" name="update_business" value="1">  <!-- এই লাইনটা যোগ করুন -->
@@ -509,6 +502,24 @@
                       }
                   });
                </script>
+
+               <!-- Phone Number -->
+               <div class="mb-3">
+                  <label for="phone_number" class="form-label">Phone Number</label>
+                  <input type="text" name="phone_number" id="phone_number" class="form-control @error('phone_number') is-invalid @enderror" value="{{ old('phone_number', auth()->user()->phone_number) }}" placeholder="Enter your phone number">
+                  @error('phone_number')
+                  <div class="text-danger mt-1">{{ $message }}</div>
+                  @enderror
+               </div>
+
+               <!-- Location -->
+               <div class="mb-3">
+                  <label for="area" class="form-label">Location</label>
+                  <input type="text" name="area" id="area" class="form-control @error('area') is-invalid @enderror" value="{{ old('area', auth()->user()->area) }}" placeholder="Add location">
+                  @error('area')
+                  <div class="text-danger mt-1">{{ $message }}</div>
+                  @enderror
+               </div>
 
 
                 <!-- Service Hours -->

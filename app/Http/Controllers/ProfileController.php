@@ -216,6 +216,8 @@ public function checkCompleteness(Request $request)
             $validated = $request->validate([
                 'job_title' => ['nullable', 'string', 'max:255'],
                 'service_hr' => ['nullable', 'array'],
+                'area' => ['nullable', 'string', 'max:255'],
+                'phone_number' => ['nullable', 'string', 'max:25', 'unique:users,phone_number,' . $user->id],
             ]);
             
             // Service hours processing
@@ -270,10 +272,10 @@ public function checkCompleteness(Request $request)
                 'name' => ['required', 'string', 'max:255'],
                 'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $user->id],
                 'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-                'phone_number' => ['nullable', 'string', 'max:25', 'unique:users,phone_number,' . $user->id],
+                
                 'country_id' => ['required', 'exists:countries,id'],
                 'city_id' => ['required', 'exists:cities,id'],
-                'area' => ['nullable', 'string', 'max:255'],
+                
                 'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             ]);
         
