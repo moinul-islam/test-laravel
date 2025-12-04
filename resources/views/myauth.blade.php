@@ -8,14 +8,15 @@
     </div>
 </div>
 -->
-
 <!-- Auth Modal -->
 <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-0">
                 <h5 class="modal-title" id="authModalLabel">Welcome</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
             </div>
             <div class="modal-body p-4">
                 
@@ -31,7 +32,10 @@
                                    title="Please enter a valid email address or phone number" required>
                             <div class="invalid-feedback"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Continue</button>
+                        <button type="submit" class="btn btn-primary w-100" id="emailBtn">
+                            <span class="btn-text"><i class="bi bi-arrow-right"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                     </form>
                 </div>
 
@@ -47,7 +51,10 @@
                             <input type="password" class="form-control" id="login_password" name="password" required>
                             <div class="invalid-feedback"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 mb-2">Login</button>
+                        <button type="submit" class="btn btn-primary w-100 mb-2" id="loginBtn">
+                            <span class="btn-text"><i class="bi bi-check-lg"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                         <button type="button" class="btn btn-link w-100 text-decoration-none" id="forgotPasswordBtn">
                             Forgot Password?
                         </button>
@@ -95,7 +102,10 @@
                             <div class="invalid-feedback"></div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Send OTP</button>
+                        <button type="submit" class="btn btn-primary w-100" id="registerBtn">
+                            <span class="btn-text"><i class="bi bi-arrow-right"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                     </form>
                 </div>
 
@@ -111,7 +121,10 @@
                             <input type="text" class="form-control text-center" id="otp_code" name="otp" maxlength="6" required>
                             <div class="invalid-feedback"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 mb-2">Verify OTP</button>
+                        <button type="submit" class="btn btn-primary w-100 mb-2" id="otpBtn">
+                            <span class="btn-text"><i class="bi bi-check-lg"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                         <button type="button" class="btn btn-link w-100 text-decoration-none" id="resendOtpBtn">
                             Resend OTP
                         </button>
@@ -140,7 +153,10 @@
                             <div class="invalid-feedback"></div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Complete Registration</button>
+                        <button type="submit" class="btn btn-primary w-100" id="passwordBtn">
+                            <span class="btn-text"><i class="bi bi-check-lg"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                     </form>
                 </div>
 
@@ -150,7 +166,7 @@
                         <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
                     </div>
                     <h6 class="mb-2">Success!</h6>
-                    <p class="text-muted">Your account has been created successfully. Redirecting...</p>
+                    <p class="text-muted">Redirecting...</p>
                 </div>
 
             </div>
@@ -161,8 +177,25 @@
 <script>
 $(document).ready(function() {
     let currentEmail = '';
-    let registrationData = null; // ✅ null দিয়ে initialize করুন
-    let isNewUser = false; // ✅ Track করুন new user কিনা
+    let registrationData = null;
+    let isNewUser = false;
+
+    // ✅ Loading state functions
+    function setButtonLoading(buttonId, isLoading) {
+        const btn = $('#' + buttonId);
+        const btnText = btn.find('.btn-text');
+        const spinner = btn.find('.spinner-border');
+        
+        if (isLoading) {
+            btn.prop('disabled', true);
+            btnText.addClass('invisible');
+            spinner.removeClass('d-none');
+        } else {
+            btn.prop('disabled', false);
+            btnText.removeClass('invisible');
+            spinner.addClass('d-none');
+        }
+    }
 
     // Reset modal on close
     $('#authModal').on('hidden.bs.modal', function () {
@@ -200,6 +233,8 @@ $(document).ready(function() {
     $('#emailForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        setButtonLoading('emailBtn', true); // ✅ Loading start
+        
         const email = $('#auth_email').val().trim();
         currentEmail = email;
 
@@ -211,18 +246,17 @@ $(document).ready(function() {
                 email: email
             },
             success: function(response) {
+                setButtonLoading('emailBtn', false); // ✅ Loading stop
+                
                 if (response.exists && response.has_password) {
-                    // User exists with password - show login
                     isNewUser = false;
                     $('#display-email').text(email);
                     $('#login_email').val(email);
                     showStep('step-login');
                 } else if (response.exists && !response.has_password) {
-                    // User exists without password - send OTP for reset
                     isNewUser = false;
                     sendOTP(email, 'reset');
                 } else {
-                    // New user - show registration
                     isNewUser = true;
                     $('#display-email-register').text(email);
                     $('#register_email').val(email);
@@ -230,6 +264,7 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
+                setButtonLoading('emailBtn', false); // ✅ Loading stop
                 showError('auth_email', 'An error occurred. Please try again.');
             }
         });
@@ -239,8 +274,8 @@ $(document).ready(function() {
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        setButtonLoading('loginBtn', true); // ✅ Loading start
 
-        // ✅ FormData তে FCM token যোগ করুন
         const formData = $(this).serialize();
         const fcmToken = localStorage.getItem('fcm_token');
         
@@ -255,11 +290,12 @@ $(document).ready(function() {
             data: finalData,
             success: function(response) {
                 if (response.success) {
-                    // ✅ Direct redirect - কোনো condition ছাড়া
                     window.location.href = response.redirect;
                 }
             },
             error: function(xhr) {
+                setButtonLoading('loginBtn', false); // ✅ Loading stop
+                
                 if (xhr.status === 422) {
                     const error = xhr.responseJSON.error || 'Invalid credentials';
                     showError('login_password', error);
@@ -276,12 +312,12 @@ $(document).ready(function() {
         sendOTP(currentEmail, 'reset');
     });
 
-    // Step 3: Registration Form - Store data and send OTP
+    // Step 3: Registration Form
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        setButtonLoading('registerBtn', true); // ✅ Loading start
 
-        // ✅ FormData তে সব data store করুন
         registrationData = new FormData(this);
         
         console.log('Registration data stored:');
@@ -289,7 +325,6 @@ $(document).ready(function() {
             console.log(key + ':', value);
         }
         
-        // Send OTP
         sendOTP(currentEmail, 'register');
     });
 
@@ -322,12 +357,14 @@ $(document).ready(function() {
                 type: type
             },
             success: function(response) {
+                setButtonLoading('registerBtn', false); // ✅ Loading stop
                 console.log('OTP sent successfully');
                 $('#display-email-otp').text(email);
                 $('#otp_email').val(email);
                 showStep('step-otp');
             },
             error: function(xhr) {
+                setButtonLoading('registerBtn', false); // ✅ Loading stop
                 alert('Failed to send OTP. Please try again.');
             }
         });
@@ -337,6 +374,7 @@ $(document).ready(function() {
     $('#otpForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        setButtonLoading('otpBtn', true); // ✅ Loading start
         
         const formData = {
             _token: '{{ csrf_token() }}',
@@ -351,7 +389,9 @@ $(document).ready(function() {
             method: 'POST',
             data: formData,
             success: function(response) {
+                setButtonLoading('otpBtn', false); // ✅ Loading stop
                 console.log('OTP verified:', response);
+                
                 if (response.verified) {
                     $('#password_email').val(currentEmail);
                     $('#password_otp').val($('#otp_code').val());
@@ -359,7 +399,9 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
+                setButtonLoading('otpBtn', false); // ✅ Loading stop
                 console.error('OTP verify error:', xhr);
+                
                 const error = xhr.responseJSON?.error || 'Invalid or expired OTP. Please try again.';
                 showError('otp_code', error);
             }
@@ -377,45 +419,41 @@ $(document).ready(function() {
     $('#passwordForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
+        setButtonLoading('passwordBtn', true); // ✅ Loading start
 
         const password = $('#new_password').val();
         const confirmPassword = $('#confirm_password').val();
 
         if (password !== confirmPassword) {
+            setButtonLoading('passwordBtn', false); // ✅ Loading stop
             showError('confirm_password', 'Passwords do not match.');
             return;
         }
 
-        // ✅ FCM Token set করুন (যদি available থাকে)
         const fcmToken = localStorage.getItem('fcm_token');
         if (fcmToken) {
             $('#password_fcm_token').val(fcmToken);
         }
 
-        // ✅ Prepare final data
         let finalData;
         
         if (isNewUser && registrationData) {
-            // NEW USER - Use stored FormData
             finalData = registrationData;
             finalData.set('password', password);
             finalData.set('password_confirmation', confirmPassword);
             
-            // ✅ FCM token for new user
             if (fcmToken) {
                 finalData.set('fcm_token', fcmToken);
             }
             
             console.log('Submitting NEW USER registration:');
         } else {
-            // PASSWORD RESET - Create new FormData
             finalData = new FormData();
             finalData.append('_token', '{{ csrf_token() }}');
             finalData.append('email', currentEmail);
             finalData.append('password', password);
             finalData.append('password_confirmation', confirmPassword);
             
-            // ✅ FCM token for password reset
             if (fcmToken) {
                 finalData.append('fcm_token', fcmToken);
             }
@@ -439,7 +477,9 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
+                setButtonLoading('passwordBtn', false); // ✅ Loading stop
                 console.error('Registration error:', xhr.responseJSON);
+                
                 if (xhr.status === 422) {
                     const error = xhr.responseJSON?.error;
                     alert(error || 'Validation failed. Please check your inputs.');
@@ -453,7 +493,6 @@ $(document).ready(function() {
         });
     });
 });
-
 </script>
 
 <style>
@@ -466,5 +505,14 @@ $(document).ready(function() {
     #otp_code {
         font-size: 1.5rem;
         letter-spacing: 0.5rem;
+    }
+    /* ✅ Button loading styles */
+    .btn .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border-width: 2px;
+    }
+    .btn .btn-text.invisible {
+        visibility: hidden;
     }
 </style>
