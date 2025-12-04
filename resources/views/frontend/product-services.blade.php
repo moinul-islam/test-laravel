@@ -4,79 +4,10 @@
 <!-- Dashboard Content -->
 <div class="row mt-3">
    @auth
-   {{-- Email দিয়ে registered user --}}
-   @if(Auth::user()->email && (is_null(Auth::user()->email_verified) || (Auth::user()->email_verified > 0 && Auth::user()->email_verified < 9)))
-   <div class="mb-4">
-      <div class="card border-warning">
-         <div class="card-body">
-            <h5 class="card-title text-warning">Verify your email</h5>
-            <p class="text-muted">Please enter the OTP sent to your email <strong>{{ Auth::user()->email }}</strong>.</p>
-            @if(Auth::user()->email_verified && Auth::user()->email_verified > 0 && Auth::user()->email_verified < 9)
-            <p class="text-info">OTP attempts: {{ Auth::user()->email_verified }}/9</p>
-            @endif
-            <form action="{{ route('verify.otp') }}" method="POST">
-               @csrf
-               <div class="mb-3">
-                  <label for="otp" class="form-label">Enter OTP <em>(Check spam folder also)</em></label>
-                  <input type="text" name="otp" id="otp" class="form-control" placeholder="Enter OTP" required>
-               </div>
-               <button type="submit" class="btn btn-success">Verify</button>
-               @if(Auth::user()->email_verified < 9)
-               <a href="/resend-otp" class="btn btn-link">Send Code Again</a>
-               @endif
-            </form>
-         </div>
-      </div>
-   </div>
-   {{-- Phone দিয়ে registered user --}}
-   @elseif(Auth::user()->phone_number && (is_null(Auth::user()->phone_verified) || (Auth::user()->phone_verified > 0 && Auth::user()->phone_verified < 9)))
-   <div class="mb-4">
-      <div class="card border-warning">
-         <div class="card-body">
-            <h5 class="card-title text-warning">Verify your phone number</h5>
-            <p class="text-muted">Please enter the OTP sent to your phone number <strong>{{ Auth::user()->phone_number }}</strong>.</p>
-            @if(Auth::user()->phone_verified && Auth::user()->phone_verified > 0 && Auth::user()->phone_verified < 9)
-            <p class="text-info">OTP attempts: {{ Auth::user()->phone_verified }}/9</p>
-            @endif
-            <form action="{{ route('verify.otp') }}" method="POST">
-               @csrf
-               <div class="mb-3">
-                  <label for="otp" class="form-label">Enter OTP</label>
-                  <input type="text" name="otp" id="otp" class="form-control" placeholder="Enter OTP" required>
-               </div>
-               <button type="submit" class="btn btn-success">Verify</button>
-               @if(Auth::user()->phone_verified < 9)
-               <a href="/resend-otp" class="btn btn-link">Send Code Again</a>
-               @endif
-            </form>
-         </div>
-      </div>
-   </div>
-   {{-- Email suspended (9 attempts) --}}
-   @elseif(Auth::user()->email && Auth::user()->email_verified == 9)
-   <div class="mb-4">
-      <div class="card border-danger">
-         <div class="card-body">
-            <h5 class="card-title text-danger">Your Account is suspended</h5>
-            <p class="text-muted">You have exceeded the maximum OTP attempts for email verification. Please contact support or try with a different email.</p>
-         </div>
-      </div>
-   </div>
-   {{-- Phone suspended (9 attempts) --}}
-   @elseif(Auth::user()->phone_number && Auth::user()->phone_verified == 9)
-   <div class="mb-4">
-      <div class="card border-danger">
-         <div class="card-body">
-            <h5 class="card-title text-danger">Your Account is suspended</h5>
-            <p class="text-muted">You have exceeded the maximum OTP attempts for phone verification. Please contact support or try with a different phone number.</p>
-         </div>
-      </div>
-   </div>
-   {{-- Verified users (email_verified == 0 OR phone_verified == 0) --}}
-   @else
+   
    {{-- Include Profile Card Partial --}}
-   @include('frontend.profile-card')
-   @endif
+   @include('frontend.profile-card-old')
+  
    {{-- Error/Success Messages --}}
    @if(session('error'))
    <div class="alert alert-danger mt-3">

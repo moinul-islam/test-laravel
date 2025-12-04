@@ -333,6 +333,14 @@ function copyProfileLink(e) {
             if (!user) return false;
             
             if (!user.image || user.image.trim() === '') return false;
+            if (!user.area || user.area.trim() === '') return false;
+            if (!user.phone_number || user.phone_number.trim() === '') return false;
+            if (!user.service_hr || user.service_hr.trim() === '') return false;
+            
+            if ((!user.job_title || user.job_title.trim() === '') && 
+                (!user.category_id || user.category_id === '')) {
+                return false;
+            }
             
             return true;
         }
@@ -342,11 +350,32 @@ function copyProfileLink(e) {
             
             const missingFields = [];
             const fieldLabels = {
-                'image': 'Profile Photo'
+                'image': 'Profile Photo',
+                'area': 'Address',
+                'phone_number': 'Phone Number',
+                'service_hr': 'Service Hours',
+                'job_category': 'Job Title or Business Category'
             };
             
             if (!user.image || user.image.trim() === '') {
                 missingFields.push(fieldLabels.image);
+            }
+            
+            if (!user.area || user.area.trim() === '') {
+                missingFields.push(fieldLabels.area);
+            }
+            
+            if (!user.phone_number || user.phone_number.trim() === '') {
+                missingFields.push(fieldLabels.phone_number);
+            }
+            
+            if (!user.service_hr || user.service_hr.trim() === '') {
+                missingFields.push(fieldLabels.service_hr);
+            }
+            
+            if ((!user.job_title || user.job_title.trim() === '') && 
+                (!user.category_id || user.category_id === '')) {
+                missingFields.push(fieldLabels.job_category);
             }
             
             const targetElement = document.getElementById(targetElementId);
@@ -357,7 +386,7 @@ function copyProfileLink(e) {
             }
             
             if (missingFields.length > 0) {
-                let message = 'If you want to add post please update ';
+                let message = 'If you want to add product or service please update ';
                 
                 if (missingFields.length === 1) {
                     message += missingFields[0];
