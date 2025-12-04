@@ -38,18 +38,21 @@
             @endphp
 
             @auth
-                <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-                    <span><i class="bi bi-cart"></i></span>
-                    <span>Product & Services</span>
-                </a>
-            @else
-                @if($hasProductServices)
+                @if(Auth::id() === $user->id || $hasProductServices)
                     <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
                         <span><i class="bi bi-cart"></i></span>
                         <span>Product & Services</span>
                     </a>
                 @endif
             @endauth
+            @guest
+                @if($hasProductServices)
+                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
+                        <span><i class="bi bi-cart"></i></span>
+                        <span>Product & Services</span>
+                    </a>
+                @endif
+            @endguest
 
             @php
             // User এর post করা সব unique categories খুঁজুন (শুধু post type)
