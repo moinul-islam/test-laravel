@@ -118,7 +118,7 @@
                         <input type="hidden" name="email" id="otp_email">
                         <div class="mb-3">
                             <label for="otp_code" class="form-label">Enter OTP</label>
-                            <input type="text" class="form-control text-center" id="otp_code" name="otp" maxlength="6" required>
+                            <input type="number" class="form-control text-center" id="otp_code" name="otp" maxlength="6" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 mb-2" id="otpBtn">
