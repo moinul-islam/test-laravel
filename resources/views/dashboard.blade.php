@@ -29,10 +29,28 @@
       <div class="scroll-container mb-4">
          <div class="scroll-content">
             {{-- Product & Services Link --}}
-            <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-            <span><i class="bi bi-cart"></i></span>
-            <span>Product & Services</span>
-            </a>
+            @php
+            // cat_type post table e ase, but category related info category table theke check korte hobe
+            $productServiceCategoryIds = \App\Models\Category::whereIn('cat_type', ['product', 'service'])->pluck('id');
+            $hasProductServices = \App\Models\Post::where('user_id', $user->id)
+                ->whereIn('category_id', $productServiceCategoryIds)
+                ->exists();
+            @endphp
+
+            @auth
+                <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
+                    <span><i class="bi bi-cart"></i></span>
+                    <span>Product & Services</span>
+                </a>
+            @else
+                @if($hasProductServices)
+                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
+                        <span><i class="bi bi-cart"></i></span>
+                        <span>Product & Services</span>
+                    </a>
+                @endif
+            @endauth
+
             @php
             // User এর post করা সব unique categories খুঁজুন (শুধু post type)
             $userPostCategoryIds = \App\Models\Post::where('user_id', $user->id)
