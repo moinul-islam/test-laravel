@@ -24,7 +24,7 @@ Route::post('/check-email', [AuthController::class, 'checkEmail']);
 Route::post('/send-otp', [AuthController::class, 'sendOTP']);
 Route::post('/myauth/verify-otp', [AuthController::class, 'verifyOTP']); // ✅ AuthController
 Route::post('/complete-registration', [AuthController::class, 'completeRegistration']);
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/myauth/login', [AuthController::class, 'login'])->name('login');
 
 // City route এ conflict আছে - এইটা AuthController এ যাবে
 // Route::get('/get-cities/{country_id}', [AuthController::class, 'getCities']);

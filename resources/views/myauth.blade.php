@@ -1,6 +1,5 @@
-@extends("frontend.master")
-@section('main-content')
 
+<!-- 
 <div class="container mt-5">
     <div class="text-center">
         <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#authModal">
@@ -8,6 +7,7 @@
         </button>
     </div>
 </div>
+-->
 
 <!-- Auth Modal -->
 <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
@@ -240,13 +240,23 @@ $(document).ready(function() {
         e.preventDefault();
         clearErrors();
 
+        // ✅ FormData তে FCM token যোগ করুন
+        const formData = $(this).serialize();
+        const fcmToken = localStorage.getItem('fcm_token');
+        
+        let finalData = formData;
+        if (fcmToken) {
+            finalData += '&fcm_token=' + encodeURIComponent(fcmToken);
+        }
+
         $.ajax({
-            url: '/login',
+            url: '/myauth/login',
             method: 'POST',
-            data: $(this).serialize(),
+            data: finalData,
             success: function(response) {
                 if (response.success) {
-                    window.location.href = response.redirect || '/';
+                    // ✅ Direct redirect - কোনো condition ছাড়া
+                    window.location.href = response.redirect;
                 }
             },
             error: function(xhr) {
@@ -458,5 +468,3 @@ $(document).ready(function() {
         letter-spacing: 0.5rem;
     }
 </style>
-
-@endsection

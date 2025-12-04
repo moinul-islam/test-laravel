@@ -234,7 +234,7 @@
 
             @guest
                 <li class="nav-item dropdown">
-                    <a class="nav-link" href="javascript:void(0)" id="guestDropdown" role="button" data-bs-toggle="modal" data-bs-target="#userNavagateModal">
+                    <a class="nav-link" href="javascript:void(0)" id="guestDropdown" role="button" data-bs-toggle="modal" data-bs-target="#authModal">
                         <img src="{{ asset('profile-image/default.png') }}"
                              class="rounded-circle"
                              alt="User"
@@ -249,6 +249,8 @@
         </ul>
     </div>
 </nav>
+
+@include('myauth')
 
 {{-- Categories Data for Search --}}
 @php
