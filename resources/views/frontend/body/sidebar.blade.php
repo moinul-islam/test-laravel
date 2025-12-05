@@ -243,10 +243,10 @@
 .accordion-body::before {
     content: '';
     position: absolute;
-    left: 25px;
+    left: 20px;
     top: 0;
     bottom: 0;
-    width: 2px;
+    width: 1px;
     background: #e0e0e0;
 }
 
@@ -354,7 +354,7 @@
     left: 45px;
     top: 0;
     bottom: 0;
-    width: 2px;
+    width: 1px;
     background: #e0e0e0;
 }
 
