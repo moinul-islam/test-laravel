@@ -537,6 +537,29 @@ document.addEventListener('DOMContentLoaded', function() {
        // Initialize read more for existing posts
        initReadMore();
    });
+
+
+
+   document.addEventListener('DOMContentLoaded', function () {
+    const scrollContainer = document.querySelector('.scroll-container');
+    const activeItem = document.querySelector('.nav-item-custom.active');
+
+    if (scrollContainer && activeItem) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const itemRect = activeItem.getBoundingClientRect();
+
+        // Calculate center position
+        const scrollLeft = 
+            (itemRect.left + itemRect.width / 2) - 
+            (containerRect.left + containerRect.width / 2);
+
+        scrollContainer.scrollTo({
+            left: scrollContainer.scrollLeft + scrollLeft,
+            behavior: 'smooth'
+        });
+    }
+});
+
 </script>
 @include('frontend.body.review-cdn')
 @endsection
