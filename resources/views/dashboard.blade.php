@@ -201,8 +201,8 @@
 
                {{-- Title Field --}}
                <div class="mb-3">
-                  <label for="title" class="form-label" id="title_label">Notice Title <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" id="title" name="title" placeholder="Enter notice title..." value="{{ old('title') }}" required>
+                  <label for="title" class="form-label" id="title_label">Post Title <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="title" name="title" placeholder="Enter post title..." value="{{ old('title') }}" required>
                   @error('title')
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
@@ -409,7 +409,7 @@
 
                {{-- Description Field --}}
                <div class="mb-3">
-                  <label for="description" class="form-label" id="description_label">Notice Description</label>
+                  <label for="description" class="form-label" id="description_label">Post Description</label>
                   <textarea class="form-control" id="description" name="description" rows="4" placeholder="Type your text here...">{{ old('description') }}</textarea>
                   @error('description')
                   <div class="text-danger">{{ $message }}</div>
@@ -558,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
             behavior: 'smooth'
         });
     }
-});
+    });
 
 </script>
 @include('frontend.body.review-cdn')
