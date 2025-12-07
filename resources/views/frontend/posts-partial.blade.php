@@ -81,9 +81,128 @@
                }
             </script>
          </div>
-         @if($post->image)
-         <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
-         @endif
+         {{-- Post Media Display (Supports both old single image and new multiple media) --}}
+@php
+    // Handle both old (string) and new (JSON) format
+    $media = null;
+    $isSingleImage = false;
+    
+    if ($post->image) {
+        if (is_string($post->image)) {
+            // Check if it's JSON
+            if (str_starts_with($post->image, '{') || str_starts_with($post->image, '[')) {
+                $media = json_decode($post->image, true);
+            } else {
+                // Old format: single image string
+                $isSingleImage = true;
+            }
+        } elseif (is_array($post->image)) {
+            // Already decoded by cast
+            $media = $post->image;
+        }
+    }
+@endphp
+
+@if($isSingleImage)
+    {{-- Old Single Image Format --}}
+    <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
+@elseif($media)
+    {{-- New Multiple Media Format --}}
+    <div class="media-container">
+        {{-- Display Images --}}
+        @if(isset($media['images']) && count($media['images']) > 0)
+            <div id="postImagesCarousel-{{ $post->id }}" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    @foreach($media['images'] as $index => $image)
+                        <div class="carousel-item @if($index === 0) active @endif">
+                            <img src="{{ asset('uploads/' . $image) }}" 
+                                 alt="Post Image {{ $index + 1 }}" 
+                                 class="img-fluid d-block w-100" 
+                                 style="width: 100%; height: 400px; object-fit: cover; cursor: pointer;"
+                                 onclick="openImageModal('{{ asset('uploads/' . $image) }}')" id="img-zoomer">
+                        </div>
+                    @endforeach
+                </div>
+                @if(count($media['images']) > 1)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                @endif
+                @if(count($media['images']) > 1)
+                    <div class="carousel-indicators">
+                        @foreach($media['images'] as $index => $image)
+                            <button type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide-to="{{ $index }}" @if($index === 0) class="active" aria-current="true" @endif aria-label="Slide {{ $index + 1 }}"></button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @endif
+        
+        {{-- Display Videos --}}
+        @if(isset($media['videos']) && count($media['videos']) > 0)
+            <div class="videos-grid">
+                @foreach($media['videos'] as $index => $video)
+                    <div class="col-12">
+                        <video src="{{ asset('uploads/' . $video) }}" 
+                               class="w-100" 
+                               controls 
+                               controlsList="nodownload"
+                               style="max-height: 400px; object-fit: contain;">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+@endif
+
+{{-- Image Lightbox Modal (Optional) --}}
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body p-0 text-center">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" style="z-index: 1060;"></button>
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 90vh; width: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Image zoom/lightbox functionality
+function openImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+    imageModal.show();
+}
+
+// Keep old zoomer functionality if it exists
+@if($isSingleImage)
+    // Your existing img-zoomer JavaScript code here
+@endif
+</script>
+
+<style>
+.img-zoomer-multiple:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+.images-grid .col-6:hover,
+.videos-grid .col-12:hover {
+    opacity: 0.9;
+}
+
+#imageModal .modal-content {
+    background: rgba(0, 0, 0, 0.9) !important;
+}
+</style>
          {{-- Card Footer: Social Actions --}}
          <div class="bg-white rounded-bottom border-0 pt-0">
             {{-- Action Buttons --}}

@@ -41,150 +41,167 @@ class PostController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $user_id = Auth::id(); // লগইন করা ইউজারের ID
-       
-        // Validation
-        $request->validate([
-            'category_name' => 'required|string|max:255',
-            'title' => 'required|string|max:255',
-            'price' => 'nullable|numeric|min:0',
-            'description' => 'nullable|string|max:1000|required_without:image_data',
-        ]);
-       
-        $photo = null;
-       
-        // Check if we have base64 image data from frontend processing
-        if ($request->filled('image_data')) {
-            // Process base64 image
-            $imageData = $request->input('image_data');
-           
-            // Extract the base64 content
-            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $decodedImage = base64_decode($imageData);
-           
-            if ($decodedImage !== false) {
-                // Generate unique filename
-                $name_gen = hexdec(uniqid()) . '.jpg';
-               
-                // Ensure directory exists
-                if (!file_exists(public_path('uploads'))) {
-                    mkdir(public_path('uploads'), 0755, true);
-                }
-               
-                // Save the image inside uploads folder
-                file_put_contents(public_path('uploads/' . $name_gen), $decodedImage);
-               
-                // Save only the filename for database
-                $photo = $name_gen;
-            }
-        }
-        // Fallback to traditional file upload if no image_data present
-        elseif ($request->hasFile('image')) {
-            $photoFile = $request->file('image');
-            $name_gen = hexdec(uniqid()) . '.' . $photoFile->getClientOriginalExtension();
-           
-            // Move the file to uploads folder
-            $photoFile->move(public_path('uploads'), $name_gen);
-           
-            // Save only the filename for database
-            $photo = $name_gen;
-        }
-       
-        $categoryId = null;
-        $newCategory = null;
-       
-        // Check if category_id is provided (existing category selected)
-        if ($request->filled('category_id') && $request->category_id != '') {
-            // Validate that the category exists
-            $categoryExists = Category::where('id', $request->category_id)->exists();
-            if ($categoryExists) {
-                $categoryId = $request->category_id;
-            } else {
-                // If category_id doesn't exist, treat as new category
-                $newCategory = $request->category_name;
-            }
+{
+    $user_id = Auth::id();
+   
+    // Validation
+    $request->validate([
+        'category_name' => 'required|string|max:255',
+        'title' => 'required|string|max:255',
+        'price' => 'nullable|numeric|min:0',
+        'description' => 'nullable|string|max:1000',
+        'media_data' => 'nullable|string',
+    ]);
+   
+    $categoryId = null;
+    $newCategory = null;
+   
+    if ($request->filled('category_id') && $request->category_id != '') {
+        $categoryExists = Category::where('id', $request->category_id)->exists();
+        if ($categoryExists) {
+            $categoryId = $request->category_id;
         } else {
-            // User typed a new category name
             $newCategory = $request->category_name;
         }
+    } else {
+        $newCategory = $request->category_name;
+    }
 
-        do {
+    // Generate unique slug
+    do {
         $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $slug = '';
-            for ($i = 0; $i < 11; $i++) {
-                $slug .= $characters[rand(0, strlen($characters) - 1)];
-            }
-        } while (Post::where('slug', $slug)->exists());
-       
-        // Build data array with only fields that have values
-        $postData = [
-            'title' => $request->title,
-            'user_id' => $user_id,
-            'category_id' => $categoryId,
-            'new_category' => $newCategory,
-            'slug' => $slug
-        ];
-        
-        // Only add price if it's provided and not empty
-        if ($request->filled('price') && $request->price != '') {
-            $postData['price'] = $request->price;
+        for ($i = 0; $i < 11; $i++) {
+            $slug .= $characters[rand(0, strlen($characters) - 1)];
         }
-        
-        // Only add image if it exists
-        if ($photo) {
-            $postData['image'] = $photo;
-        }
-        
-        // Only add description if it's provided
-        if ($request->filled('description')) {
-            $postData['description'] = $request->description;
-        }
-       
-        // DB-এ সেভ করা - শুধুমাত্র যেসব field এ data আছে
-        $post = Post::create($postData);
+    } while (Post::where('slug', $slug)->exists());
+   
+    // Process Media (Images + Videos together)
+    $savedMedia = [
+        'images' => [],
+        'videos' => []
+    ];
     
-        // নতুন যোগ: পোস্ট creator এর সব followers দের notification পাঠানো
-        try {
-            $postCreator = Auth::user();
-            
-            // Get all followers of the post creator
-            $followers = $postCreator->followers; // যারা এই user কে follow করেছে
-            
-            \Log::info('New post created, sending notifications to followers', [
-                'post_id' => $post->id,
-                'creator_id' => $user_id,
-                'followers_count' => $followers->count()
-            ]);
-    
-            foreach ($followers as $follower) {
-                $priceText = $post->price ? "Price: {$post->price}" : "No price specified";
-               $this->sendBrowserNotification(
-                    $follower->id,
-                    'New Post from ' . $postCreator->name,
-                    "{$postCreator->name} posted: {$post->title}. {$priceText}",
-                    $post->id,
-                    url('/post/' . $post->slug), // custom link
-                    'post', // notification type
-                    $post->slug // slug পাঠান
-                );
-                                
-                \Log::info('Notification sent to follower', [
-                    'follower_id' => $follower->id,
-                    'post_id' => $post->id
-                ]);
+    if ($request->filled('media_data')) {
+        $mediaDataArray = json_decode($request->input('media_data'), true);
+        
+        if (is_array($mediaDataArray)) {
+            foreach ($mediaDataArray as $media) {
+                $type = $media['type']; // 'image' or 'video'
+                $data = $media['data'];
+                
+                // Extract base64 content
+                if ($type === 'image') {
+                    $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
+                } else {
+                    $data = preg_replace('#^data:video/\w+;base64,#i', '', $data);
+                }
+                
+                $data = str_replace(' ', '+', $data);
+                $decoded = base64_decode($data);
+                
+                if ($decoded !== false) {
+                    // Generate filename based on type
+                    $extension = $type === 'image' ? '.jpg' : '.mp4';
+                    $name_gen = hexdec(uniqid()) . $extension;
+                    
+                    // Ensure directory exists
+                    if (!file_exists(public_path('uploads'))) {
+                        mkdir(public_path('uploads'), 0755, true);
+                    }
+                    
+                    // Save file
+                    file_put_contents(public_path('uploads/' . $name_gen), $decoded);
+                    
+                    // Add to appropriate array
+                    if ($type === 'image') {
+                        $savedMedia['images'][] = $name_gen;
+                    } else {
+                        $savedMedia['videos'][] = $name_gen;
+                    }
+                }
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send notifications to followers', [
-                'error' => $e->getMessage(),
-                'post_id' => $post->id
-            ]);
-            // নোটিফিকেশন fail হলেও পোস্ট তৈরি হবে
         }
-       
-        return back()->with('success', 'Post created successfully!');
     }
+    
+    // Count media files
+    $imageCount = count($savedMedia['images']);
+    $videoCount = count($savedMedia['videos']);
+   
+    // Build post data
+    $postData = [
+        'title' => $request->title,
+        'user_id' => $user_id,
+        'category_id' => $categoryId,
+        'new_category' => $newCategory,
+        'slug' => $slug
+    ];
+    
+    // Add optional fields
+    if ($request->filled('price') && $request->price != '') {
+        $postData['price'] = $request->price;
+    }
+    
+    if ($request->filled('description')) {
+        $postData['description'] = $request->description;
+    }
+    
+    // Store media as JSON in 'image' column (for backward compatibility)
+    // Check if your table has 'media' column or 'image' column
+    $mediaColumnName = 'image'; // Change to 'media' if you renamed the column
+    
+    if (!empty($savedMedia['images']) || !empty($savedMedia['videos'])) {
+        $postData[$mediaColumnName] = json_encode($savedMedia);
+    }
+   
+    // Save post to database
+    $post = Post::create($postData);
+
+    // Send notifications to followers
+    try {
+        $postCreator = Auth::user();
+        $followers = $postCreator->followers;
+        
+        \Log::info('New post created, sending notifications to followers', [
+            'post_id' => $post->id,
+            'creator_id' => $user_id,
+            'followers_count' => $followers->count(),
+            'images_count' => $imageCount,
+            'videos_count' => $videoCount
+        ]);
+
+        foreach ($followers as $follower) {
+            $mediaInfo = [];
+            if ($imageCount > 0) {
+                $mediaInfo[] = $imageCount . ' image(s)';
+            }
+            if ($videoCount > 0) {
+                $mediaInfo[] = $videoCount . ' video(s)';
+            }
+            $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
+            
+            $priceText = $post->price ? " - Price: {$post->price}" : "";
+            
+            $this->sendBrowserNotification(
+                $follower->id,
+                'New Post from ' . $postCreator->name,
+                "{$postCreator->name} posted: {$post->title}{$mediaText}{$priceText}",
+                $post->id,
+                url('/post/' . $post->slug),
+                'post',
+                $post->slug
+            );
+        }
+    } catch (\Exception $e) {
+        \Log::error('Failed to send notifications to followers', [
+            'error' => $e->getMessage(),
+            'post_id' => $post->id
+        ]);
+    }
+   
+    $totalMedia = $imageCount + $videoCount;
+    return back()->with('success', "Post created successfully with {$totalMedia} media file(s)!");
+}
 
 
     private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'order', $slug = null)
