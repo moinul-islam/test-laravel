@@ -139,6 +139,10 @@
                             >
                         @elseif($item['type'] === 'video')
                             <div style="background:#000;max-height:400px;overflow:hidden;display:flex;align-items:center;">
+                              @php
+                                  // Store mute preference in localStorage, fallback to true (muted) if not set
+                                  $mutePref = 'true';
+                              @endphp
                               <video 
                                   src="{{ asset('uploads/' . $item['file']) }}"
                                   class="w-100 post-carousel-video"
@@ -146,10 +150,52 @@
                                   controlsList="nodownload"
                                   style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
                                   data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
-                                  muted
+                                  {{-- muted attribute will be set by JS based on user preference --}}
                               >
                                   Your browser does not support the video tag.
                               </video>
+                              <script>
+                                // Unified mute/unmute handling for all videos
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    let globalMutePref = localStorage.getItem('globalVideoMuted');
+                                    if (globalMutePref === null) globalMutePref = "true"; // default: muted
+
+                                    function setAllVideosMuted(muted) {
+                                        document.querySelectorAll('video.post-carousel-video').forEach(video => {
+                                            video.muted = muted;
+                                            // For some browsers, changing mute requires reloading playback state
+                                            if (!video.paused && !muted && video.readyState >= 2) {
+                                                video.play().catch(()=>{});
+                                            }
+                                        });
+                                    }
+
+                                    // Set the mute state initially
+                                    setAllVideosMuted(globalMutePref === "true");
+
+                                    // Listen for mute/unmute actions on any .post-carousel-video
+                                    let listening = false;
+                                    if (!window._global_video_mute_listener) {
+                                        window._global_video_mute_listener = true;
+                                        document.addEventListener('volumechange', function(event) {
+                                            let target = event.target;
+                                            if (target && target.classList && target.classList.contains('post-carousel-video')) {
+                                                localStorage.setItem('globalVideoMuted', target.muted ? "true" : "false");
+                                                setAllVideosMuted(target.muted);
+                                            }
+                                        }, true);
+                                        // For browsers that do not propagate 'volumechange' outside video, use event delegation
+                                        document.body.addEventListener('click', function(e) {
+                                            if (e.target && e.target.tagName === 'VIDEO' && e.target.classList.contains('post-carousel-video')) {
+                                                setTimeout(() => {
+                                                    localStorage.setItem('globalVideoMuted', e.target.muted ? "true" : "false");
+                                                    setAllVideosMuted(e.target.muted);
+                                                }, 50);
+                                            }
+                                        }, true);
+                                    }
+                                });
+                              </script>
                             </div>
                             <script>
                             document.addEventListener('DOMContentLoaded', function () {
