@@ -233,30 +233,28 @@
 </div>
 
 {{-- Video Trim Modal --}}
-<div class="modal fade" id="videoTrimModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="videoTrimModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Trim Video (Max 60 seconds)</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeTrimModal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> This video is <strong id="videoDuration"></strong> seconds long. Please select 60 seconds or less.
+                    <i class="fas fa-exclamation-triangle"></i> This video is <strong id="videoDuration"></strong> seconds long. Please trim it to 60 seconds or less.
                 </div>
                 
-                <video id="trimVideoPreview" controls class="w-100 mb-3" style="max-height: 400px; background: #000;"></video>
+                <video id="trimVideoPreview" controls class="w-100 mb-3" style="max-height: 400px;"></video>
                 
                 <div class="row mb-3">
                     <div class="col-6">
                         <label class="form-label">Start Time (seconds)</label>
-                        <input type="range" class="form-range" id="trimStart" min="0" step="0.1" value="0">
-                        <input type="number" class="form-control mt-1" id="trimStartValue" value="0" min="0" step="0.1" style="width: 100%;">
+                        <input type="number" class="form-control" id="trimStart" value="0" min="0" step="0.1">
                     </div>
                     <div class="col-6">
                         <label class="form-label">End Time (seconds)</label>
-                        <input type="range" class="form-range" id="trimEnd" min="0" step="0.1" value="60">
-                        <input type="number" class="form-control mt-1" id="trimEndValue" value="60" min="0" step="0.1" style="width: 100%;">
+                        <input type="number" class="form-control" id="trimEnd" value="60" min="0" step="0.1">
                     </div>
                 </div>
                 
@@ -264,38 +262,17 @@
                     Selected duration: <strong id="selectedDuration">60</strong> seconds
                 </div>
                 
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" id="trimVideoBtn">
-                        <i class="fas fa-cut"></i> Trim Video
-                    </button>
-                    <button class="btn btn-secondary" id="cancelTrimBtn" data-bs-dismiss="modal">Cancel</button>
-                </div>
+                <button class="btn btn-primary w-100" id="trimVideoBtn">
+                    <i class="fas fa-cut"></i> Trim & Process Video
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Background Upload Progress Modal --}}
-<div class="modal fade" id="uploadProgressModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <h5 class="mb-3">Uploading Post...</h5>
-                <div class="progress mb-2" style="height: 25px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
-                         id="uploadProgressBar" style="width: 0%">0%</div>
-                </div>
-                <p class="text-muted mb-0" id="uploadStatusText">Preparing upload...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- External Libraries --}}
+{{-- External Libraries - Using different CDN for FFmpeg --}}
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -312,11 +289,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const mediaPreviewContainer = document.getElementById('mediaPreviewContainer');
     
     let processedMediaArray = [];
+    let ffmpegLoaded = false;
+    let ffmpeg = null;
     let pendingVideoFile = null;
     let currentFileIndex = 0;
     let totalFiles = 0;
+    
+    // Bootstrap modal
     let trimModal = null;
-    let uploadProgressModal = null;
     
     mediaInput.addEventListener('change', async function(e) {
         const files = Array.from(this.files);
@@ -358,24 +338,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         pendingVideoFile = file;
                         await showTrimModalAndWait(file, duration);
                     } else {
-                        // Video is OK - compress it using custom method
-                        mediaStatusText.textContent = `Processing video ${i + 1} of ${files.length}...`;
-                        const processedBase64 = await compressVideoCustom(file);
+                        // Video is OK - compress it
+                        mediaStatusText.textContent = `Compressing video ${i + 1} of ${files.length}...`;
+                        const compressedBase64 = await compressVideoSimple(file);
                         processedMediaArray.push({
                             type: 'video',
-                            data: processedBase64
+                            data: compressedBase64
                         });
-                        addMediaPreview(processedBase64, 'video', processedMediaArray.length - 1);
+                        addMediaPreview(compressedBase64, 'video', processedMediaArray.length - 1);
                     }
                 } catch (error) {
                     console.error('Video processing failed:', error);
-                    // Use original video if processing fails
-                    const videoBase64 = await readFileAsBase64(file);
-                    processedMediaArray.push({
-                        type: 'video',
-                        data: videoBase64
-                    });
-                    addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
+                    alert('Video processing failed: ' + file.name);
                 }
             }
         }
@@ -412,135 +386,91 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Show trim modal and wait for user action - Custom System
+    // Show trim modal and wait for user action
     function showTrimModalAndWait(file, duration) {
         return new Promise((resolve) => {
             if (!trimModal) {
-                trimModal = new bootstrap.Modal(document.getElementById('videoTrimModal'), {
-                    backdrop: 'static',
-                    keyboard: false
-                });
+                trimModal = new bootstrap.Modal(document.getElementById('videoTrimModal'));
             }
             
             const videoPreview = document.getElementById('trimVideoPreview');
             const trimStart = document.getElementById('trimStart');
-            const trimStartValue = document.getElementById('trimStartValue');
             const trimEnd = document.getElementById('trimEnd');
-            const trimEndValue = document.getElementById('trimEndValue');
             const videoDuration = document.getElementById('videoDuration');
             const selectedDuration = document.getElementById('selectedDuration');
             const trimBtn = document.getElementById('trimVideoBtn');
-            const cancelBtn = document.getElementById('cancelTrimBtn');
             
-            // Clean up previous video URL
-            if (videoPreview.src) {
-                URL.revokeObjectURL(videoPreview.src);
-            }
-            
-            const videoUrl = URL.createObjectURL(file);
-            videoPreview.src = videoUrl;
+            videoPreview.src = URL.createObjectURL(file);
             videoDuration.textContent = duration.toFixed(1);
-            
-            // Set max values
-            const maxEnd = Math.min(MAX_VIDEO_DURATION, duration);
+            trimStart.value = 0;
+            trimEnd.value = Math.min(MAX_VIDEO_DURATION, duration);
             trimStart.max = duration;
             trimEnd.max = duration;
-            trimStart.value = 0;
-            trimEnd.value = maxEnd;
-            trimStartValue.value = 0;
-            trimEndValue.value = maxEnd;
-            
-            // Reset button state
-            trimBtn.disabled = false;
-            trimBtn.innerHTML = '<i class="fas fa-cut"></i> Trim Video';
             
             // Update selected duration on change
             function updateDuration() {
                 const start = parseFloat(trimStart.value) || 0;
                 const end = parseFloat(trimEnd.value) || 0;
-                const diff = Math.max(0, end - start);
+                const diff = end - start;
                 selectedDuration.textContent = diff.toFixed(1);
                 
-                // Sync input values
-                trimStartValue.value = start.toFixed(1);
-                trimEndValue.value = end.toFixed(1);
-                
-                // Update video preview position
-                if (videoPreview.readyState >= 2) {
-                    videoPreview.currentTime = start;
-                }
-                
-                if (diff > MAX_VIDEO_DURATION || diff <= 0 || diff < 1) {
+                if (diff > MAX_VIDEO_DURATION) {
                     selectedDuration.classList.add('text-danger');
                     selectedDuration.classList.remove('text-success');
-                    trimBtn.disabled = true;
                 } else {
                     selectedDuration.classList.add('text-success');
                     selectedDuration.classList.remove('text-danger');
-                    trimBtn.disabled = false;
                 }
             }
             
-            // Sync range and number inputs
-            trimStart.addEventListener('input', function() {
-                trimStartValue.value = this.value;
-                updateDuration();
-            });
-            trimStartValue.addEventListener('input', function() {
-                const val = Math.max(0, Math.min(parseFloat(this.value) || 0, duration));
-                trimStart.value = val;
-                updateDuration();
-            });
+            trimStart.oninput = updateDuration;
+            trimEnd.oninput = updateDuration;
+            updateDuration();
             
-            trimEnd.addEventListener('input', function() {
-                trimEndValue.value = this.value;
-                updateDuration();
-            });
-            trimEndValue.addEventListener('input', function() {
-                const val = Math.max(0, Math.min(parseFloat(this.value) || 0, duration));
-                trimEnd.value = val;
-                updateDuration();
-            });
-            
-            // Video time update to sync with start time
-            videoPreview.addEventListener('loadedmetadata', function() {
-                updateDuration();
-            });
-            
-            // Remove old click handlers
-            const newTrimBtn = trimBtn.cloneNode(true);
-            trimBtn.parentNode.replaceChild(newTrimBtn, trimBtn);
-            const newCancelBtn = cancelBtn.cloneNode(true);
-            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-            
-            // Trim button click handler - Custom trim using MediaRecorder
-            document.getElementById('trimVideoBtn').addEventListener('click', async function() {
+            // Trim button click handler
+            trimBtn.onclick = async function() {
                 const start = parseFloat(trimStart.value) || 0;
                 const end = parseFloat(trimEnd.value) || 0;
                 const duration = end - start;
                 
-                if (duration > MAX_VIDEO_DURATION || duration <= 0 || duration < 1) {
-                    alert(`Video duration must be between 1 and ${MAX_VIDEO_DURATION} seconds!`);
+                if (duration > MAX_VIDEO_DURATION) {
+                    alert(`Video duration must be ${MAX_VIDEO_DURATION} seconds or less!`);
                     return;
                 }
                 
-                this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trimming...';
                 trimModal.hide();
                 
-                // Show processing status
-                mediaProcessingStatus.style.display = 'block';
-                mediaStatusText.textContent = 'Trimming video...';
+                // Load FFmpeg if not loaded
+                if (!ffmpegLoaded) {
+                    mediaStatusText.textContent = 'Loading video editor (one-time)...';
+                    try {
+                        const { createFFmpeg, fetchFile } = FFmpeg;
+                        ffmpeg = createFFmpeg({ log: false });
+                        await ffmpeg.load();
+                        ffmpegLoaded = true;
+                    } catch (error) {
+                        console.error('FFmpeg load failed:', error);
+                        alert('Video editor failed to load. Using original video without trim.');
+                        const videoBase64 = await readFileAsBase64(file);
+                        processedMediaArray.push({
+                            type: 'video',
+                            data: videoBase64
+                        });
+                        addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
+                        resolve();
+                        return;
+                    }
+                }
                 
+                // Trim video
+                mediaStatusText.textContent = `Trimming video...`;
                 try {
-                    const trimmedBase64 = await trimVideoCustom(file, start, end);
+                    const trimmedBase64 = await trimVideo(file, start, end);
                     processedMediaArray.push({
                         type: 'video',
                         data: trimmedBase64
                     });
                     addMediaPreview(trimmedBase64, 'video', processedMediaArray.length - 1);
-                    mediaDataInput.value = JSON.stringify(processedMediaArray);
-                    mediaStatusText.innerHTML = '<i class="fas fa-check-circle text-success"></i> Video trimmed successfully!';
                 } catch (error) {
                     console.error('Video trim failed:', error);
                     alert('Video trim failed. Using original video.');
@@ -550,290 +480,97 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: videoBase64
                     });
                     addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
-                    mediaDataInput.value = JSON.stringify(processedMediaArray);
                 }
                 
-                setTimeout(() => {
-                    mediaProcessingStatus.style.display = 'none';
-                }, 2000);
-                
-                // Cleanup
-                URL.revokeObjectURL(videoUrl);
                 resolve();
-            });
+            };
             
-            // Cancel button
-            document.getElementById('cancelTrimBtn').addEventListener('click', function() {
-                URL.revokeObjectURL(videoUrl);
-                // Use original video
-                readFileAsBase64(file).then(videoBase64 => {
-                    processedMediaArray.push({
-                        type: 'video',
-                        data: videoBase64
-                    });
-                    addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
-                    mediaDataInput.value = JSON.stringify(processedMediaArray);
-                    resolve();
-                });
-            });
-            
-            updateDuration();
             trimModal.show();
         });
     }
     
-    // Custom Video Trim using MediaRecorder API - Optimized
-    async function trimVideoCustom(file, startTime, endTime) {
-        return new Promise((resolve, reject) => {
-            const video = document.createElement('video');
-            video.preload = 'auto';
-            video.muted = true;
-            video.playsInline = true;
-            video.crossOrigin = 'anonymous';
-            
-            const videoUrl = URL.createObjectURL(file);
-            video.src = videoUrl;
-            
-            video.onloadedmetadata = function() {
-                video.currentTime = startTime;
-            };
-            
-            video.onseeked = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Calculate aspect ratio
-                const aspectRatio = video.videoWidth / video.videoHeight;
-                let width = 854;
-                let height = 480;
-                
-                if (aspectRatio > width / height) {
-                    height = width / aspectRatio;
-                } else {
-                    width = height * aspectRatio;
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Try to use better codec
-                let mimeType = 'video/webm;codecs=vp9,opus';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm;codecs=vp8,opus';
-                }
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
-                }
-                
-                const stream = canvas.captureStream(24); // Reduced to 24fps for faster processing
-                const mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: mimeType,
-                    videoBitsPerSecond: 1500000 // Reduced bitrate for faster processing
-                });
-                
-                const chunks = [];
-                let frameCount = 0;
-                const totalFrames = Math.ceil((endTime - startTime) * 24);
-                
-                mediaRecorder.ondataavailable = function(e) {
-                    if (e.data && e.data.size > 0) {
-                        chunks.push(e.data);
-                    }
-                };
-                
-                mediaRecorder.onstop = function() {
-                    URL.revokeObjectURL(videoUrl);
-                    const blob = new Blob(chunks, { type: mimeType });
-                    const reader = new FileReader();
-                    reader.onload = function() {
-                        resolve(reader.result);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                };
-                
-                // Optimized frame drawing
-                function drawFrame() {
-                    if (video.ended || video.currentTime >= endTime) {
-                        clearInterval(drawInterval);
-                        mediaRecorder.stop();
-                        video.pause();
-                        return;
-                    }
-                    
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    frameCount++;
-                    
-                    // Update progress
-                    if (frameCount % 10 === 0) {
-                        const progress = (frameCount / totalFrames) * 100;
-                        mediaStatusText.textContent = `Trimming video... ${Math.round(progress)}%`;
-                    }
-                }
-                
-                // Start recording
-                try {
-                    mediaRecorder.start(100); // Collect data every 100ms
-                    const drawInterval = setInterval(drawFrame, 42); // ~24fps
-                    
-                    // Play video
-                    video.play().then(() => {
-                        // Auto-stop when end time reached
-                        setTimeout(() => {
-                            if (mediaRecorder.state !== 'inactive') {
-                                clearInterval(drawInterval);
-                                mediaRecorder.stop();
-                                video.pause();
-                            }
-                        }, (endTime - startTime) * 1000);
-                    }).catch(reject);
-                } catch (error) {
-                    URL.revokeObjectURL(videoUrl);
-                    reject(error);
-                }
-            };
-            
-            video.onerror = function(e) {
-                URL.revokeObjectURL(videoUrl);
-                reject(new Error('Video loading failed'));
-            };
-        });
+    // Trim video using FFmpeg
+    async function trimVideo(file, startTime, endTime) {
+        const { fetchFile } = FFmpeg;
+        const inputName = 'input.mp4';
+        const outputName = 'output.mp4';
+        const duration = endTime - startTime;
+        
+        ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+        
+        await ffmpeg.run(
+            '-i', inputName,
+            '-ss', startTime.toString(),
+            '-t', duration.toString(),
+            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease',
+            '-c:v', 'libx264',
+            '-crf', '30',
+            '-preset', 'veryfast',
+            '-c:a', 'aac',
+            '-b:a', '96k',
+            outputName
+        );
+        
+        const data = ffmpeg.FS('readFile', outputName);
+        ffmpeg.FS('unlink', inputName);
+        ffmpeg.FS('unlink', outputName);
+        
+        const blob = new Blob([data.buffer], { type: 'video/mp4' });
+        return readFileAsBase64(blob);
     }
     
-    // Custom Video Compression - Optimized
-    async function compressVideoCustom(file) {
-        return new Promise((resolve, reject) => {
-            // If file is already small (< 10MB), use original
-            if (file.size < 10 * 1024 * 1024) {
-                readFileAsBase64(file).then(resolve).catch(reject);
-                return;
+    // Simple video compression without FFmpeg using canvas
+    async function compressVideoSimple(file) {
+        // Load FFmpeg for compression
+        if (!ffmpegLoaded) {
+            try {
+                const { createFFmpeg } = FFmpeg;
+                ffmpeg = createFFmpeg({ log: false });
+                await ffmpeg.load();
+                ffmpegLoaded = true;
+            } catch (error) {
+                console.error('FFmpeg load failed, uploading original:', error);
+                return readFileAsBase64(file);
             }
+        }
+        
+        try {
+            const { fetchFile } = FFmpeg;
+            const inputName = 'input.mp4';
+            const outputName = 'output.mp4';
             
-            const video = document.createElement('video');
-            video.preload = 'auto';
-            video.muted = true;
-            video.playsInline = true;
-            video.crossOrigin = 'anonymous';
+            ffmpeg.FS('writeFile', inputName, await fetchFile(file));
             
-            const videoUrl = URL.createObjectURL(file);
-            video.src = videoUrl;
+            // Compress: 720p, CRF 30 (smaller file)
+            await ffmpeg.run(
+                '-i', inputName,
+                '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease',
+                '-c:v', 'libx264',
+                '-crf', '30',
+                '-preset', 'veryfast',
+                '-c:a', 'aac',
+                '-b:a', '96k',
+                outputName
+            );
             
-            video.onloadedmetadata = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Calculate aspect ratio
-                const aspectRatio = video.videoWidth / video.videoHeight;
-                let width = 854;
-                let height = 480;
-                
-                if (aspectRatio > width / height) {
-                    height = width / aspectRatio;
-                } else {
-                    width = height * aspectRatio;
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Try better codec first
-                let mimeType = 'video/webm;codecs=vp9,opus';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm;codecs=vp8,opus';
-                }
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
-                }
-                
-                const stream = canvas.captureStream(24); // 24fps for faster processing
-                const mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: mimeType,
-                    videoBitsPerSecond: 1500000 // 1.5 Mbps for compression
-                });
-                
-                const chunks = [];
-                let frameCount = 0;
-                const duration = video.duration;
-                const totalFrames = Math.ceil(duration * 24);
-                
-                mediaRecorder.ondataavailable = function(e) {
-                    if (e.data && e.data.size > 0) {
-                        chunks.push(e.data);
-                    }
-                };
-                
-                mediaRecorder.onstop = function() {
-                    URL.revokeObjectURL(videoUrl);
-                    const blob = new Blob(chunks, { type: mimeType });
-                    
-                    // Check if compression actually reduced size
-                    if (blob.size >= file.size) {
-                        // Compression didn't help, use original
-                        readFileAsBase64(file).then(resolve).catch(reject);
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                };
-                
-                function drawFrame() {
-                    if (video.ended) {
-                        clearInterval(drawInterval);
-                        mediaRecorder.stop();
-                        return;
-                    }
-                    
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    frameCount++;
-                    
-                    // Update progress
-                    if (frameCount % 30 === 0) {
-                        const progress = (frameCount / totalFrames) * 100;
-                        mediaStatusText.textContent = `Compressing video... ${Math.round(progress)}%`;
-                    }
-                }
-                
-                try {
-                    mediaRecorder.start(100);
-                    const drawInterval = setInterval(drawFrame, 42); // ~24fps
-                    
-                    video.onended = function() {
-                        clearInterval(drawInterval);
-                        if (mediaRecorder.state !== 'inactive') {
-                            mediaRecorder.stop();
-                        }
-                    };
-                    
-                    video.onerror = function(e) {
-                        URL.revokeObjectURL(videoUrl);
-                        clearInterval(drawInterval);
-                        // Fallback to original
-                        readFileAsBase64(file).then(resolve).catch(reject);
-                    };
-                    
-                    video.play().catch(() => {
-                        URL.revokeObjectURL(videoUrl);
-                        // Fallback to original
-                        readFileAsBase64(file).then(resolve).catch(reject);
-                    });
-                } catch (error) {
-                    URL.revokeObjectURL(videoUrl);
-                    // Fallback to original
-                    readFileAsBase64(file).then(resolve).catch(reject);
-                }
-            };
+            const data = ffmpeg.FS('readFile', outputName);
+            ffmpeg.FS('unlink', inputName);
+            ffmpeg.FS('unlink', outputName);
             
-            video.onerror = function() {
-                URL.revokeObjectURL(videoUrl);
-                // Fallback to original
-                readFileAsBase64(file).then(resolve).catch(reject);
-            };
-        });
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const compressed = await readFileAsBase64(blob);
+            
+            // Check if compression worked
+            const originalSize = file.size;
+            const compressedSize = blob.size;
+            console.log(`Video compressed: ${(originalSize/1024/1024).toFixed(2)}MB → ${(compressedSize/1024/1024).toFixed(2)}MB`);
+            
+            return compressed;
+        } catch (error) {
+            console.error('Video compression failed:', error);
+            return readFileAsBase64(file);
+        }
     }
-    
     
     // Process image
     async function processImage(file) {
@@ -946,213 +683,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
     
-    // Form submission handler - AJAX submission with background upload
+    // Form submission handler
     const form = document.getElementById('createPostForm');
-    const createPostModal = document.getElementById('createPostModal');
-    const submitBtn = document.getElementById('submitBtn');
-    
     if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        form.addEventListener('submit', function(e) {
             // Check if media is still processing
             if (mediaProcessingStatus.style.display !== 'none') {
+                e.preventDefault();
                 alert('Please wait for media processing to complete!');
                 return false;
             }
-            
-            // Disable submit button
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Post...';
-            }
-            
-            // Get form data
-            const formData = new FormData(form);
-            
-            // Check if there are videos in the media data
-            let hasVideos = false;
-            if (formData.get('media_data')) {
-                try {
-                    const mediaData = JSON.parse(formData.get('media_data'));
-                    hasVideos = mediaData.some(media => media.type === 'video');
-                } catch (e) {
-                    console.error('Error parsing media data:', e);
-                }
-            }
-            
-            // Close modal immediately
-            if (createPostModal) {
-                const modalInstance = bootstrap.Modal.getInstance(createPostModal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }
-            
-            // Show upload progress modal
-            if (!uploadProgressModal) {
-                uploadProgressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-            }
-            uploadProgressModal.show();
-            
-            const uploadProgressBar = document.getElementById('uploadProgressBar');
-            const uploadStatusText = document.getElementById('uploadStatusText');
-            
-            try {
-                // Create XMLHttpRequest for progress tracking
-                const xhr = new XMLHttpRequest();
-                
-                // Track upload progress
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const percentComplete = (e.loaded / e.total) * 100;
-                        uploadProgressBar.style.width = percentComplete + '%';
-                        uploadProgressBar.textContent = Math.round(percentComplete) + '%';
-                        uploadStatusText.textContent = `Uploading... ${Math.round(percentComplete)}%`;
-                    }
-                });
-                
-                // Handle response
-                xhr.addEventListener('load', function() {
-                    if (xhr.status === 200) {
-                        try {
-                            const result = JSON.parse(xhr.responseText);
-                            uploadProgressBar.style.width = '100%';
-                            uploadProgressBar.textContent = '100%';
-                            uploadStatusText.textContent = 'Upload complete!';
-                            
-                            // Hide progress modal
-                            setTimeout(() => {
-                                uploadProgressModal.hide();
-                                showToast('success', 'Post created successfully!', 2000);
-                                
-                                // Fetch and show new post immediately without full page reload
-                                if (result.post && result.post.slug) {
-                                    fetchNewPost(result.post.slug);
-                                } else {
-                                    // Fallback to reload
-                                    setTimeout(() => window.location.reload(), 1500);
-                                }
-                            }, 500);
-                        } catch (e) {
-                            uploadProgressModal.hide();
-                            showToast('success', 'Post created successfully!', 2000);
-                            setTimeout(() => window.location.reload(), 1500);
-                        }
-                    } else {
-                        uploadProgressModal.hide();
-                        let errorMsg = 'Failed to create post. Please try again.';
-                        try {
-                            const result = JSON.parse(xhr.responseText);
-                            errorMsg = result.message || errorMsg;
-                        } catch (e) {}
-                        showToast('error', errorMsg, 5000);
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = 'Create Post';
-                        }
-                    }
-                });
-                
-                xhr.addEventListener('error', function() {
-                    uploadProgressModal.hide();
-                    showToast('error', 'Network error. Please try again.', 5000);
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Create Post';
-                    }
-                });
-                
-                // Start upload
-                uploadStatusText.textContent = 'Preparing upload...';
-                xhr.open('POST', form.action);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || formData.get('_token'));
-                xhr.send(formData);
-                
-            } catch (error) {
-                console.error('Form submission error:', error);
-                uploadProgressModal.hide();
-                showToast('error', 'An error occurred. Please try again.', 5000);
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Create Post';
-                }
-            }
         });
-    }
-    
-    // Toast notification function
-    function showToast(type, message, duration = 3000) {
-        // Remove existing toast if any
-        const existingToast = document.querySelector('.toast-notification');
-        if (existingToast) {
-            existingToast.remove();
-        }
-        
-        const toast = document.createElement('div');
-        toast.className = `toast-notification alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
-        toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
-    }
-    
-    // Fetch new post and add to top of list
-    async function fetchNewPost(slug) {
-        try {
-            // Get current user from page
-            const currentUser = @json($user->username ?? null);
-            if (!currentUser) {
-                window.location.reload();
-                return;
-            }
-            
-            // Fetch posts partial view with AJAX
-            const response = await fetch(`/${currentUser}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                
-                if (result.posts) {
-                    const postsContainer = document.getElementById('posts-container');
-                    if (postsContainer) {
-                        // Replace with new posts HTML
-                        postsContainer.innerHTML = result.posts;
-                        
-                        // Scroll to top to show new post
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        
-                        // Re-initialize any event listeners if needed
-                        initReadMore();
-                        return;
-                    }
-                }
-            }
-            
-            // Fallback: reload page
-            window.location.reload();
-        } catch (error) {
-            console.error('Error fetching new post:', error);
-            // Fallback: reload page
-            window.location.reload();
-        }
     }
 });
 </script>
