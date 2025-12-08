@@ -45,13 +45,24 @@ class PostController extends Controller
     $user_id = Auth::id();
    
     // Validation
-    $request->validate([
-        'category_name' => 'required|string|max:255',
-        'title' => 'required|string|max:255',
-        'price' => 'nullable|numeric|min:0',
-        'description' => 'nullable|string|max:1000',
-        'media_data' => 'nullable|string',
-    ]);
+    try {
+        $request->validate([
+            'category_name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'price' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string|max:1000',
+            'media_data' => 'nullable|string',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+        throw $e;
+    }
    
     $categoryId = null;
     $newCategory = null;
@@ -200,6 +211,16 @@ class PostController extends Controller
     }
    
     $totalMedia = $imageCount + $videoCount;
+    
+    // Return JSON response for AJAX requests
+    if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => "Post created successfully with {$totalMedia} media file(s)!",
+            'post' => $post
+        ]);
+    }
+    
     return back()->with('success', "Post created successfully with {$totalMedia} media file(s)!");
 }
 
