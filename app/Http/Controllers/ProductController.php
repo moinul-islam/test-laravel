@@ -21,10 +21,7 @@ class ProductController extends Controller
         $user = null;
         
         if ($path == 'international') {
-            $userIds = User::where(function($query) {
-                $query->where('phone_verified', 0)
-                      ->orWhere('email_verified', 0);
-            })->pluck('id')->toArray();
+            $userIds = User::pluck('id')->toArray();
             
             $user = new \stdClass();
             $user->id = 0;
@@ -36,10 +33,6 @@ class ProductController extends Controller
             $country = Country::where('username', $path)->first();
             if ($country) {
                 $userIds = User::where('country_id', $country->id)
-                    ->where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })
                     ->pluck('id')
                     ->toArray();
                 
@@ -53,10 +46,6 @@ class ProductController extends Controller
                 $city = City::where('username', $path)->first();
                 if ($city) {
                     $userIds = User::where('city_id', $city->id)
-                        ->where(function($query) {
-                            $query->where('phone_verified', 0)
-                                  ->orWhere('email_verified', 0);
-                        })
                         ->pluck('id')
                         ->toArray();
                     
@@ -117,28 +106,17 @@ class ProductController extends Controller
         $userIds = [];
     
         if ($path == 'international') {
-            $userIds = User::where(function($query) {
-                $query->where('phone_verified', 0)
-                      ->orWhere('email_verified', 0);
-            })->pluck('id')->toArray();
+            $userIds = User::pluck('id')->toArray();
         } else {
             $country = Country::where('username', $path)->first();
             if ($country) {
                 $userIds = User::where('country_id', $country->id)
-                    ->where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })
                     ->pluck('id')
                     ->toArray();
             } else {
                 $city = City::where('username', $path)->first();
                 if ($city) {
                     $userIds = User::where('city_id', $city->id)
-                        ->where(function($query) {
-                            $query->where('phone_verified', 0)
-                                  ->orWhere('email_verified', 0);
-                        })
                         ->pluck('id')
                         ->toArray();
                 } else {
@@ -173,28 +151,17 @@ class ProductController extends Controller
         $userIds = [];
         
         if ($path == 'international') {
-            $userIds = User::where(function($query) {
-                $query->where('phone_verified', 0)
-                      ->orWhere('email_verified', 0);
-            })->pluck('id')->toArray();
+            $userIds = User::pluck('id')->toArray();
         } else {
             $country = Country::where('username', $path)->first();
             if ($country) {
                 $userIds = User::where('country_id', $country->id)
-                    ->where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })
                     ->pluck('id')
                     ->toArray();
             } else {
                 $city = City::where('username', $path)->first();
                 if ($city) {
                     $userIds = User::where('city_id', $city->id)
-                        ->where(function($query) {
-                            $query->where('phone_verified', 0)
-                                  ->orWhere('email_verified', 0);
-                        })
                         ->pluck('id')
                         ->toArray();
                 } else {

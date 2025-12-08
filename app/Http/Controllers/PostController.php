@@ -523,35 +523,21 @@ public function showByCategory(Request $request, $username, $slug)
     $userIds = [];
     
     if ($path == 'international') {
-        $userIds = User::where(function($query) {
-            $query->where('phone_verified', 0)
-                  ->orWhere('email_verified', 0);
-        })->pluck('id')->toArray();
+        $userIds = User::pluck('id')->toArray();
     } else {
         $country = Country::where('username', $path)->first();
         if ($country) {
             $userIds = User::where('country_id', $country->id)
-                ->where(function($query) {
-                    $query->where('phone_verified', 0)
-                          ->orWhere('email_verified', 0);
-                })
                 ->pluck('id')
                 ->toArray();
         } else {
             $city = City::where('username', $path)->first();
             if ($city) {
                 $userIds = User::where('city_id', $city->id)
-                    ->where(function($query) {
-                        $query->where('phone_verified', 0)
-                              ->orWhere('email_verified', 0);
-                    })
                     ->pluck('id')
                     ->toArray();
             } else {
-                $userIds = User::where(function($query) {
-                    $query->where('phone_verified', 0)
-                          ->orWhere('email_verified', 0);
-                })->pluck('id')->toArray();
+                $userIds = User::pluck('id')->toArray();
             }
         }
     }
