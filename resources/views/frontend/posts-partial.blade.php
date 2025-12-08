@@ -144,7 +144,9 @@
                                   class="w-100"
                                   controls
                                   controlsList="nodownload"
-                                  style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;">
+                                  style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
+                                  data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
+                              >
                                   Your browser does not support the video tag.
                               </video>
                             </div>
@@ -178,6 +180,56 @@
                 </div>
             @endif
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var carousel = document.getElementById('mixedMediaCarousel-{{ $post->id }}');
+                if (!carousel) return;
+                var videos = carousel.querySelectorAll('video.post-carousel-video');
+                var items = carousel.querySelectorAll('.carousel-item');
+
+                // Helper to pause all videos except current
+                function pauseOtherVideos(activeIndex) {
+                    videos.forEach(function(video, idx) {
+                        if(idx !== activeIndex && !video.paused) { 
+                            video.pause(); 
+                            video.currentTime = 0;
+                        }
+                    });
+                }
+
+                // Initial autoplay if first media is video
+                if(items.length && items[0].querySelector('video.post-carousel-video')) {
+                    var firstVideo = items[0].querySelector('video.post-carousel-video');
+                    firstVideo.play().catch(()=>{});
+                }
+
+                // Listen for slide event to control autoplay & autostop
+                carousel.addEventListener('slide.bs.carousel', function (event) {
+                    // Pause all videos before slide
+                    pauseOtherVideos(-1);
+                });
+
+                carousel.addEventListener('slid.bs.carousel', function (event) {
+                    var activeIndex = event.to ?? Array.prototype.findIndex.call(items, function(item){ return item.classList.contains('active'); });
+                    // Sometimes event.to is not set, fallback to DOM
+                    if(typeof activeIndex !== 'number' || activeIndex < 0) {
+                        items.forEach(function(item, idx){
+                            if(item.classList.contains('active')) activeIndex = idx;
+                        });
+                    }
+                    
+                    items.forEach(function(item, idx){
+                        var v = item.querySelector('video.post-carousel-video');
+                        if(idx===activeIndex && v) {
+                            v.play().catch(()=>{});
+                        } else if(v) {
+                            v.pause();
+                            v.currentTime = 0;
+                        }
+                    });
+                });
+            });
+        </script>
     </div>
 @endif
 
