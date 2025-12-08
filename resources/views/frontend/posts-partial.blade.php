@@ -81,12 +81,12 @@
                }
             </script>
          </div>
-         {{-- Post Media Display (Supports both old single image and new multiple media) --}}
+         {{-- Post Media Display (Supports both old single image and new mixed media (images/videos)) --}}
 @php
     // Handle both old (string) and new (JSON) format
     $media = null;
     $isSingleImage = false;
-    
+
     if ($post->image) {
         if (is_string($post->image)) {
             // Check if it's JSON
@@ -101,64 +101,83 @@
             $media = $post->image;
         }
     }
+
+    // Prepare a unified $allMedia array preserving type and file
+    $allMedia = [];
+    if ($media) {
+        if (isset($media['images']) && is_array($media['images'])) {
+            foreach ($media['images'] as $img) {
+                $allMedia[] = ['type' => 'image', 'file' => $img];
+            }
+        }
+        if (isset($media['videos']) && is_array($media['videos'])) {
+            foreach ($media['videos'] as $vid) {
+                $allMedia[] = ['type' => 'video', 'file' => $vid];
+            }
+        }
+    }
 @endphp
 
 @if($isSingleImage)
     {{-- Old Single Image Format --}}
     <img id="img-zoomer" src="{{ asset('uploads/'.$post->image) }}" alt="Post Image" class="img-fluid" style="object-fit:cover; max-height:400px; width:100%;">
-@elseif($media)
-    {{-- New Multiple Media Format --}}
+@elseif($media && count($allMedia) > 0)
+    {{-- Unified Media Carousel for images and videos --}}
     <div class="media-container">
-        {{-- Display Images --}}
-        @if(isset($media['images']) && count($media['images']) > 0)
-            <div id="postImagesCarousel-{{ $post->id }}" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    @foreach($media['images'] as $index => $image)
-                        <div class="carousel-item @if($index === 0) active @endif">
-                            <img src="{{ asset('uploads/' . $image) }}" 
-                                 alt="Post Image {{ $index + 1 }}" 
-                                 class="img-fluid d-block w-100" 
-                                 style="width: 100%; height: 400px; object-fit: cover; cursor: pointer;"
-                                 onclick="openImageModal('{{ asset('uploads/' . $image) }}')" id="img-zoomer">
-                        </div>
-                    @endforeach
-                </div>
-                @if(count($media['images']) > 1)
-                    <button class="carousel-control-prev" type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                @endif
-                @if(count($media['images']) > 1)
-                    <div class="carousel-indicators">
-                        @foreach($media['images'] as $index => $image)
-                            <button type="button" data-bs-target="#postImagesCarousel-{{ $post->id }}" data-bs-slide-to="{{ $index }}" @if($index === 0) class="active" aria-current="true" @endif aria-label="Slide {{ $index + 1 }}"></button>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        @endif
-        
-        {{-- Display Videos --}}
-        @if(isset($media['videos']) && count($media['videos']) > 0)
-            <div class="videos-grid">
-                @foreach($media['videos'] as $index => $video)
-                    <div class="col-12">
-                        <video src="{{ asset('uploads/' . $video) }}" 
-                               class="w-100" 
-                               controls 
-                               controlsList="nodownload"
-                               style="max-height: 400px; object-fit: contain;">
-                            Your browser does not support the video tag.
-                        </video>
+        <div id="mixedMediaCarousel-{{ $post->id }}" class="carousel slide" data-bs-ride="false">
+            <div class="carousel-inner">
+                @foreach($allMedia as $index => $item)
+                    <div class="carousel-item @if($index === 0) active @endif">
+                        @if($item['type'] === 'image')
+                            <img 
+                                src="{{ asset('uploads/' . $item['file']) }}" 
+                                alt="Post Image {{ $index + 1 }}" 
+                                class="img-fluid d-block w-100"
+                                style="width: 100%; height: 400px; object-fit: cover; cursor: pointer;"
+                                onclick="openImageModal('{{ asset('uploads/' . $item['file']) }}')"
+                                id="img-zoomer"
+                            >
+                        @elseif($item['type'] === 'video')
+                            <div style="background:#000;max-height:400px;overflow:hidden;display:flex;align-items:center;">
+                              <video 
+                                  src="{{ asset('uploads/' . $item['file']) }}"
+                                  class="w-100"
+                                  controls
+                                  controlsList="nodownload"
+                                  style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;">
+                                  Your browser does not support the video tag.
+                              </video>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
-        @endif
+            @if(count($allMedia) > 1)
+                <button class="carousel-control-prev p-0 border-0 rounded-circle shadow-sm bg-white d-flex align-items-center justify-content-center" type="button" data-bs-target="#mixedMediaCarousel-{{ $post->id }}" data-bs-slide="prev" style="width:34px;height:34px;top:50%;left:8px;transform:translateY(-50%);position:absolute;z-index:2;">
+                    <span style="font-size: 1.1rem; line-height: 1;" class="d-flex align-items-center justify-content-center text-secondary">
+                        <i class="bi bi-chevron-left"></i>
+                    </span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next p-0 border-0 rounded-circle shadow-sm bg-white d-flex align-items-center justify-content-center" type="button" data-bs-target="#mixedMediaCarousel-{{ $post->id }}" data-bs-slide="next" style="width:34px;height:34px;top:50%;right:8px;transform:translateY(-50%);position:absolute;z-index:2;">
+                    <span style="font-size: 1.1rem; line-height: 1;" class="d-flex align-items-center justify-content-center text-secondary">
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                <div class="carousel-indicators" style="bottom: 10px;">
+                    @foreach($allMedia as $index => $item)
+                        <button type="button"
+                            data-bs-target="#mixedMediaCarousel-{{ $post->id }}"
+                            data-bs-slide-to="{{ $index }}"
+                            @if($index === 0) class="active" aria-current="true" @endif
+                            aria-label="Slide {{ $index + 1 }}"
+                            style="width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1.5px solid #999; margin-right: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 @endif
 
