@@ -141,15 +141,66 @@
                             <div style="background:#000;max-height:400px;overflow:hidden;display:flex;align-items:center;">
                               <video 
                                   src="{{ asset('uploads/' . $item['file']) }}"
-                                  class="w-100"
+                                  class="w-100 post-carousel-video"
                                   controls
                                   controlsList="nodownload"
                                   style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
                                   data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
+                                  muted
                               >
                                   Your browser does not support the video tag.
                               </video>
                             </div>
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const video = document.querySelector('#mixedMediaCarousel-{{ $post->id }} .carousel-item.active video.post-carousel-video');
+                                if (video) {
+                                    // Autoplay when the slide is shown
+                                    video.play().catch(()=>{});
+                                }
+
+                                let observer;
+                                // Auto-pause when scrolled out of view
+                                setTimeout(function () {
+                                    const vid = document.querySelector('#mixedMediaCarousel-{{ $post->id }} .carousel-item.active video.post-carousel-video');
+                                    if (!vid) return;
+                                    observer = new IntersectionObserver((entries) => {
+                                        entries.forEach(entry => {
+                                            if (entry.isIntersecting) {
+                                                vid.play().catch(()=>{});
+                                            } else {
+                                                vid.pause();
+                                            }
+                                        });
+                                    }, { threshold: 0.5 }); // 50% visible threshold
+                                    observer.observe(vid);
+                                }, 400);
+
+                                // When slide changes, play new, pause previous
+                                const carousel = document.getElementById('mixedMediaCarousel-{{ $post->id }}');
+                                if (carousel) {
+                                    carousel.addEventListener('slid.bs.carousel', function(event) {
+                                        const videos = carousel.querySelectorAll('video.post-carousel-video');
+                                        videos.forEach((v, idx) => v.pause());
+                                        const newActive = carousel.querySelector('.carousel-item.active video.post-carousel-video');
+                                        if (newActive) {
+                                            newActive.play().catch(()=>{});
+                                            if (observer) observer.disconnect();
+                                            observer = new IntersectionObserver((entries) => {
+                                                entries.forEach(entry => {
+                                                    if (entry.isIntersecting) {
+                                                        newActive.play().catch(()=>{});
+                                                    } else {
+                                                        newActive.pause();
+                                                    }
+                                                });
+                                            }, { threshold: 0.5 });
+                                            observer.observe(newActive);
+                                        }
+                                    });
+                                }
+                            });
+                            </script>
                         @endif
                     </div>
                 @endforeach
