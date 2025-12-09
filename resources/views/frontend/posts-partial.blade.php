@@ -376,16 +376,24 @@ function openImageModal(imageSrc) {
             {{-- Action Buttons --}}
             <div class="d-flex justify-content-around text-muted border-top pt-2 pb-2">
                 
+               @auth
                <button 
                   class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
                   data-post-id="{{ $post->id }}"
-                  @guest
-                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();"
-                  @endguest
                >
                   <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
                   <span class="action-count">{{ $post->likesCount() }}</span>
                </button>
+               @else
+               <button 
+                  class="btn text-muted d-flex align-items-center" 
+                  onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();"
+                  type="button"
+               >
+                  <i class="bi bi-hand-thumbs-up me-1"></i>
+                  <span class="action-count">{{ $post->likesCount() }}</span>
+               </button>
+               @endauth
                
                <button 
                   class="btn text-muted d-flex align-items-center comment-toggle-btn" 
@@ -418,7 +426,7 @@ function openImageModal(imageSrc) {
                      style="width:32px; height:32px; object-fit:cover;" 
                      alt="Your Profile">
                   <div class="flex-grow-1">
-                     <form action="{{ route('comment.store') }}" method="POST" class="comment-form">
+                    <form action="{{ route('comment.store') }}" method="POST" class="comment-form">
                         @csrf
                         <input type="hidden" name="user_id" value="{{ Auth::id() }}">
                         <input type="hidden" name="post_id" value="{{ $post->id }}">
@@ -440,11 +448,18 @@ function openImageModal(imageSrc) {
                               <i class="bi bi-image"></i>
                               </button>
                            </div>
+                           @auth
                            <button type="submit" class="btn btn-primary btn-sm">
-                           Post
+                               Post
                            </button>
+                           @else
+                           <button type="button" class="btn btn-primary btn-sm" onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();">
+                               Login to Post
+                           </button>
+                           @endauth
                         </div>
                      </form>
+                    
                   </div>
                </div>
             </div>
@@ -490,12 +505,15 @@ function openImageModal(imageSrc) {
 
                            @else
                            <span class="text-muted me-2" style="font-size: 12px;">
-                           <i class="bi bi-hand-thumbs-up me-1"></i>
-                           <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
+                              <i class="bi bi-hand-thumbs-up me-1"></i>
+                              <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
                            </span>
-                           <a href="{{ route('login') }}" class="btn btn-sm text-muted p-0 me-2" style="font-size: 12px;">
-                           <i class="bi bi-reply me-1"></i>
-                           Login to Reply
+                           <a href="javascript:void(0);" 
+                              class="btn btn-sm text-muted p-0 me-2" 
+                              style="font-size: 12px;"
+                              onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();">
+                              <i class="bi bi-reply me-1"></i>
+                              Login to Reply
                            </a>
                            @endauth
                         </div>
@@ -600,13 +618,19 @@ function openImageModal(imageSrc) {
 
                                     @else
                                     <span class="text-muted me-2" style="font-size: 11px;">
-                                    <i class="bi bi-hand-thumbs-up me-1"></i>
-                                    <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
+                                        <i class="bi bi-hand-thumbs-up me-1"></i>
+                                        <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
                                     </span>
-                                    <a href="{{ route('login') }}" class="btn btn-sm text-muted p-0" style="font-size: 11px;">
-                                    <i class="bi bi-reply me-1"></i>
-                                    Login to Reply
-                                    </a>
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-sm text-muted p-0" 
+                                        style="font-size: 11px;" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#authModal"
+                                    >
+                                        <i class="bi bi-reply me-1"></i>
+                                        Login to Reply
+                                    </button>
                                     @endauth
                                  </div>
 
