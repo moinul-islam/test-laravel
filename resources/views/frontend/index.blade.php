@@ -10,8 +10,10 @@
     {{-- Include Sidebar --}}
     @include('frontend.body.sidebar')
 
+    {{--
     @include('frontend.phonebook')
-    
+    --}}
+
     @php
            $countries = App\Models\Country::orderByRaw("CASE WHEN username = 'international' THEN 0 ELSE 1 END")
        ->orderBy('name') // অথবা যেকোনো column দিয়ে sort করতে চান
@@ -53,12 +55,16 @@
     <!-- Horizontal Scrollable Navigation -->
     <div class="scroll-container mb-4">
         <div class="scroll-content">
+
             <button href="" class="nav-item-custom" id="openSidebarBtn">
                 <span><i class="bi bi-list"></i></span>
             </button>
+
+            <!--
+            
             <button class="nav-item-custom" data-bs-toggle="modal" data-bs-target="#fullModal">
                 <span><i class="bi bi-journal-bookmark"></i></span>
-            </button>
+            </button> 
 
             <button class="nav-item-custom" data-bs-toggle="modal" data-bs-target="#locationModal">
                 <span><i class="bi bi-geo-alt"></i></span>
@@ -72,6 +78,8 @@
                     @endif
                 </span>
             </button>
+
+            -->
 
             
            
