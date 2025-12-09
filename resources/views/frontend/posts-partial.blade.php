@@ -380,7 +380,7 @@ function openImageModal(imageSrc) {
                   class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
                   data-post-id="{{ $post->id }}"
                   @guest
-                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('userNavagateModal')); modal.show();"
+                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();"
                   @endguest
                >
                   <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
@@ -391,7 +391,7 @@ function openImageModal(imageSrc) {
                   class="btn text-muted d-flex align-items-center comment-toggle-btn" 
                   data-post-id="{{ $post->id }}"
                   @guest
-                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('userNavagateModal')); modal.show();"
+                      onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();"
                   @endguest
                >
                   <i class="bi bi-chat-left-text me-1"></i> 
