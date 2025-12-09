@@ -29,21 +29,16 @@
         
         <span class="badge {{ $isOwnPost ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnPost ? 'disabled' : '' }}"
             @if(!$isOwnPost)
-                @if(auth()->check() && auth()->user()->phone_verified == '0')
-                    onclick="addToCart(
-                        '{{ $item->id }}',
-                        '{{ $item->title }}',
-                        '{{ $item->price ?? 0 }}',
-                        '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}',
-                        '{{ $categoryType }}',
-                        '{{ $item->discount_price ?? 0 }}'
-                    )"
-                    style="cursor: pointer;"
-                    data-category-type="{{ $categoryType }}"
-                @else
-                    onclick="alert('দয়া করে আগে ফোন নম্বর ভেরিফাই করুন!')"
-                    style="cursor: not-allowed; opacity: 0.6;"
-                @endif
+                onclick="addToCart(
+                    '{{ $item->id }}',
+                    '{{ $item->title }}',
+                    '{{ $item->price ?? 0 }}',
+                    '{{ $item->image ? asset('uploads/'.$item->image) : asset('profile-image/no-image.jpeg') }}',
+                    '{{ $categoryType }}',
+                    '{{ $item->discount_price ?? 0 }}'
+                )"
+                style="cursor: pointer;"
+                data-category-type="{{ $categoryType }}"
             @endif>
             @if($categoryType == 'service')                            
                 @if($isOwnPost)
