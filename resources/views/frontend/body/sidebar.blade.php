@@ -70,7 +70,17 @@
                          data-bs-parent="#categoryAccordion">
                         <div class="accordion-body">
                             <ul class="list-unstyled">
-                                @foreach($allSubCategories as $subCategory)
+                                @php
+                                    // "profile" cat_type gulo first, then baki gulo id-onujayi
+                                    $profileSubCategories = $allSubCategories->where('cat_type', 'profile');
+                                    $otherSubCategories = $allSubCategories->where('cat_type', '!=', 'profile');
+                                    // others sort by id 
+                                    $otherSubCategories = $otherSubCategories->sortBy('id');
+                                    // Combined collection
+                                    $sortedSubCategories = $profileSubCategories->concat($otherSubCategories);
+                                @endphp
+
+                                @foreach($sortedSubCategories as $subCategory)
                                     @php
                                         $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get();
                                         $isActiveSubParent = ($currentParentId == $subCategory->id || $currentCategoryId == $subCategory->id);
