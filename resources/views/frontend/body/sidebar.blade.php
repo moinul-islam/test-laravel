@@ -70,6 +70,14 @@
                          data-bs-parent="#categoryAccordion">
                         <div class="accordion-body">
                             <ul class="list-unstyled">
+
+
+
+                            <!-- 
+                            
+
+                            profile/products/services sob category ase ekhane
+
                                 @php
                                     // "profile" cat_type gulo first, then baki gulo id-onujayi
                                     $profileSubCategories = $allSubCategories->where('cat_type', 'profile');
@@ -78,6 +86,15 @@
                                     $otherSubCategories = $otherSubCategories->sortBy('id');
                                     // Combined collection
                                     $sortedSubCategories = $profileSubCategories->concat($otherSubCategories);
+                                @endphp
+                            
+                            -->
+
+
+
+                                @php
+                                    // Only subcategories where cat_type is NOT 'profile'
+                                    $sortedSubCategories = $allSubCategories->where('cat_type', '===', 'profile')->sortBy('id');
                                 @endphp
 
                                 @foreach($sortedSubCategories as $subCategory)
