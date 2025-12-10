@@ -176,6 +176,11 @@
 </style>
 
 <div class="container mt-4">
+
+
+
+    @include('frontend.body.nortification-bar')
+
     <div class="notification-card">
         <!-- Header -->
         <div class="notification-header">

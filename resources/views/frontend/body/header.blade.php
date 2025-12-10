@@ -192,13 +192,14 @@
                     <li>
                         <a class="dropdown-item" href="/notifications">
                         <i class="bi bi-bell me-2"></i>Notification
-                        @if($unseenNotificationsCount > 0)
-                            <span class="dropdown-badge">{{ $unseenNotificationsCount }}</span>
+                        
+                        @if($totalUnseenCount > 0)
+                            <span class="dropdown-badge">{{ $totalUnseenCount > 99 ? '99+' : $totalUnseenCount }}</span>
                         @endif
                         </a>
                     </li>
                     
-                    @if($hasPlacedOrders)
+                    <!-- @if($hasPlacedOrders)
                         <li><a class="dropdown-item" href="{{ route('buy') }}"><i class="bi bi-cart me-2"></i>Buy</a></li>
                     @endif
                     
@@ -211,7 +212,7 @@
                                 @endif
                             </a>
                         </li>
-                    @endif
+                    @endif -->
 
                     @if(auth()->check() && auth()->user()->role === 'delivery')
                         <li><a class="dropdown-item" href="{{ route('delivery.page') }}"><i class="bi bi-truck me-2"></i>Delivery</a></li>
