@@ -185,9 +185,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 9px;
     border-bottom: 1px solid #e0e0e0;
-    background: #f8f9fa;
+    /* background: #f8f9fa; */
     position: sticky;
     top: 0;
     z-index: 10;
