@@ -49,7 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
     shareButtons.forEach(button => {
         button.addEventListener('click', async function() {
             const postId = this.dataset.postId;
-            const postUrl = this.dataset.postUrl || window.location.href;
+            let rawUrl = this.dataset.postUrl || window.location.href;
+            // Remove 'www.' from the URL if present
+            const postUrl = rawUrl.replace('://www.', '://');
             const postTitle = this.dataset.postTitle || document.title;
             
             currentShareData = {
