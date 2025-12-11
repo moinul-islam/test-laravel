@@ -41,7 +41,7 @@
          position: sticky;
          top: 0;
          z-index: 1000;
-         background: #f2f2f2;
+         background: #fff;
          /* border-bottom: 1px solid #e0e0e0; */
          }
          /* Dark mode background */

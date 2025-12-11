@@ -13,9 +13,6 @@
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <style>
 
-body {
-    background-color: #f2f2f2 !important;
-}
 
 form {
     margin: 0 !important;
