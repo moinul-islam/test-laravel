@@ -6,3 +6,4 @@
 </div>
 @endsection
 
+@include('frontend.post-card-script')
