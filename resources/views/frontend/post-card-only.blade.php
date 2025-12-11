@@ -43,7 +43,7 @@
             </div>
          </div>
          <div class="card-body">
-            <h2>{{ $post->title }}</h2>
+            <!-- <h2>{{ $post->title }}</h2> -->
             @php
             $maxLength = 200;
             $desc = $post->description;
