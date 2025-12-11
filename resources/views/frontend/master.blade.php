@@ -1113,5 +1113,90 @@ form {
       </script>
       <!-- Bootstrap JS -->
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+<!-- HTML: Modal markup -->
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">স্বাগতম!</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p id="popupText">
+          কুতুবপুরের সোশ্যায়াল কমিউনিটি অ্যাপে আপনাকে স্বাগতম — এখানে আপনার এলাকার সকল গুরুত্বপূর্ণ ঘোষণা, খবরা-খবর ও ব্যাবসায়িক তথ্য দেখাতে পাবেন।
+        </p>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="dontShowAgain">
+          <label class="form-check-label" for="dontShowAgain">
+            আমিও এখানে এলাকাভিত্তিক পোস্ট করবো
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modalCloseBtn" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="modalOkBtn" type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const STORAGE_KEY = "popup_text_hash";  // where we store the text signature
+    const popupText = document.getElementById("popupText").innerText.trim();
+
+    // Create a simple hash from text
+    function createHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0; // convert to 32bit int
+        }
+        return hash;
+    }
+
+    const currentHash = createHash(popupText).toString();
+    const savedHash = localStorage.getItem(STORAGE_KEY);
+
+    // If hash changed or first time → show popup
+    if (savedHash !== currentHash) {
+
+        const modalEl = document.getElementById('welcomeModal');
+        const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: true });
+        modal.show();
+
+        const dontShowCheckbox = document.getElementById("dontShowAgain");
+        const closeBtn = document.getElementById("modalCloseBtn");
+        const okBtn = document.getElementById("modalOkBtn");
+
+        function saveIfChecked() {
+            if (dontShowCheckbox.checked) {
+                // User wants: Don't show again → store current hash
+                localStorage.setItem(STORAGE_KEY, currentHash);
+            }
+        }
+
+        // When modal closes → save preference if checkbox checked
+        modalEl.addEventListener("hidden.bs.modal", saveIfChecked);
+
+        closeBtn.addEventListener("click", saveIfChecked);
+        okBtn.addEventListener("click", saveIfChecked);
+    }
+
+});
+</script>
+
+
    </body>
 </html>
