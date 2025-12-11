@@ -1135,7 +1135,7 @@ form {
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="dontShowAgain">
           <label class="form-check-label" for="dontShowAgain">
-            আমিও এখানে এলাকাভিত্তিক পোস্ট করবো
+            আমিও এখানে এলাকাভিত্তিক পোস্ট করার চেষ্টা করবো <i class="text-success">(সম্মতি জানালাম)</i><em class="text-danger">*</em>
           </label>
         </div>
       </div>
