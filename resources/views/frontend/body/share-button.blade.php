@@ -38,103 +38,116 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const shareButtons = document.querySelectorAll('.share-btn');
-    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    const shareUrlInput = document.getElementById('shareUrl');
-    const copyLinkBtn = document.getElementById('copyLinkBtn');
-    
-    let currentShareData = {};
+document.addEventListener('click', async function(e) {
 
-    shareButtons.forEach(button => {
-        button.addEventListener('click', async function() {
-            const postId = this.dataset.postId;
-            let rawUrl = this.dataset.postUrl || window.location.href;
-            // Remove 'www.' from the URL if present
-            const postUrl = rawUrl.replace('://www.', '://');
-            const postTitle = this.dataset.postTitle || document.title;
-            
-            currentShareData = {
-                title: postTitle,
-                text: `Check out this post: ${postTitle}`,
-                url: postUrl
-            };
+    /* ================================
+       SHARE BUTTON CLICK HANDLER
+       Lazy Load Compatible
+    ================================= */
 
-            // শুধুমাত্র native share API available থাকলেই চেষ্টা করবে
-            // না থাকলে সরাসরি custom modal দেখাবে
-            if (navigator.share) {
-                try {
-                    await navigator.share(currentShareData);
-                    console.log('Shared successfully via native share');
-                } catch (err) {
-                    // User যদি cancel করে (AbortError) তাহলে কিছু করবে না
-                    // কিন্তু অন্য কোনো error হলে custom modal দেখাবে
-                    if (err.name !== 'AbortError') {
-                        console.log('Native share failed, showing custom modal');
-                        showCustomShareModal(postUrl);
-                    }
+    let btn = e.target.closest('.share-btn');
+    if (btn) {
+
+        const postId = btn.dataset.postId;
+        let rawUrl = btn.dataset.postUrl || window.location.href;
+
+        // Remove "www." from URL
+        const postUrl = rawUrl.replace('://www.', '://');
+
+        const postTitle = btn.dataset.postTitle || document.title;
+
+        window.currentShareData = {
+            title: postTitle,
+            text: `Check out this post: ${postTitle}`,
+            url: postUrl
+        };
+
+        // If Native Share API exists
+        if (navigator.share) {
+            try {
+                await navigator.share(window.currentShareData);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    showCustomShareModal(postUrl);
                 }
-            } else {
-                // Native share support নেই, custom modal দেখাও
-                console.log('Native share not supported, showing custom modal');
-                showCustomShareModal(postUrl);
             }
-        });
-    });
+        } else {
+            showCustomShareModal(postUrl);
+        }
+    }
 
+
+    /* ================================
+       SOCIAL SHARE BUTTONS
+    ================================= */
+    let socialBtn = e.target.closest('.share-option-btn');
+    if (socialBtn) {
+        const platform = socialBtn.dataset.platform;
+        const url = encodeURIComponent(window.currentShareData.url);
+        const text = encodeURIComponent(window.currentShareData.text);
+
+        let shareUrl = '';
+
+        switch(platform) {
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                break;
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
+                break;
+            case 'whatsapp':
+                shareUrl = `https://wa.me/?text=${text}%20${url}`;
+                break;
+            case 'linkedin':
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                break;
+        }
+
+        if (shareUrl !== '') {
+            window.open(shareUrl, '_blank', 'width=600,height=400');
+        }
+    }
+
+
+    /* ================================
+       COPY LINK BUTTON
+    ================================= */
+    if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
+        const copyBtn = document.getElementById('copyLinkBtn');
+        const urlInput = document.getElementById('shareUrl');
+
+        urlInput.select();
+        document.execCommand('copy');
+
+        const originalText = copyBtn.innerHTML;
+
+        copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+        copyBtn.classList.add('btn-success');
+        copyBtn.classList.remove('btn-outline-secondary');
+
+        setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }
+
+
+    /* ================================
+       SHOW SHARE MODAL FUNCTION
+    ================================= */
     function showCustomShareModal(url) {
-        shareUrlInput.value = url;
+        document.getElementById('shareUrl').value = url;
+
+        const shareModalEl = document.getElementById('shareModal');
+        const shareModal = new bootstrap.Modal(shareModalEl);
+
         shareModal.show();
     }
 
-    // Handle social media sharing
-    document.querySelectorAll('.share-option-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const platform = this.dataset.platform;
-            const url = encodeURIComponent(currentShareData.url);
-            const text = encodeURIComponent(currentShareData.text);
-            let shareUrl = '';
-
-            switch(platform) {
-                case 'facebook':
-                    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-                    break;
-                case 'twitter':
-                    shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
-                    break;
-                case 'whatsapp':
-                    shareUrl = `https://wa.me/?text=${text}%20${url}`;
-                    break;
-                case 'linkedin':
-                    shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
-                    break;
-            }
-
-            if (shareUrl) {
-                window.open(shareUrl, '_blank', 'width=600,height=400');
-            }
-        });
-    });
-
-    // Copy link functionality
-    copyLinkBtn.addEventListener('click', function() {
-        shareUrlInput.select();
-        document.execCommand('copy');
-        
-        // Show feedback
-        const originalText = this.innerHTML;
-        this.innerHTML = '<i class="bi bi-check"></i> Copied!';
-        this.classList.add('btn-success');
-        this.classList.remove('btn-outline-secondary');
-        
-        setTimeout(() => {
-            this.innerHTML = originalText;
-            this.classList.remove('btn-success');
-            this.classList.add('btn-outline-secondary');
-        }, 2000);
-    });
 });
 </script>
+
 <style>
 .share-options {
     display: grid;
