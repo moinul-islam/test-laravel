@@ -2,6 +2,7 @@
 
 @section('main-content')
 <div class="container mt-5">
+@include('frontend.body.admin-nav')
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-lg border-0">

@@ -1,12 +1,8 @@
 @extends('frontend.master')
 @section('main-content')
 <div class="py-4 ms-3 me-3">
+    @include('frontend.body.admin-nav')
     <div class="mb-4 d-flex">
-        <a href="/categories" class="btn btn-outline-success me-2">Categories</a>
-        <a href="/admin/create-post" class="btn btn-outline-primary me-2">Add Post</a>
-
-        <a class="btn btn-outline-warning me-2" href="{{ route('delivery.page') }}">Delivery</a>
-        <a class="btn btn-outline-danger me-2" href="{{ route('contribute') }}">Contribute</a>
         
         <!-- Search Form -->
         <form method="GET" action="{{ request()->url() }}" class="d-flex" style="width: 400px;">
@@ -44,9 +40,9 @@
                         <th>City</th>
                         <th>Area</th>
                         <th>Email</th>
-                        <th>Verified</th>
+                        
                         <th>Phone</th>                      
-                        <th>Verified</th>
+                      
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -67,21 +63,9 @@
                         <td>{{ $user->city->name ?? 'N/A' }}</td>
                         <td>{{ $user->area ?? 'N/A' }}</td>
                         <td>{{ $user->email ?? 'N/A' }}</td>
-                        <td>
-                            @if($user->email_verified === 0)
-                                0
-                            @else
-                                {{ $user->email_verified ?? 'N/A' }}
-                            @endif
-                        </td>
+                        
                         <td>{{ $user->phone_number ?? 'N/A' }}</td>
-                        <td>
-                            @if($user->phone_verified === 0)
-                                0
-                            @else
-                                {{ $user->phone_verified ?? 'N/A' }}
-                            @endif
-                        </td>
+                        
                         <td>
                             <button class="btn btn-sm btn-info" onclick="editUser({{ $user->id }})">
                                 Edit

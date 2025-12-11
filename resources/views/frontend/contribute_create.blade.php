@@ -2,6 +2,7 @@
 @section('main-content')
 <!-- Page Header -->
 <div class="container mt-4">
+@include('frontend.body.admin-nav')
    <div class="">
       @php
       $passwordError = $errors->userDeletion->first('password');

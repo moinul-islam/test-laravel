@@ -3,7 +3,7 @@
 
 <div class="py-4 container-fluid">
     
-
+@include('frontend.body.admin-nav')
     <div class="row">
         <!-- Add/Edit Category Form -->
         <div class="col-lg-4">
