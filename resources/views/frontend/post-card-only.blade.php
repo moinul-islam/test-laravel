@@ -42,7 +42,7 @@
                </ul>
             </div>
          </div>
-         <div class="card-body">
+         <div class="card-body" style="padding-top:0;">
             <!-- <h2>{{ $post->title }}</h2> -->
             @php
             $maxLength = 200;
