@@ -203,21 +203,17 @@
           <input type="text" class="form-control" id="title" name="title" placeholder="Enter post title..." required>
        </div>
 
-       {{-- Single Media Upload (Images + Videos) --}}
+       {{-- Media Upload --}}
        <div class="mb-4">
           <label for="media" class="form-label">Choose Media (Images/Videos)</label>
-          <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,video/*,.heic,.heif">
-          <small class="text-muted">Videos must be 60 seconds or less. Any size video supported.</small>
+          <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,video/*">
+          <small class="text-muted">Videos must be 60 seconds or less and under 500MB.</small>
           
-          {{-- Hidden field for processed media data --}}
-          <input type="hidden" name="media_data" id="mediaData">
-          
-          {{-- Processing Status --}}
-          <div id="mediaProcessingStatus" style="display: none;" class="mt-2">
-             <div class="progress mb-2">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="mediaProgress"></div>
+          {{-- Validation Status --}}
+          <div id="mediaValidationStatus" style="display: none;" class="mt-2">
+             <div class="alert alert-info mb-0" role="alert">
+                <small id="mediaStatusText">Checking files...</small>
              </div>
-             <small id="mediaStatusText">Processing media...</small>
           </div>
           
           {{-- Media Preview --}}
@@ -232,99 +228,84 @@
     </form>
 </div>
 
-{{-- External Libraries --}}
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const MAX_WIDTH = 1800;
-    const MAX_HEIGHT = 1800;
-    const IMAGE_QUALITY = 0.7;
     const MAX_VIDEO_DURATION = 60; // seconds
+    const MAX_VIDEO_SIZE_MB = 500;
+    const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
     
     const mediaInput = document.getElementById('mediaInput');
-    const mediaDataInput = document.getElementById('mediaData');
-    const mediaProcessingStatus = document.getElementById('mediaProcessingStatus');
-    const mediaProgress = document.getElementById('mediaProgress');
+    const mediaValidationStatus = document.getElementById('mediaValidationStatus');
     const mediaStatusText = document.getElementById('mediaStatusText');
     const mediaPreviewContainer = document.getElementById('mediaPreviewContainer');
+    const submitBtn = document.getElementById('submitBtn');
+    const createPostForm = document.getElementById('createPostForm');
+    const createPostModal = document.getElementById('createPostModal');
     
-    let processedMediaArray = [];
-    let ffmpegLoaded = false;
-    let ffmpeg = null;
-    let currentFileIndex = 0;
-    let totalFiles = 0;
+    let validFiles = [];
+    let bsModal = null;
     
+    // Initialize Bootstrap modal instance
+    if (createPostModal) {
+        bsModal = new bootstrap.Modal(createPostModal);
+    }
+    
+    // Media input change handler
     mediaInput.addEventListener('change', async function(e) {
         const files = Array.from(this.files);
         if (files.length === 0) return;
         
-        processedMediaArray = [];
+        validFiles = [];
         mediaPreviewContainer.innerHTML = '';
-        mediaProcessingStatus.style.display = 'block';
-        totalFiles = files.length;
-        currentFileIndex = 0;
+        mediaValidationStatus.style.display = 'block';
+        mediaStatusText.textContent = 'Validating files...';
         
-        // Process files one by one
+        // Validate each file
         for (let i = 0; i < files.length; i++) {
-            currentFileIndex = i;
-            mediaProgress.style.width = ((i / files.length) * 100) + '%';
             const file = files[i];
-            const fileType = file.type.split('/')[0]; // 'image' or 'video'
+            const fileType = file.type.split('/')[0];
             
             if (fileType === 'image') {
-                mediaStatusText.textContent = `Processing image ${i + 1} of ${files.length}...`;
-                try {
-                    const processedBase64 = await processImage(file);
-                    processedMediaArray.push({
-                        type: 'image',
-                        data: processedBase64
-                    });
-                    addMediaPreview(processedBase64, 'image', processedMediaArray.length - 1);
-                } catch (error) {
-                    console.error('Image processing failed:', error);
-                    alert('Image processing failed: ' + file.name);
-                }
+                // Images are always valid
+                validFiles.push(file);
+                addMediaPreview(file, 'image', validFiles.length - 1);
             } else if (fileType === 'video') {
-                mediaStatusText.textContent = `Checking video ${i + 1} of ${files.length}...`;
+                // Check video size
+                if (file.size > MAX_VIDEO_SIZE_BYTES) {
+                    const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                    alert(`ভিডিও "${file.name}" খুব বড় (${fileSizeMB}MB)। অনুগ্রহ করে ${MAX_VIDEO_SIZE_MB}MB বা তার কম আকারের ভিডিও আপলোড করুন।\n\nVideo "${file.name}" is too large (${fileSizeMB}MB). Please upload videos ${MAX_VIDEO_SIZE_MB}MB or less.`);
+                    continue;
+                }
+                
+                // Check video duration
                 try {
                     const duration = await getVideoDuration(file);
                     
                     if (duration > MAX_VIDEO_DURATION) {
-                        // Video too long - reject it
-                        alert(`ভিডিও "${file.name}" খুব বড় (${duration.toFixed(1)} সেকেন্ড)। দয়া করে ${MAX_VIDEO_DURATION} সেকেন্ড বা তার কম সময়ের ভিডিও আপলোড করুন।\n\nVideo "${file.name}" is too long (${duration.toFixed(1)} seconds). Please upload videos that are ${MAX_VIDEO_DURATION} seconds or less.`);
-                        continue; // Skip this video
+                        alert(`ভিডিও "${file.name}" খুব বড় (${duration.toFixed(1)} সেকেন্ড)। দয়া করে ${MAX_VIDEO_DURATION} সেকেন্ড বা তার কম সময়ের ভিডিও আপলোড করুন।\n\nVideo "${file.name}" is too long (${duration.toFixed(1)} seconds). Please upload videos ${MAX_VIDEO_DURATION} seconds or less.`);
+                        continue;
                     }
                     
-                    // Show original size
-                    const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
-                    mediaStatusText.innerHTML = `Compressing video ${i + 1} of ${files.length}...<br>Original: ${originalSizeMB}MB - Please wait...`;
-                    
-                    // Video is OK - compress it aggressively
-                    const compressedBase64 = await compressVideo(file, (progress) => {
-                        // Update progress during compression
-                        mediaStatusText.innerHTML = `Compressing video ${i + 1} of ${files.length}...<br>Original: ${originalSizeMB}MB - ${progress}% complete`;
-                    });
-                    
-                    processedMediaArray.push({
-                        type: 'video',
-                        data: compressedBase64
-                    });
-                    addMediaPreview(compressedBase64, 'video', processedMediaArray.length - 1);
+                    // Video is valid
+                    validFiles.push(file);
+                    addMediaPreview(file, 'video', validFiles.length - 1);
                 } catch (error) {
-                    console.error('Video processing failed:', error);
-                    alert('Video processing failed: ' + file.name + '\nError: ' + error.message);
+                    console.error('Video validation failed:', error);
+                    alert('Could not validate video: ' + file.name);
                 }
             }
         }
         
-        mediaProgress.style.width = '100%';
-        mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> All media processed successfully!`;
-        mediaDataInput.value = JSON.stringify(processedMediaArray);
+        if (validFiles.length > 0) {
+            mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${validFiles.length} file(s) ready to upload`;
+            submitBtn.disabled = false;
+        } else {
+            mediaStatusText.innerHTML = `<i class="fas fa-exclamation-circle text-danger"></i> No valid files selected`;
+            submitBtn.disabled = true;
+        }
         
         setTimeout(() => {
-            mediaProcessingStatus.style.display = 'none';
+            mediaValidationStatus.style.display = 'none';
         }, 2000);
     });
     
@@ -342,296 +323,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Read file as base64
-    function readFileAsBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
-    
-    // Compress video AGGRESSIVELY (like Facebook/Instagram/TikTok)
-    async function compressVideo(file, progressCallback) {
-        // Load FFmpeg if not loaded
-        if (!ffmpegLoaded) {
-            mediaStatusText.textContent = 'Loading video compressor (one-time setup)...';
-            try {
-                const { createFFmpeg } = FFmpeg;
-                ffmpeg = createFFmpeg({ 
-                    log: true,
-                    progress: ({ ratio }) => {
-                        if (progressCallback) {
-                            progressCallback(Math.round(ratio * 100));
-                        }
-                    }
-                });
-                
-                console.log('Loading FFmpeg...');
-                await ffmpeg.load();
-                console.log('FFmpeg loaded successfully!');
-                ffmpegLoaded = true;
-            } catch (error) {
-                console.error('FFmpeg load failed:', error);
-                
-                // Fallback: Use canvas-based compression for very basic compression
-                console.log('Using fallback compression method...');
-                return await fallbackVideoCompress(file);
-            }
-        }
-        
-        try {
-            const { fetchFile } = FFmpeg;
-            const inputName = 'input.mp4';
-            const outputName = 'output.mp4';
-            
-            console.log('Writing file to FFmpeg...');
-            ffmpeg.FS('writeFile', inputName, await fetchFile(file));
-            
-            console.log('Starting aggressive compression...');
-            
-            // AGGRESSIVE compression settings (social media style):
-            // - 720p max (good balance)
-            // - CRF 28 (higher = smaller file, still good quality)
-            // - Faster preset (smaller files)
-            // - Lower bitrate cap
-            // - Optimized audio: 96kbps AAC (good enough, much smaller)
-            // - 30fps max (smoother uploads)
-            
-            await ffmpeg.run(
-                '-i', inputName,
-                
-                // Video settings
-                '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,fps=30',
-                '-c:v', 'libx264',
-                '-crf', '28',
-                '-preset', 'faster',
-                '-maxrate', '2M',
-                '-bufsize', '2M',
-                '-profile:v', 'main',
-                '-level', '3.1',
-                '-pix_fmt', 'yuv420p',
-                
-                // Audio settings (good quality but small)
-                '-c:a', 'aac',
-                '-b:a', '96k',
-                '-ar', '44100',
-                '-ac', '2',
-                
-                // Optimization
-                '-movflags', '+faststart',
-                '-threads', '0',
-                
-                outputName
-            );
-            
-            console.log('Reading compressed file...');
-            const data = ffmpeg.FS('readFile', outputName);
-            
-            // Cleanup
-            ffmpeg.FS('unlink', inputName);
-            ffmpeg.FS('unlink', outputName);
-            
-            const blob = new Blob([data.buffer], { type: 'video/mp4' });
-            const compressed = await readFileAsBase64(blob);
-            
-            // Log compression results
-            const originalSize = file.size;
-            const compressedSize = blob.size;
-            const reduction = ((1 - compressedSize/originalSize) * 100).toFixed(1);
-            
-            console.log(`✓ Video compressed successfully!`);
-            console.log(`  Original: ${(originalSize/1024/1024).toFixed(2)}MB`);
-            console.log(`  Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB`);
-            console.log(`  Reduction: ${reduction}%`);
-            
-            // Show final size
-            if (mediaStatusText) {
-                mediaStatusText.innerHTML = `Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% smaller)`;
-            }
-            
-            return compressed;
-        } catch (error) {
-            console.error('Video compression failed:', error);
-            throw new Error('Compression failed: ' + error.message);
-        }
-    }
-    
-    // Fallback compression using MediaRecorder API
-    async function fallbackVideoCompress(file) {
-        try {
-            console.log('Using browser-based video compression...');
-            
-            const videoElement = document.createElement('video');
-            videoElement.src = URL.createObjectURL(file);
-            videoElement.muted = true;
-            
-            await new Promise((resolve) => {
-                videoElement.onloadedmetadata = resolve;
-            });
-            
-            const canvas = document.createElement('canvas');
-            const targetWidth = Math.min(videoElement.videoWidth, 1280);
-            const targetHeight = Math.min(videoElement.videoHeight, 720);
-            
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-            
-            const ctx = canvas.getContext('2d');
-            const stream = canvas.captureStream(30); // 30 fps
-            
-            // Add audio from original video
-            const audioContext = new AudioContext();
-            const sourceNode = audioContext.createMediaElementSource(videoElement);
-            const dest = audioContext.createMediaStreamDestination();
-            sourceNode.connect(dest);
-            sourceNode.connect(audioContext.destination);
-            
-            // Combine video and audio streams
-            const audioTrack = dest.stream.getAudioTracks()[0];
-            if (audioTrack) {
-                stream.addTrack(audioTrack);
-            }
-            
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp8,opus',
-                videoBitsPerSecond: 2000000, // 2 Mbps
-                audioBitsPerSecond: 96000 // 96 kbps
-            });
-            
-            const chunks = [];
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-            
-            const recordingPromise = new Promise((resolve) => {
-                mediaRecorder.onstop = () => resolve(chunks);
-            });
-            
-            videoElement.play();
-            mediaRecorder.start();
-            
-            // Draw video frames to canvas
-            const drawFrame = () => {
-                if (!videoElement.paused && !videoElement.ended) {
-                    ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
-                    requestAnimationFrame(drawFrame);
-                }
-            };
-            drawFrame();
-            
-            // Wait for video to end
-            await new Promise((resolve) => {
-                videoElement.onended = resolve;
-            });
-            
-            mediaRecorder.stop();
-            audioContext.close();
-            URL.revokeObjectURL(videoElement.src);
-            
-            const recordedChunks = await recordingPromise;
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            
-            const originalSize = file.size;
-            const compressedSize = blob.size;
-            const reduction = ((1 - compressedSize/originalSize) * 100).toFixed(1);
-            
-            console.log(`✓ Video compressed (fallback method)!`);
-            console.log(`  Original: ${(originalSize/1024/1024).toFixed(2)}MB`);
-            console.log(`  Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB`);
-            console.log(`  Reduction: ${reduction}%`);
-            
-            if (mediaStatusText) {
-                mediaStatusText.innerHTML = `Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% smaller)`;
-            }
-            
-            return await readFileAsBase64(blob);
-        } catch (error) {
-            console.error('Fallback compression also failed:', error);
-            // Last resort: return original
-            alert('Video compression not available. Uploading original video. This may take longer.');
-            return await readFileAsBase64(file);
-        }
-    }
-    
-    // Process image
-    async function processImage(file) {
-        const fileExt = file.name.split('.').pop().toLowerCase();
-        
-        if (fileExt === 'heic' || fileExt === 'heif') {
-            const jpegBlob = await convertHeicToJpeg(file);
-            return await compressImage(jpegBlob);
-        } else {
-            return await compressImage(file);
-        }
-    }
-    
-    function convertHeicToJpeg(file) {
-        return new Promise((resolve, reject) => {
-            const fileReader = new FileReader();
-            fileReader.onload = function(event) {
-                heic2any({
-                    blob: new Blob([event.target.result]),
-                    toType: 'image/jpeg',
-                    quality: 0.8
-                }).then(resolve).catch(reject);
-            };
-            fileReader.onerror = reject;
-            fileReader.readAsArrayBuffer(file);
-        });
-    }
-    
-    function compressImage(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                        if (width > height) {
-                            height = Math.round(height * (MAX_WIDTH / width));
-                            width = MAX_WIDTH;
-                        } else {
-                            width = Math.round(width * (MAX_HEIGHT / height));
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, width, height);
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    canvas.toBlob(blob => {
-                        const blobReader = new FileReader();
-                        blobReader.onload = () => resolve(blobReader.result);
-                        blobReader.onerror = reject;
-                        blobReader.readAsDataURL(blob);
-                    }, 'image/jpeg', IMAGE_QUALITY);
-                };
-                img.onerror = reject;
-                img.src = e.target.result;
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
-    
     // Add media preview
-    function addMediaPreview(base64, type, index) {
+    function addMediaPreview(file, type, index) {
         const col = document.createElement('div');
         col.className = 'col-6 col-md-3';
+        col.setAttribute('data-index', index);
+        
+        const url = URL.createObjectURL(file);
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
         
         if (type === 'image') {
             col.innerHTML = `
                 <div class="position-relative">
-                    <img src="${base64}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;">
+                    <img src="${url}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;">
                     <span class="badge bg-primary position-absolute top-0 start-0 m-1">Image</span>
+                    <span class="badge bg-secondary position-absolute bottom-0 start-0 m-1">${sizeMB}MB</span>
                     <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="removeMedia(${index})">
                         <i class="fas fa-times"></i>
                     </button>
@@ -640,8 +346,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             col.innerHTML = `
                 <div class="position-relative">
-                    <video src="${base64}" class="w-100 rounded" style="height: 150px; object-fit: cover;"></video>
+                    <video src="${url}" class="w-100 rounded" style="height: 150px; object-fit: cover;"></video>
                     <span class="badge bg-success position-absolute top-0 start-0 m-1">Video</span>
+                    <span class="badge bg-secondary position-absolute bottom-0 start-0 m-1">${sizeMB}MB</span>
                     <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="removeMedia(${index})">
                         <i class="fas fa-times"></i>
                     </button>
@@ -654,39 +361,134 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Remove media
     window.removeMedia = function(index) {
-        processedMediaArray.splice(index, 1);
-        mediaDataInput.value = JSON.stringify(processedMediaArray);
+        validFiles.splice(index, 1);
         
         // Re-render all previews with updated indices
         mediaPreviewContainer.innerHTML = '';
-        processedMediaArray.forEach((media, idx) => {
-            addMediaPreview(media.data, media.type, idx);
+        validFiles.forEach((file, idx) => {
+            const fileType = file.type.split('/')[0];
+            addMediaPreview(file, fileType, idx);
         });
+        
+        if (validFiles.length === 0) {
+            submitBtn.disabled = true;
+            mediaInput.value = '';
+        }
     };
     
-    // Form submission handler
-    const form = document.getElementById('createPostForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Check if media is still processing
-            if (mediaProcessingStatus.style.display !== 'none') {
-                e.preventDefault();
-                alert('Please wait for media processing to complete!');
-                return false;
+    // Form submission with AJAX
+    createPostForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Disable submit button to prevent double submission
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+        
+        // Create FormData
+        const formData = new FormData(this);
+        
+        // Remove old media input and add valid files
+        formData.delete('media[]');
+        validFiles.forEach(file => {
+            formData.append('media[]', file);
+        });
+        
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
+            const result = await response.json();
+            console.log('Response data:', result);
+            
+            if (response.ok && result.success) {
+                // Close modal
+                if (bsModal) {
+                    bsModal.hide();
+                }
+                
+                // Reset form
+                createPostForm.reset();
+                mediaPreviewContainer.innerHTML = '';
+                validFiles = [];
+                
+                // Show success notification
+                showNotification('Post is uploading in background! It will appear on your profile when ready.', 'success');
+                
+                // Optional: Reload page after 2 seconds to show the post
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+                
+            } else {
+                throw new Error(result.message || 'Upload failed');
             }
+            
+        } catch (error) {
+            console.error('Upload error:', error);
+            console.error('Error details:', error.message);
+            showNotification('Upload failed. Check console for details.', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Create Post';
+        }
+    });
+    
+    // Show notification function
+    function showNotification(message, type = 'info') {
+        // Create toast element
+        const toastHTML = `
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        // Add to body
+        const toastContainer = document.createElement('div');
+        toastContainer.innerHTML = toastHTML;
+        document.body.appendChild(toastContainer);
+        
+        // Initialize and show toast
+        const toastElement = toastContainer.querySelector('.toast');
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 5000
+        });
+        toast.show();
+        
+        // Remove from DOM after hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastContainer.remove();
+        });
+    }
+    
+    // Reset form when modal closes
+    if (createPostModal) {
+        createPostModal.addEventListener('hidden.bs.modal', function() {
+            createPostForm.reset();
+            mediaPreviewContainer.innerHTML = '';
+            validFiles = [];
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Create Post';
+            mediaValidationStatus.style.display = 'none';
         });
     }
 });
 </script>
 
 <style>
-.progress {
-    height: 25px;
-}
-.progress-bar {
-    font-size: 14px;
-    line-height: 25px;
-}
 .badge {
     font-size: 10px;
 }

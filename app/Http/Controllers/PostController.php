@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use Intervention\Image\Laravel\Facades\Image;
+use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
+use FFMpeg\Format\Video\X264;
 
 class PostController extends Controller
 {
@@ -41,167 +44,273 @@ class PostController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    $user_id = Auth::id();
-   
-    // Validation
-    $request->validate([
-        'category_name' => 'required|string|max:255',
-        'title' => 'required|string|max:255',
-        'price' => 'nullable|numeric|min:0',
-        'description' => 'nullable|string|max:1000',
-        'media_data' => 'nullable|string',
-    ]);
-   
-    $categoryId = null;
-    $newCategory = null;
-   
-    if ($request->filled('category_id') && $request->category_id != '') {
-        $categoryExists = Category::where('id', $request->category_id)->exists();
-        if ($categoryExists) {
-            $categoryId = $request->category_id;
+    {
+        $user_id = Auth::id();
+       
+        // Validation
+        $request->validate([
+            'category_name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'price' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string|max:1000',
+            'media.*' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi,webm|max:512000', // 500MB
+        ]);
+       
+        $categoryId = null;
+        $newCategory = null;
+       
+        if ($request->filled('category_id') && $request->category_id != '') {
+            $categoryExists = Category::where('id', $request->category_id)->exists();
+            if ($categoryExists) {
+                $categoryId = $request->category_id;
+            } else {
+                $newCategory = $request->category_name;
+            }
         } else {
             $newCategory = $request->category_name;
         }
-    } else {
-        $newCategory = $request->category_name;
-    }
 
-    // Generate unique slug
-    do {
-        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $slug = '';
-        for ($i = 0; $i < 11; $i++) {
-            $slug .= $characters[rand(0, strlen($characters) - 1)];
-        }
-    } while (Post::where('slug', $slug)->exists());
-   
-    // Process Media (Images + Videos together)
-    $savedMedia = [
-        'images' => [],
-        'videos' => []
-    ];
-    
-    if ($request->filled('media_data')) {
-        $mediaDataArray = json_decode($request->input('media_data'), true);
+        // Generate unique slug
+        do {
+            $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            $slug = '';
+            for ($i = 0; $i < 11; $i++) {
+                $slug .= $characters[rand(0, strlen($characters) - 1)];
+            }
+        } while (Post::where('slug', $slug)->exists());
+       
+        // Process Media (Images + Videos)
+        $savedMedia = [
+            'images' => [],
+            'videos' => []
+        ];
         
-        if (is_array($mediaDataArray)) {
-            foreach ($mediaDataArray as $media) {
-                $type = $media['type']; // 'image' or 'video'
-                $data = $media['data'];
+        // NEW: Process uploaded files directly
+        if ($request->hasFile('media')) {
+            // Ensure directory exists
+            if (!file_exists(public_path('uploads'))) {
+                mkdir(public_path('uploads'), 0755, true);
+            }
+            
+            foreach ($request->file('media') as $file) {
+                $mimeType = $file->getMimeType();
                 
-                // Extract base64 content
-                if ($type === 'image') {
-                    $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
-                } else {
-                    $data = preg_replace('#^data:video/\w+;base64,#i', '', $data);
+                // Check if image
+                if (strpos($mimeType, 'image') !== false) {
+                    $imagePath = $this->processImage($file);
+                    $savedMedia['images'][] = $imagePath;
                 }
-                
-                $data = str_replace(' ', '+', $data);
-                $decoded = base64_decode($data);
-                
-                if ($decoded !== false) {
-                    // Generate filename based on type
-                    $extension = $type === 'image' ? '.jpg' : '.mp4';
-                    $name_gen = hexdec(uniqid()) . $extension;
-                    
-                    // Ensure directory exists
-                    if (!file_exists(public_path('uploads'))) {
-                        mkdir(public_path('uploads'), 0755, true);
-                    }
-                    
-                    // Save file
-                    file_put_contents(public_path('uploads/' . $name_gen), $decoded);
-                    
-                    // Add to appropriate array
-                    if ($type === 'image') {
-                        $savedMedia['images'][] = $name_gen;
-                    } else {
-                        $savedMedia['videos'][] = $name_gen;
-                    }
+                // Check if video
+                elseif (strpos($mimeType, 'video') !== false) {
+                    $videoPath = $this->processVideo($file);
+                    $savedMedia['videos'][] = $videoPath;
                 }
             }
         }
-    }
-    
-    // Count media files
-    $imageCount = count($savedMedia['images']);
-    $videoCount = count($savedMedia['videos']);
-   
-    // Build post data
-    $postData = [
-        'title' => $request->title,
-        'user_id' => $user_id,
-        'category_id' => $categoryId,
-        'new_category' => $newCategory,
-        'slug' => $slug
-    ];
-    
-    // Add optional fields
-    if ($request->filled('price') && $request->price != '') {
-        $postData['price'] = $request->price;
-    }
-    
-    if ($request->filled('description')) {
-        $postData['description'] = $request->description;
-    }
-    
-    // Store media as JSON in 'image' column (for backward compatibility)
-    // Check if your table has 'media' column or 'image' column
-    $mediaColumnName = 'image'; // Change to 'media' if you renamed the column
-    
-    if (!empty($savedMedia['images']) || !empty($savedMedia['videos'])) {
-        $postData[$mediaColumnName] = json_encode($savedMedia);
-    }
-   
-    // Save post to database
-    $post = Post::create($postData);
-
-    // Send notifications to followers
-    try {
-        $postCreator = Auth::user();
-        $followers = $postCreator->followers;
         
-        \Log::info('New post created, sending notifications to followers', [
-            'post_id' => $post->id,
-            'creator_id' => $user_id,
-            'followers_count' => $followers->count(),
-            'images_count' => $imageCount,
-            'videos_count' => $videoCount
-        ]);
-
-        foreach ($followers as $follower) {
-            $mediaInfo = [];
-            if ($imageCount > 0) {
-                $mediaInfo[] = $imageCount . ' image(s)';
-            }
-            if ($videoCount > 0) {
-                $mediaInfo[] = $videoCount . ' video(s)';
-            }
-            $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
-            
-            $priceText = $post->price ? " - Price: {$post->price}" : "";
-            
-            $this->sendBrowserNotification(
-                $follower->id,
-                'New Post from ' . $postCreator->name,
-                "{$postCreator->name} posted: {$post->title}{$mediaText}{$priceText}",
-                $post->id,
-                url('/post/' . $post->slug),
-                'post',
-                $post->slug
-            );
+        // Count media files
+        $imageCount = count($savedMedia['images']);
+        $videoCount = count($savedMedia['videos']);
+       
+        // Build post data
+        $postData = [
+            'title' => $request->title,
+            'user_id' => $user_id,
+            'category_id' => $categoryId,
+            'new_category' => $newCategory,
+            'slug' => $slug
+        ];
+        
+        // Add optional fields
+        if ($request->filled('price') && $request->price != '') {
+            $postData['price'] = $request->price;
         }
-    } catch (\Exception $e) {
-        \Log::error('Failed to send notifications to followers', [
-            'error' => $e->getMessage(),
-            'post_id' => $post->id
-        ]);
+        
+        if ($request->filled('description')) {
+            $postData['description'] = $request->description;
+        }
+        
+        // Store media as JSON
+        $mediaColumnName = 'image'; // Your existing column name
+        
+        if (!empty($savedMedia['images']) || !empty($savedMedia['videos'])) {
+            $postData[$mediaColumnName] = json_encode($savedMedia);
+        }
+       
+        // Save post to database
+        $post = Post::create($postData);
+
+        // Send notifications to followers
+        try {
+            $postCreator = Auth::user();
+            $followers = $postCreator->followers;
+            
+            \Log::info('New post created, sending notifications to followers', [
+                'post_id' => $post->id,
+                'creator_id' => $user_id,
+                'followers_count' => $followers->count(),
+                'images_count' => $imageCount,
+                'videos_count' => $videoCount
+            ]);
+
+            foreach ($followers as $follower) {
+                $mediaInfo = [];
+                if ($imageCount > 0) {
+                    $mediaInfo[] = $imageCount . ' image(s)';
+                }
+                if ($videoCount > 0) {
+                    $mediaInfo[] = $videoCount . ' video(s)';
+                }
+                $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
+                
+                $priceText = $post->price ? " - Price: {$post->price}" : "";
+                
+                $this->sendBrowserNotification(
+                    $follower->id,
+                    'New Post from ' . $postCreator->name,
+                    "{$postCreator->name} posted: {$post->title}{$mediaText}{$priceText}",
+                    $post->id,
+                    url('/post/' . $post->slug),
+                    'post',
+                    $post->slug
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send notifications to followers', [
+                'error' => $e->getMessage(),
+                'post_id' => $post->id
+            ]);
+        }
+       
+        $totalMedia = $imageCount + $videoCount;
+        
+        // AJAX Response for frontend
+        // Check multiple ways to detect AJAX request
+        if ($request->ajax() || 
+            $request->wantsJson() || 
+            $request->expectsJson() ||
+            $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Post created successfully with {$totalMedia} media file(s)!",
+                'post_id' => $post->id,
+                'slug' => $post->slug
+            ]);
+        }
+        
+        return back()->with('success', "Post created successfully with {$totalMedia} media file(s)!");
     }
-   
-    $totalMedia = $imageCount + $videoCount;
-    return back()->with('success', "Post created successfully with {$totalMedia} media file(s)!");
-}
+    
+    /**
+     * Process and optimize image
+     */
+    private function processImage($file)
+    {
+        try {
+            // Generate unique filename
+            $name_gen = hexdec(uniqid()) . '.jpg';
+            $uploadPath = public_path('uploads/' . $name_gen);
+            
+            // Open image with Intervention Image
+            $image = Image::read($file);
+            
+            // Resize if too large (max 1800x1800)
+            $image->scale(width: 1800, height: 1800);
+            
+            // Save as optimized JPEG
+            $image->toJpeg(quality: 80)->save($uploadPath);
+            
+            \Log::info('Image processed successfully', ['filename' => $name_gen]);
+            
+            return $name_gen;
+        } catch (\Exception $e) {
+            \Log::error('Image processing failed', [
+                'error' => $e->getMessage(),
+                'file' => $file->getClientOriginalName()
+            ]);
+            
+            // Fallback: Save original file
+            $name_gen = hexdec(uniqid()) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads'), $name_gen);
+            return $name_gen;
+        }
+    }
+    
+    /**
+     * Process and compress video
+     */
+    private function processVideo($file)
+    {
+        try {
+            // Generate unique filenames
+            $originalName = hexdec(uniqid()) . '_original.' . $file->getClientOriginalExtension();
+            $compressedName = hexdec(uniqid()) . '.mp4';
+            
+            // Save original file temporarily
+            $originalPath = public_path('uploads/' . $originalName);
+            $file->move(public_path('uploads'), $originalName);
+            
+            $compressedPath = public_path('uploads/' . $compressedName);
+            
+            \Log::info('Starting video compression', [
+                'original' => $originalName,
+                'compressed' => $compressedName
+            ]);
+            
+            // Compress video using FFmpeg
+            FFMpeg::fromDisk('public')
+                ->open('uploads/' . $originalName)
+                ->export()
+                ->toDisk('public')
+                ->inFormat(new X264('aac', 'libx264'))
+                ->resize(1280, 720) // Max 720p
+                ->addFilter([
+                    '-crf', '28',           // Compression quality (higher = smaller file)
+                    '-preset', 'fast',      // Encoding speed
+                    '-maxrate', '2M',       // Max bitrate 2Mbps
+                    '-bufsize', '2M',
+                    '-vf', 'fps=30',        // 30 fps
+                    '-movflags', '+faststart' // Web optimization
+                ])
+                ->save('uploads/' . $compressedName);
+            
+            // Delete original file after compression
+            if (file_exists($originalPath)) {
+                unlink($originalPath);
+            }
+            
+            // Log compression stats
+            $originalSize = filesize($originalPath);
+            $compressedSize = file_exists($compressedPath) ? filesize($compressedPath) : 0;
+            $reduction = $originalSize > 0 ? round((1 - $compressedSize/$originalSize) * 100, 1) : 0;
+            
+            \Log::info('Video compression completed', [
+                'original_size' => round($originalSize / 1024 / 1024, 2) . 'MB',
+                'compressed_size' => round($compressedSize / 1024 / 1024, 2) . 'MB',
+                'reduction' => $reduction . '%'
+            ]);
+            
+            return $compressedName;
+            
+        } catch (\Exception $e) {
+            \Log::error('Video compression failed', [
+                'error' => $e->getMessage(),
+                'file' => $file->getClientOriginalName()
+            ]);
+            
+            // Fallback: Use original file if compression fails
+            if (isset($originalName) && file_exists(public_path('uploads/' . $originalName))) {
+                \Log::info('Using original video file as fallback');
+                return $originalName;
+            }
+            
+            // Last resort: Save original
+            $name_gen = hexdec(uniqid()) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads'), $name_gen);
+            return $name_gen;
+        }
+    }
 
 
     private function sendBrowserNotification($userId, $title, $body, $sourceId = null, $customLink = null, $notificationType = 'order', $slug = null)
