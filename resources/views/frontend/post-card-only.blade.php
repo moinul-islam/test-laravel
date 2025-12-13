@@ -42,13 +42,17 @@
                </ul>
             </div>
          </div>
-         <div class="card-body" style="padding-top:0;">
-            <!-- <h2>{{ $post->title }}</h2> -->
-            @php
+         @php
             $maxLength = 200;
             $desc = $post->description;
             $descLength = mb_strlen($desc);
-            @endphp
+            $hasDesc = $descLength > 0;
+            // Calculate which style to use:
+            $bodyStyle = 'padding-top:0;';
+            if(!$hasDesc) $bodyStyle .= 'padding-bottom:0;';
+         @endphp
+         <div class="card-body" style="{{ $bodyStyle }}">
+            <!-- <h2>{{ $post->title }}</h2> -->
             @if($descLength > $maxLength)
             <p class="m-0 post-desc-short" style="display: block;">
                {{ mb_substr($desc, 0, $maxLength) }}...
@@ -58,7 +62,7 @@
                {{ $desc }}
                <a href="javascript:void(0);" class="see-less-link text-primary" onclick="toggleDescription(this)">See less</a>
             </p>
-            @else
+            @elseif($descLength > 0)
             <p class="m-0">{{ $desc }}</p>
             @endif
             <script>
