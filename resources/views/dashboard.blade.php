@@ -207,7 +207,7 @@
        <div class="mb-4">
           <label for="media" class="form-label">Choose Media (Images/Videos)</label>
           <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,video/*,.heic,.heif">
-          <small class="text-muted">Select multiple images/videos. Videos must be 60 seconds or less. Max file size: 500MB per video.</small>
+          <small class="text-muted">Videos must be 60 seconds or less. Any size video supported.</small>
           
           {{-- Hidden field for processed media data --}}
           <input type="hidden" name="media_data" id="mediaData">
@@ -234,7 +234,7 @@
 
 {{-- External Libraries --}}
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -242,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const MAX_HEIGHT = 1800;
     const IMAGE_QUALITY = 0.7;
     const MAX_VIDEO_DURATION = 60; // seconds
-    const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
     
     const mediaInput = document.getElementById('mediaInput');
     const mediaDataInput = document.getElementById('mediaData');
@@ -260,15 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
     mediaInput.addEventListener('change', async function(e) {
         const files = Array.from(this.files);
         if (files.length === 0) return;
-        
-        // Check file sizes first
-        for (let file of files) {
-            if (file.size > MAX_FILE_SIZE) {
-                alert(`File "${file.name}" is too large (${(file.size/1024/1024).toFixed(2)}MB). Maximum allowed size is 500MB.`);
-                this.value = '';
-                return;
-            }
-        }
         
         processedMediaArray = [];
         mediaPreviewContainer.innerHTML = '';
@@ -307,9 +297,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         continue; // Skip this video
                     }
                     
-                    // Video is OK - compress it
-                    mediaStatusText.textContent = `Compressing video ${i + 1} of ${files.length}... (this may take a moment)`;
-                    const compressedBase64 = await compressVideo(file);
+                    // Show original size
+                    const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                    mediaStatusText.innerHTML = `Compressing video ${i + 1} of ${files.length}...<br>Original: ${originalSizeMB}MB - Please wait...`;
+                    
+                    // Video is OK - compress it aggressively
+                    const compressedBase64 = await compressVideo(file, (progress) => {
+                        // Update progress during compression
+                        mediaStatusText.innerHTML = `Compressing video ${i + 1} of ${files.length}...<br>Original: ${originalSizeMB}MB - ${progress}% complete`;
+                    });
+                    
                     processedMediaArray.push({
                         type: 'video',
                         data: compressedBase64
@@ -317,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     addMediaPreview(compressedBase64, 'video', processedMediaArray.length - 1);
                 } catch (error) {
                     console.error('Video processing failed:', error);
-                    alert('Video processing failed: ' + file.name);
+                    alert('Video processing failed: ' + file.name + '\nError: ' + error.message);
                 }
             }
         }
@@ -333,13 +330,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get video duration
     function getVideoDuration(file) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
             video.onloadedmetadata = function() {
                 window.URL.revokeObjectURL(video.src);
                 resolve(video.duration);
             };
+            video.onerror = () => reject(new Error('Could not load video'));
             video.src = URL.createObjectURL(file);
         });
     }
@@ -354,21 +352,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Compress video with high quality audio (like YouTube/Facebook)
-    async function compressVideo(file) {
+    // Compress video AGGRESSIVELY (like Facebook/Instagram/TikTok)
+    async function compressVideo(file, progressCallback) {
         // Load FFmpeg if not loaded
         if (!ffmpegLoaded) {
+            mediaStatusText.textContent = 'Loading video compressor (one-time setup)...';
             try {
                 const { createFFmpeg } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
-                    log: false,
-                    corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
+                    log: true,
+                    progress: ({ ratio }) => {
+                        if (progressCallback) {
+                            progressCallback(Math.round(ratio * 100));
+                        }
+                    }
                 });
+                
+                console.log('Loading FFmpeg...');
                 await ffmpeg.load();
+                console.log('FFmpeg loaded successfully!');
                 ffmpegLoaded = true;
             } catch (error) {
-                console.error('FFmpeg load failed, uploading original:', error);
-                return readFileAsBase64(file);
+                console.error('FFmpeg load failed:', error);
+                
+                // Fallback: Use canvas-based compression for very basic compression
+                console.log('Using fallback compression method...');
+                return await fallbackVideoCompress(file);
             }
         }
         
@@ -377,32 +386,50 @@ document.addEventListener('DOMContentLoaded', function() {
             const inputName = 'input.mp4';
             const outputName = 'output.mp4';
             
+            console.log('Writing file to FFmpeg...');
             ffmpeg.FS('writeFile', inputName, await fetchFile(file));
             
-            // High-quality compression settings similar to YouTube/Facebook:
-            // - Two-pass encoding for better quality
-            // - CRF 23 (good balance of quality and size)
-            // - 1080p max resolution
-            // - High quality audio: AAC 128kbps (preserved audio quality)
-            // - Medium preset for better compression
+            console.log('Starting aggressive compression...');
+            
+            // AGGRESSIVE compression settings (social media style):
+            // - 720p max (good balance)
+            // - CRF 28 (higher = smaller file, still good quality)
+            // - Faster preset (smaller files)
+            // - Lower bitrate cap
+            // - Optimized audio: 96kbps AAC (good enough, much smaller)
+            // - 30fps max (smoother uploads)
             
             await ffmpeg.run(
                 '-i', inputName,
-                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease',
+                
+                // Video settings
+                '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,fps=30',
                 '-c:v', 'libx264',
-                '-crf', '23',
-                '-preset', 'medium',
-                '-profile:v', 'high',
-                '-level', '4.0',
+                '-crf', '28',
+                '-preset', 'faster',
+                '-maxrate', '2M',
+                '-bufsize', '2M',
+                '-profile:v', 'main',
+                '-level', '3.1',
                 '-pix_fmt', 'yuv420p',
+                
+                // Audio settings (good quality but small)
                 '-c:a', 'aac',
-                '-b:a', '128k',
-                '-ar', '48000',
+                '-b:a', '96k',
+                '-ar', '44100',
+                '-ac', '2',
+                
+                // Optimization
                 '-movflags', '+faststart',
+                '-threads', '0',
+                
                 outputName
             );
             
+            console.log('Reading compressed file...');
             const data = ffmpeg.FS('readFile', outputName);
+            
+            // Cleanup
             ffmpeg.FS('unlink', inputName);
             ffmpeg.FS('unlink', outputName);
             
@@ -413,13 +440,116 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalSize = file.size;
             const compressedSize = blob.size;
             const reduction = ((1 - compressedSize/originalSize) * 100).toFixed(1);
-            console.log(`Video compressed: ${(originalSize/1024/1024).toFixed(2)}MB → ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% reduction)`);
+            
+            console.log(`✓ Video compressed successfully!`);
+            console.log(`  Original: ${(originalSize/1024/1024).toFixed(2)}MB`);
+            console.log(`  Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB`);
+            console.log(`  Reduction: ${reduction}%`);
+            
+            // Show final size
+            if (mediaStatusText) {
+                mediaStatusText.innerHTML = `Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% smaller)`;
+            }
             
             return compressed;
         } catch (error) {
             console.error('Video compression failed:', error);
-            // If compression fails, upload original
-            return readFileAsBase64(file);
+            throw new Error('Compression failed: ' + error.message);
+        }
+    }
+    
+    // Fallback compression using MediaRecorder API
+    async function fallbackVideoCompress(file) {
+        try {
+            console.log('Using browser-based video compression...');
+            
+            const videoElement = document.createElement('video');
+            videoElement.src = URL.createObjectURL(file);
+            videoElement.muted = true;
+            
+            await new Promise((resolve) => {
+                videoElement.onloadedmetadata = resolve;
+            });
+            
+            const canvas = document.createElement('canvas');
+            const targetWidth = Math.min(videoElement.videoWidth, 1280);
+            const targetHeight = Math.min(videoElement.videoHeight, 720);
+            
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            const ctx = canvas.getContext('2d');
+            const stream = canvas.captureStream(30); // 30 fps
+            
+            // Add audio from original video
+            const audioContext = new AudioContext();
+            const sourceNode = audioContext.createMediaElementSource(videoElement);
+            const dest = audioContext.createMediaStreamDestination();
+            sourceNode.connect(dest);
+            sourceNode.connect(audioContext.destination);
+            
+            // Combine video and audio streams
+            const audioTrack = dest.stream.getAudioTracks()[0];
+            if (audioTrack) {
+                stream.addTrack(audioTrack);
+            }
+            
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp8,opus',
+                videoBitsPerSecond: 2000000, // 2 Mbps
+                audioBitsPerSecond: 96000 // 96 kbps
+            });
+            
+            const chunks = [];
+            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+            
+            const recordingPromise = new Promise((resolve) => {
+                mediaRecorder.onstop = () => resolve(chunks);
+            });
+            
+            videoElement.play();
+            mediaRecorder.start();
+            
+            // Draw video frames to canvas
+            const drawFrame = () => {
+                if (!videoElement.paused && !videoElement.ended) {
+                    ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
+                    requestAnimationFrame(drawFrame);
+                }
+            };
+            drawFrame();
+            
+            // Wait for video to end
+            await new Promise((resolve) => {
+                videoElement.onended = resolve;
+            });
+            
+            mediaRecorder.stop();
+            audioContext.close();
+            URL.revokeObjectURL(videoElement.src);
+            
+            const recordedChunks = await recordingPromise;
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            
+            const originalSize = file.size;
+            const compressedSize = blob.size;
+            const reduction = ((1 - compressedSize/originalSize) * 100).toFixed(1);
+            
+            console.log(`✓ Video compressed (fallback method)!`);
+            console.log(`  Original: ${(originalSize/1024/1024).toFixed(2)}MB`);
+            console.log(`  Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB`);
+            console.log(`  Reduction: ${reduction}%`);
+            
+            if (mediaStatusText) {
+                mediaStatusText.innerHTML = `Compressed: ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% smaller)`;
+            }
+            
+            return await readFileAsBase64(blob);
+        } catch (error) {
+            console.error('Fallback compression also failed:', error);
+            // Last resort: return original
+            alert('Video compression not available. Uploading original video. This may take longer.');
+            return await readFileAsBase64(file);
         }
     }
     
