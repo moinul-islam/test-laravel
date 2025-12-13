@@ -207,7 +207,7 @@
        <div class="mb-4">
           <label for="media" class="form-label">Choose Media (Images/Videos)</label>
           <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,video/*,.heic,.heif">
-          <small class="text-muted">Select multiple images/videos. Videos longer than 60 seconds will need to be trimmed.</small>
+          <small class="text-muted">Select multiple images/videos. Videos must be 60 seconds or less. Max file size: 500MB per video.</small>
           
           {{-- Hidden field for processed media data --}}
           <input type="hidden" name="media_data" id="mediaData">
@@ -232,45 +232,7 @@
     </form>
 </div>
 
-{{-- Video Trim Modal --}}
-<div class="modal fade" id="videoTrimModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Trim Video (Max 60 seconds)</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> This video is <strong id="videoDuration"></strong> seconds long. Please trim it to 60 seconds or less.
-                </div>
-                
-                <video id="trimVideoPreview" controls class="w-100 mb-3" style="max-height: 400px;"></video>
-                
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="form-label">Start Time (seconds)</label>
-                        <input type="number" class="form-control" id="trimStart" value="0" min="0" step="0.1">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">End Time (seconds)</label>
-                        <input type="number" class="form-control" id="trimEnd" value="60" min="0" step="0.1">
-                    </div>
-                </div>
-                
-                <div class="alert alert-info">
-                    Selected duration: <strong id="selectedDuration">60</strong> seconds
-                </div>
-                
-                <button class="btn btn-primary w-100" id="trimVideoBtn">
-                    <i class="fas fa-cut"></i> Trim & Process Video
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- External Libraries - Using different CDN for FFmpeg --}}
+{{-- External Libraries --}}
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
 
@@ -280,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const MAX_HEIGHT = 1800;
     const IMAGE_QUALITY = 0.7;
     const MAX_VIDEO_DURATION = 60; // seconds
+    const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
     
     const mediaInput = document.getElementById('mediaInput');
     const mediaDataInput = document.getElementById('mediaData');
@@ -291,16 +254,21 @@ document.addEventListener('DOMContentLoaded', function() {
     let processedMediaArray = [];
     let ffmpegLoaded = false;
     let ffmpeg = null;
-    let pendingVideoFile = null;
     let currentFileIndex = 0;
     let totalFiles = 0;
-    
-    // Bootstrap modal
-    let trimModal = null;
     
     mediaInput.addEventListener('change', async function(e) {
         const files = Array.from(this.files);
         if (files.length === 0) return;
+        
+        // Check file sizes first
+        for (let file of files) {
+            if (file.size > MAX_FILE_SIZE) {
+                alert(`File "${file.name}" is too large (${(file.size/1024/1024).toFixed(2)}MB). Maximum allowed size is 500MB.`);
+                this.value = '';
+                return;
+            }
+        }
         
         processedMediaArray = [];
         mediaPreviewContainer.innerHTML = '';
@@ -329,24 +297,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Image processing failed: ' + file.name);
                 }
             } else if (fileType === 'video') {
-                mediaStatusText.textContent = `Processing video ${i + 1} of ${files.length}...`;
+                mediaStatusText.textContent = `Checking video ${i + 1} of ${files.length}...`;
                 try {
                     const duration = await getVideoDuration(file);
                     
                     if (duration > MAX_VIDEO_DURATION) {
-                        // Video too long - show trim modal
-                        pendingVideoFile = file;
-                        await showTrimModalAndWait(file, duration);
-                    } else {
-                        // Video is OK - compress it
-                        mediaStatusText.textContent = `Compressing video ${i + 1} of ${files.length}...`;
-                        const compressedBase64 = await compressVideoSimple(file);
-                        processedMediaArray.push({
-                            type: 'video',
-                            data: compressedBase64
-                        });
-                        addMediaPreview(compressedBase64, 'video', processedMediaArray.length - 1);
+                        // Video too long - reject it
+                        alert(`ভিডিও "${file.name}" খুব বড় (${duration.toFixed(1)} সেকেন্ড)। দয়া করে ${MAX_VIDEO_DURATION} সেকেন্ড বা তার কম সময়ের ভিডিও আপলোড করুন।\n\nVideo "${file.name}" is too long (${duration.toFixed(1)} seconds). Please upload videos that are ${MAX_VIDEO_DURATION} seconds or less.`);
+                        continue; // Skip this video
                     }
+                    
+                    // Video is OK - compress it
+                    mediaStatusText.textContent = `Compressing video ${i + 1} of ${files.length}... (this may take a moment)`;
+                    const compressedBase64 = await compressVideo(file);
+                    processedMediaArray.push({
+                        type: 'video',
+                        data: compressedBase64
+                    });
+                    addMediaPreview(compressedBase64, 'video', processedMediaArray.length - 1);
                 } catch (error) {
                     console.error('Video processing failed:', error);
                     alert('Video processing failed: ' + file.name);
@@ -355,23 +323,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         mediaProgress.style.width = '100%';
-        mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> All ${files.length} media processed!`;
+        mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> All media processed successfully!`;
         mediaDataInput.value = JSON.stringify(processedMediaArray);
         
         setTimeout(() => {
             mediaProcessingStatus.style.display = 'none';
         }, 2000);
     });
-    
-    // Read file as base64 (simple, no compression)
-    function readFileAsBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
     
     // Get video duration
     function getVideoDuration(file) {
@@ -386,146 +344,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Show trim modal and wait for user action
-    function showTrimModalAndWait(file, duration) {
-        return new Promise((resolve) => {
-            if (!trimModal) {
-                trimModal = new bootstrap.Modal(document.getElementById('videoTrimModal'));
-            }
-            
-            const videoPreview = document.getElementById('trimVideoPreview');
-            const trimStart = document.getElementById('trimStart');
-            const trimEnd = document.getElementById('trimEnd');
-            const videoDuration = document.getElementById('videoDuration');
-            const selectedDuration = document.getElementById('selectedDuration');
-            const trimBtn = document.getElementById('trimVideoBtn');
-            
-            videoPreview.src = URL.createObjectURL(file);
-            videoDuration.textContent = duration.toFixed(1);
-            trimStart.value = 0;
-            trimEnd.value = Math.min(MAX_VIDEO_DURATION, duration);
-            trimStart.max = duration;
-            trimEnd.max = duration;
-            
-            // Update selected duration on change
-            function updateDuration() {
-                const start = parseFloat(trimStart.value) || 0;
-                const end = parseFloat(trimEnd.value) || 0;
-                const diff = end - start;
-                selectedDuration.textContent = diff.toFixed(1);
-                
-                if (diff > MAX_VIDEO_DURATION) {
-                    selectedDuration.classList.add('text-danger');
-                    selectedDuration.classList.remove('text-success');
-                } else {
-                    selectedDuration.classList.add('text-success');
-                    selectedDuration.classList.remove('text-danger');
-                }
-            }
-            
-            trimStart.oninput = updateDuration;
-            trimEnd.oninput = updateDuration;
-            updateDuration();
-            
-            // Trim button click handler
-            trimBtn.onclick = async function() {
-                const start = parseFloat(trimStart.value) || 0;
-                const end = parseFloat(trimEnd.value) || 0;
-                const duration = end - start;
-                
-                if (duration > MAX_VIDEO_DURATION) {
-                    alert(`Video duration must be ${MAX_VIDEO_DURATION} seconds or less!`);
-                    return;
-                }
-                
-                trimModal.hide();
-                
-                // Load FFmpeg if not loaded
-                if (!ffmpegLoaded) {
-                    mediaStatusText.textContent = 'Loading video editor (one-time)...';
-                    try {
-                        const { createFFmpeg, fetchFile } = FFmpeg;
-                        ffmpeg = createFFmpeg({ log: false });
-                        await ffmpeg.load();
-                        ffmpegLoaded = true;
-                    } catch (error) {
-                        console.error('FFmpeg load failed:', error);
-                        alert('Video editor failed to load. Using original video without trim.');
-                        const videoBase64 = await readFileAsBase64(file);
-                        processedMediaArray.push({
-                            type: 'video',
-                            data: videoBase64
-                        });
-                        addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
-                        resolve();
-                        return;
-                    }
-                }
-                
-                // Trim video
-                mediaStatusText.textContent = `Trimming video...`;
-                try {
-                    const trimmedBase64 = await trimVideo(file, start, end);
-                    processedMediaArray.push({
-                        type: 'video',
-                        data: trimmedBase64
-                    });
-                    addMediaPreview(trimmedBase64, 'video', processedMediaArray.length - 1);
-                } catch (error) {
-                    console.error('Video trim failed:', error);
-                    alert('Video trim failed. Using original video.');
-                    const videoBase64 = await readFileAsBase64(file);
-                    processedMediaArray.push({
-                        type: 'video',
-                        data: videoBase64
-                    });
-                    addMediaPreview(videoBase64, 'video', processedMediaArray.length - 1);
-                }
-                
-                resolve();
-            };
-            
-            trimModal.show();
+    // Read file as base64
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
     }
     
-    // Trim video using FFmpeg
-    async function trimVideo(file, startTime, endTime) {
-        const { fetchFile } = FFmpeg;
-        const inputName = 'input.mp4';
-        const outputName = 'output.mp4';
-        const duration = endTime - startTime;
-        
-        ffmpeg.FS('writeFile', inputName, await fetchFile(file));
-        
-        await ffmpeg.run(
-            '-i', inputName,
-            '-ss', startTime.toString(),
-            '-t', duration.toString(),
-            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease',
-            '-c:v', 'libx264',
-            '-crf', '30',
-            '-preset', 'veryfast',
-            '-c:a', 'aac',
-            '-b:a', '96k',
-            outputName
-        );
-        
-        const data = ffmpeg.FS('readFile', outputName);
-        ffmpeg.FS('unlink', inputName);
-        ffmpeg.FS('unlink', outputName);
-        
-        const blob = new Blob([data.buffer], { type: 'video/mp4' });
-        return readFileAsBase64(blob);
-    }
-    
-    // Simple video compression without FFmpeg using canvas
-    async function compressVideoSimple(file) {
-        // Load FFmpeg for compression
+    // Compress video with high quality audio (like YouTube/Facebook)
+    async function compressVideo(file) {
+        // Load FFmpeg if not loaded
         if (!ffmpegLoaded) {
             try {
                 const { createFFmpeg } = FFmpeg;
-                ffmpeg = createFFmpeg({ log: false });
+                ffmpeg = createFFmpeg({ 
+                    log: false,
+                    corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
+                });
                 await ffmpeg.load();
                 ffmpegLoaded = true;
             } catch (error) {
@@ -541,15 +379,26 @@ document.addEventListener('DOMContentLoaded', function() {
             
             ffmpeg.FS('writeFile', inputName, await fetchFile(file));
             
-            // Compress: 720p, CRF 30 (smaller file)
+            // High-quality compression settings similar to YouTube/Facebook:
+            // - Two-pass encoding for better quality
+            // - CRF 23 (good balance of quality and size)
+            // - 1080p max resolution
+            // - High quality audio: AAC 128kbps (preserved audio quality)
+            // - Medium preset for better compression
+            
             await ffmpeg.run(
                 '-i', inputName,
-                '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease',
+                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease',
                 '-c:v', 'libx264',
-                '-crf', '30',
-                '-preset', 'veryfast',
+                '-crf', '23',
+                '-preset', 'medium',
+                '-profile:v', 'high',
+                '-level', '4.0',
+                '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac',
-                '-b:a', '96k',
+                '-b:a', '128k',
+                '-ar', '48000',
+                '-movflags', '+faststart',
                 outputName
             );
             
@@ -560,14 +409,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const blob = new Blob([data.buffer], { type: 'video/mp4' });
             const compressed = await readFileAsBase64(blob);
             
-            // Check if compression worked
+            // Log compression results
             const originalSize = file.size;
             const compressedSize = blob.size;
-            console.log(`Video compressed: ${(originalSize/1024/1024).toFixed(2)}MB → ${(compressedSize/1024/1024).toFixed(2)}MB`);
+            const reduction = ((1 - compressedSize/originalSize) * 100).toFixed(1);
+            console.log(`Video compressed: ${(originalSize/1024/1024).toFixed(2)}MB → ${(compressedSize/1024/1024).toFixed(2)}MB (${reduction}% reduction)`);
             
             return compressed;
         } catch (error) {
             console.error('Video compression failed:', error);
+            // If compression fails, upload original
             return readFileAsBase64(file);
         }
     }
