@@ -192,9 +192,9 @@
                     <div style="font-size: 1.03rem; margin: 6px 0 4px 0; color: #424242;">
                         <span style="color: #188068;">•</span> টিকেট রিলিজ হবে <b>১৬ ডিসেম্বর</b>। <br>
                         <span style="color: #188068;">•</span> প্রতি <b>একাউন্টে ১টি ফ্রি টিকেট</b>। <br>
-                        <span style="color: #188068;">•</span> এলাকাভিত্তিক পোস্টে পয়েন্ট, প্রতি <b>৩০ পয়েন্টে ১টি টিকেট ফ্রি</b>।<br>
+                        <span style="color: #188068;">•</span> সাথে এলাকাভিত্তিক পোস্টে পয়েন্ট, প্রতি <b>৩০ পয়েন্টে ১টি করে টিকেট ফ্রি</b>।<br>
                         <span style="color: #188068;">•</span> বিস্তারিত জানতে WhatsApp করুন : 
-                        <a href="callto:01875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
+                        <a href="callto:+8801875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
                     </div>
                     <span class="badge rounded-pill bg-success" style="font-size: 1rem;">Login করে রাখুন!</span>
                 </div>
