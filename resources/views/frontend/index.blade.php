@@ -180,6 +180,8 @@
 
 
     <div class="row">
+        
+        @guest
         <div class="col-12 mb-3">
             <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
                 <div style="font-size: 2.2rem; margin-right: 18px; color: #0abb87;">
@@ -200,6 +202,8 @@
                 </div>
             </div>
         </div>
+        @endguest
+
         <div class="col-12" id="posts-container">
             @include('frontend.posts-partial', ['posts' => $posts])
         </div>
