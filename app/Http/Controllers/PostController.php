@@ -50,7 +50,7 @@ class PostController extends Controller
         $request->validate([
             'category_name' => 'required|string|max:255',
             'price' => 'nullable|numeric|min:0',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:5000',
             'media_data' => 'nullable|string',
         ]);
         
