@@ -194,7 +194,7 @@
                         <span style="color: #188068;">•</span> প্রতি <b>একাউন্টে ১টি ফ্রি টিকেট</b>। <br>
                         <span style="color: #188068;">•</span> সাথে এলাকাভিত্তিক পোস্টে পয়েন্ট, প্রতি <b>৩০ পয়েন্টে ১টি করে টিকেট ফ্রি</b>।<br>
                         <span style="color: #188068;">•</span> বিস্তারিত জানতে WhatsApp করুন : 
-                        <a href="callto:+8801875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
+                        <a href="tel:+8801875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
                     </div>
                     <span class="badge rounded-pill bg-success" style="font-size: 1rem; cursor:pointer;" data-bs-toggle="modal" data-bs-target="#authModal">Login করে রাখুন!</span>
                 </div>
