@@ -151,13 +151,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
          
-
+@php
+    use App\Http\Controllers\PointController;
+    $points = PointController::get($user->id);
+@endphp
 
             <img src="{{ $user->image ? asset('profile-image/'.$user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
                class="rounded-circle mb-3"
                alt="Profile Photo"
                style="width:100px; height:100px; object-fit:cover;">
-            <h4 class="mb-2">{{ $user->name }}</h4>
+            <h4 class="mb-2">{{ $user->name }}
+@if($points < 1000)
+    <span data-bs-toggle="modal" data-bs-target="#pointModal" style="cursor:pointer">
+        🏆
+    </span>
+@elseif($points >= 1000 && $points < 10000)
+    <span title="Level 1" data-bs-toggle="modal" data-bs-target="#pointModal" style="cursor:pointer">🥉</span>
+@elseif($points >= 10000 && $points < 100000)
+    <span title="Level 2" data-bs-toggle="modal" data-bs-target="#pointModal" style="cursor:pointer">🥈</span>
+@elseif($points >= 100000 && $points < 1000000)
+    <span title="Level 3" data-bs-toggle="modal" data-bs-target="#pointModal" style="cursor:pointer">🥇</span>
+@elseif($points >= 1000000)
+    <span class="badge bg-warning rounded-circle p-1" data-bs-toggle="modal" data-bs-target="#pointModal" style="cursor:pointer">✔</span>
+@endif
+            </h4>
+
+            
+
+
+           
+
+
+
+
+<div class="modal fade" id="pointModal">
+ <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-content">
+   <div class="modal-header">
+    <h5>User Points</h5>
+    <button class="btn-close" data-bs-dismiss="modal"></button>
+   </div>
+   <div class="modal-body text-center">
+    <h2>{{ $points }}</h2>
+    <p>Total Points</p>
+   </div>
+  </div>
+ </div>
+</div>
+
             
             @if($user->category && $user->category->category_name)
             <p class="text-muted mb-2">

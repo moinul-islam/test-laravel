@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use App\Http\Controllers\PointController;
+
 
 class PostController extends Controller
 {
@@ -149,6 +151,10 @@ class PostController extends Controller
        
         // Save post to database
         $post = Post::create($postData);
+
+        // ✅ POST CREATE POINT (+10)
+        PointController::add($user_id, 10);
+
     
         // Send notifications to followers
         try {
@@ -758,6 +764,8 @@ public function showByCategory(Request $request, $username, $slug)
        
         // Delete the post from database
         $post->delete();
+        PointController::subtract(auth()->id(), 10);
+
        
         return response()->json([
             'success' => true,
