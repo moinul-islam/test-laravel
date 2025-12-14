@@ -180,6 +180,26 @@
 
 
     <div class="row">
+        <div class="col-12 mb-3">
+            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+                <div style="font-size: 2.2rem; margin-right: 18px; color: #0abb87;">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+                <div style="flex: 1 1 300px;">
+                    <div style="font-weight: 600; font-size: 1.2rem; color: #04595c;">
+                        🎟️ কুতুবপুর বাণিজ্য মেলার টিকেট স্পেশাল সুযোগ!
+                    </div>
+                    <div style="font-size: 1.03rem; margin: 6px 0 4px 0; color: #424242;">
+                        <span style="color: #188068;">•</span> টিকেট রিলিজ হবে <b>১৬ ডিসেম্বর</b>। <br>
+                        <span style="color: #188068;">•</span> প্রতি <b>একাউন্টে ১টি ফ্রি টিকেট</b>। <br>
+                        <span style="color: #188068;">•</span> এলাকাভিত্তিক পোস্টে পয়েন্ট, প্রতি <b>৩০ পয়েন্টে ১টি টিকেট ফ্রি</b>।<br>
+                        <span style="color: #188068;">•</span> বিস্তারিত জানতে WhatsApp করুন : 
+                        <a href="callto:01875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
+                    </div>
+                    <span class="badge rounded-pill bg-success" style="font-size: 1rem;">Login করে রাখুন!</span>
+                </div>
+            </div>
+        </div>
         <div class="col-12" id="posts-container">
             @include('frontend.posts-partial', ['posts' => $posts])
         </div>
