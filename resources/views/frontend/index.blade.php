@@ -196,7 +196,7 @@
                         <span style="color: #188068;">•</span> বিস্তারিত জানতে WhatsApp করুন : 
                         <a href="callto:+8801875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
                     </div>
-                    <span class="badge rounded-pill bg-success" style="font-size: 1rem;">Login করে রাখুন!</span>
+                    <span class="badge rounded-pill bg-success" style="font-size: 1rem; cursor:pointer;" data-bs-toggle="modal" data-bs-target="#authModal">Login করে রাখুন!</span>
                 </div>
             </div>
         </div>
