@@ -252,6 +252,61 @@
                                 }
                             }
                         });
+
+                        // --- PATCH registration form submission to use compressed image data only ---
+                        // @see: app/Http/Controllers/AuthController.php expects: image_data (base64 string) for processing in registration
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const registerForm = document.getElementById('registerForm');
+                            if (!registerForm) return;
+
+                            // Hijack submission via jQuery (if already present), else add here
+                            registerForm.addEventListener('submit', function(e) {
+                                // This prevents duplicate if using jQuery's .on in main script section
+                                if (window.__registerFormSubmitHandled) return;
+                                window.__registerFormSubmitHandled = true;
+                                
+                                e.preventDefault();
+                                clearErrors && clearErrors();
+                                setButtonLoading && setButtonLoading('registerBtn', true);
+
+                                // Build FormData, but do _not_ include original image file; use base64 string
+                                const formData = new FormData(registerForm);
+                                // Remove original image from FormData
+                                formData.delete('image');
+
+                                // Add base64 image data, if exists
+                                const imageData = document.getElementById('register_imageData').value;
+                                if (imageData) {
+                                    formData.set('image_data', imageData);
+                                }
+
+                                // Add FCM token if available
+                                const fcmToken = localStorage.getItem('fcm_token');
+                                if (fcmToken) {
+                                    formData.set('fcm_token', fcmToken);
+                                }
+
+                                // Ajax: must use processData: false, contentType: false
+                                $.ajax({
+                                    url: '/send-otp',
+                                    method: 'POST',
+                                    data: formData,
+                                    processData: false,
+                                    contentType: false,
+                                    success: function(response) {
+                                        setButtonLoading && setButtonLoading('registerBtn', false);
+                                        console.log('OTP sent successfully from register submit');
+                                        $('#display-email-otp').text($('#register_email').val());
+                                        $('#otp_email').val($('#register_email').val());
+                                        showStep && showStep('step-otp');
+                                    },
+                                    error: function(xhr) {
+                                        setButtonLoading && setButtonLoading('registerBtn', false);
+                                        alert('Failed to send OTP. Please try again.');
+                                    }
+                                });
+                            }, true); // True to run on capture, before bubbling to any underlying jQuery
+                        });
                         </script>
 
                         <div class="mb-3">
@@ -655,32 +710,13 @@ $(document).ready(function() {
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
-        
-        const imageInput = document.getElementById('register_image');
-        const imageDataInput = document.getElementById('register_imageData');
-        
-        // Check if image is still processing
-        if (imageInput.files.length > 0 && !imageDataInput.value) {
-            alert('দয়া করে অপেক্ষা করুন, ছবি প্রসেস হচ্ছে...');
-            return;
-        }
-        
-        setButtonLoading('registerBtn', true);
+        setButtonLoading('registerBtn', true); // ✅ Loading start
+
         registrationData = new FormData(this);
-        
-        // ✅ If compressed image exists, remove original file and keep only compressed data
-        if (imageDataInput.value) {
-            registrationData.delete('image'); // Remove original file
-            registrationData.set('image_data', imageDataInput.value); // Keep compressed base64
-        }
         
         console.log('Registration data stored:');
         for (let [key, value] of registrationData.entries()) {
-            if (key === 'image_data') {
-                console.log(key + ':', value.substring(0, 80) + '... [compressed base64]');
-            } else {
-                console.log(key + ':', value);
-            }
+            console.log(key + ':', value);
         }
         
         sendOTP(currentEmail, 'register');
