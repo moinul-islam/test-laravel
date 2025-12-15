@@ -98,150 +98,166 @@
                         </div>
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-                        // Single image compress for registration using dashboard post logic
-                        document.addEventListener('DOMContentLoaded', function() {
+                        // Reusable image compression logic (from product-services.blade.php)
+                        function setupImageProcessing(inputId, dataInputId, statusId, progressId, statusTextId, previewId = null) {
                             const MAX_WIDTH = 1800;
                             const MAX_HEIGHT = 1800;
-                            const IMAGE_QUALITY = 0.7;
-
-                            const imageInput = document.getElementById('register_image');
-                            const imageDataInput = document.getElementById('register_imageData');
-                            const imageProcessingStatus = document.getElementById('registerImageProcessingStatus');
-                            const imageProgress = document.getElementById('registerImageProgress');
-                            const imageStatusText = document.getElementById('registerImageStatusText');
-                            const imagePreview = document.getElementById('registerImagePreview');
-
+                            const QUALITY = 0.7;
+                        
+                            const imageInput = document.getElementById(inputId);
+                            const imageDataInput = document.getElementById(dataInputId);
+                            const imageProcessingStatus = document.getElementById(statusId);
+                            const imageProgress = document.getElementById(progressId);
+                            const imageStatusText = document.getElementById(statusTextId);
+                            const imagePreview = previewId ? document.getElementById(previewId) : null;
+                        
                             if (!imageInput) return;
-
-                            imageInput.addEventListener('change', async function(e) {
+                        
+                            imageInput.addEventListener('change', function(e) {
                                 const file = this.files[0];
                                 if (!file) return;
-
-                                // Validate extension
-                                const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+                        
+                                // Clear previous preview
+                                if (imagePreview) imagePreview.src = '';
+                        
+                                // File type validation
                                 const fileExt = file.name.split('.').pop().toLowerCase();
+                                const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+                        
                                 if (!allowedExts.includes(fileExt)) {
                                     alert('Please upload only JPG, PNG, GIF, WEBP, HEIC or HEIF files!');
                                     this.value = '';
                                     return;
                                 }
-
-                                // Reset
-                                imagePreview.style.display = 'none';
-                                imagePreview.src = '';
-                                imageStatusText.style.color = '';
+                        
+                                // Show processing status
+                                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
                                 imageProcessingStatus.style.display = 'block';
-                                imageProgress.style.width = '8%';
-                                imageStatusText.textContent = (fileExt === 'heic' || fileExt === 'heif')
-                                    ? 'HEIC/HEIF image (' + (file.size/(1024*1024)).toFixed(2) + ' MB) is being converted...'
-                                    : 'Image (' + (file.size/(1024*1024)).toFixed(2) + ' MB) is being optimized...';
-
-                                try {
-                                    let finalBase64;
-                                    if (fileExt === 'heic' || fileExt === 'heif') {
-                                        imageProgress.style.width = '22%';
-                                        const jpegBlob = await convertHeicToJpeg(file);
-                                        imageProgress.style.width = '44%';
-                                        imageStatusText.textContent = 'HEIC conversion successful! Now optimizing...';
-                                        finalBase64 = await compressImage(jpegBlob);
-                                    } else {
-                                        imageProgress.style.width = '44%';
-                                        finalBase64 = await compressImage(file);
-                                    }
-                                    imageProgress.style.width = '100%';
-                                    imageDataInput.value = finalBase64;
-
-                                    // Show image preview
-                                    imagePreview.src = finalBase64;
-                                    imagePreview.style.display = 'block';
-                                    imagePreview.style.border = '3px solid #28a745';
-
-                                    // Show status
-                                    // Calculate size optimization info
-                                    const originalSize = file.size;
-                                    let result;
-                                    await fetch(finalBase64)
-                                        .then(r => r.blob())
-                                        .then(blob=>{
-                                            const compressedSize = blob.size;
-                                            const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
-                                            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced!)</span>`;
-                                            imageStatusText.style.color = '#28a745';
-                                        });
-
-                                    setTimeout(()=>{
-                                        imageProcessingStatus.style.display = 'none';
-                                    }, 1600);
-
-                                } catch (err) {
-                                    imageStatusText.textContent = "Image optimization failed!";
-                                    imageStatusText.style.color = '#dc3545';
-                                    console.error('Image process error:', err);
-                                    imagePreview.style.display = 'none';
+                                imageProgress.style.width = '10%';
+                        
+                                if (fileExt === 'heic' || fileExt === 'heif') {
+                                    imageStatusText.textContent = `HEIC/HEIF image (${fileSizeMB} MB) is being converted...`;
+                                } else {
+                                    imageStatusText.textContent = `Image (${fileSizeMB} MB) is being optimized...`;
                                 }
+                        
+                                // Process the image
+                                processImage(file, imageDataInput, imageProgress, imageStatusText, imageProcessingStatus, imagePreview);
                             });
-
-                            // Functions ported from dashboard.blade.php
-                            function convertHeicToJpeg(file) {
-                                return new Promise((resolve, reject) => {
-                                    const fileReader = new FileReader();
-                                    fileReader.onload = function(event) {
-                                        heic2any({
-                                            blob: new Blob([event.target.result]),
-                                            toType: 'image/jpeg',
-                                            quality: 0.8
-                                        }).then(resolve).catch(reject);
-                                    };
-                                    fileReader.onerror = reject;
-                                    fileReader.readAsArrayBuffer(file);
-                                });
+                        
+                            function processImage(file, dataInput, progress, statusText, processingStatus, preview) {
+                                const originalSize = file.size;
+                                const fileExt = file.name.split('.').pop().toLowerCase();
+                        
+                                if ((fileExt === 'heic' || fileExt === 'heif') && typeof heic2any !== 'undefined') {
+                                    convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
+                                } else {
+                                    loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
+                                }
                             }
-                            function compressImage(file) {
-                                return new Promise((resolve, reject) => {
-                                    const reader = new FileReader();
-                                    reader.onload = function(e) {
-                                        const img = new Image();
-                                        img.onload = function() {
-                                            let width = img.width;
-                                            let height = img.height;
-                                            let targetWidth = width;
-                                            let targetHeight = height;
-                                            if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                                                if (width > height) {
-                                                    targetHeight = Math.round(height * (MAX_WIDTH / width));
-                                                    targetWidth = MAX_WIDTH;
-                                                } else {
-                                                    targetWidth = Math.round(width * (MAX_HEIGHT / height));
-                                                    targetHeight = MAX_HEIGHT;
-                                                }
+                        
+                            function convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
+                                progress.style.width = '20%';
+                        
+                                const fileReader = new FileReader();
+                                fileReader.onload = function(event) {
+                                    const arrayBuffer = event.target.result;
+                        
+                                    heic2any({
+                                        blob: new Blob([arrayBuffer]),
+                                        toType: 'image/jpeg',
+                                        quality: 0.8
+                                    }).then(function(jpegBlob) {
+                                        progress.style.width = '40%';
+                                        statusText.textContent = 'HEIC conversion successful! Now optimizing...';
+                                        loadImageWithOrientation(jpegBlob, originalSize, dataInput, progress, statusText, processingStatus, preview);
+                                    }).catch(function(err) {
+                                        console.error('HEIC conversion error:', err);
+                                        statusText.textContent = 'HEIC conversion error! Trying standard procedure...';
+                                        loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
+                                    });
+                                };
+                        
+                                fileReader.readAsArrayBuffer(file);
+                            }
+                        
+                            function loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
+                                progress.style.width = '50%';
+                        
+                                const urlReader = new FileReader();
+                                urlReader.onload = function(event) {
+                                    const img = new Image();
+                        
+                                    img.onload = function() {
+                                        progress.style.width = '60%';
+                        
+                                        let width = img.width;
+                                        let height = img.height;
+                                        let targetWidth = width;
+                                        let targetHeight = height;
+                        
+                                        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                                            if (width > height) {
+                                                targetHeight = Math.round(height * (MAX_WIDTH / width));
+                                                targetWidth = MAX_WIDTH;
+                                            } else {
+                                                targetWidth = Math.round(width * (MAX_HEIGHT / height));
+                                                targetHeight = MAX_HEIGHT;
                                             }
-                                            const canvas = document.createElement('canvas');
-                                            canvas.width = targetWidth;
-                                            canvas.height = targetHeight;
-                                            const ctx = canvas.getContext('2d');
-                                            ctx.fillStyle = '#FFFFFF';
-                                            ctx.fillRect(0, 0, targetWidth, targetHeight);
-                                            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                                            let targetQuality = IMAGE_QUALITY;
-                                            let fileSizeMB = file.size / (1024 * 1024);
-                                            if (fileSizeMB > 10) targetQuality = 0.5;
-                                            else if (fileSizeMB > 5) targetQuality = 0.6;
-                                            canvas.toBlob(function(blob) {
-                                                const reader2 = new FileReader();
-                                                reader2.onload = function(evt) {
-                                                    resolve(evt.target.result);
-                                                };
-                                                reader2.onerror = reject;
-                                                reader2.readAsDataURL(blob);
-                                            }, 'image/jpeg', targetQuality);
-                                        };
-                                        img.onerror = reject;
-                                        img.src = e.target.result;
+                                        }
+                        
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = targetWidth;
+                                        canvas.height = targetHeight;
+                                        const ctx = canvas.getContext('2d');
+                        
+                                        ctx.fillStyle = '#FFFFFF';
+                                        ctx.fillRect(0, 0, targetWidth, targetHeight);
+                                        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                        
+                                        let targetQuality = QUALITY;
+                                        let fileSizeMB = file.size / (1024 * 1024);
+                        
+                                        if (fileSizeMB > 10) targetQuality = 0.5;
+                                        else if (fileSizeMB > 5) targetQuality = 0.6;
+                        
+                                        progress.style.width = '90%';
+                        
+                                        canvas.toBlob(function(blob) {
+                                            finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview);
+                                        }, 'image/jpeg', targetQuality);
                                     };
-                                    reader.onerror = reject;
-                                    reader.readAsDataURL(file);
-                                });
+                        
+                                    img.src = event.target.result;
+                                };
+                        
+                                urlReader.readAsDataURL(file);
                             }
+                        
+                            function finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    if (preview) {
+                                        preview.src = e.target.result;
+                                        preview.style.display = 'block';
+                                        preview.style.border = '3px solid #28a745';
+                                    }
+                        
+                                    const compressedSize = blob.size;
+                                    const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
+                                    statusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced!)</span>`;
+                                    statusText.style.color = '#28a745';
+                                    processingStatus.style.display = 'none';
+                                };
+                                reader.readAsDataURL(blob);
+                        
+                                const dataReader = new FileReader();
+                                dataReader.onload = function(e) {
+                                    dataInput.value = e.target.result;
+                                };
+                                dataReader.readAsDataURL(blob);
+                            }
+                        
                             function formatFileSize(bytes) {
                                 if (bytes < 1024) {
                                     return bytes + " B";
@@ -251,6 +267,11 @@
                                     return (bytes / 1048576).toFixed(2) + " MB";
                                 }
                             }
+                        }
+                        
+                        // Initialize image processing for register form
+                        document.addEventListener('DOMContentLoaded', function() {
+                            setupImageProcessing('register_image', 'register_imageData', 'registerImageProcessingStatus', 'registerImageProgress', 'registerImageStatusText', 'registerImagePreview');
                         });
                         </script>
 
@@ -655,32 +676,13 @@ $(document).ready(function() {
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
-        
-        const imageInput = document.getElementById('register_image');
-        const imageDataInput = document.getElementById('register_imageData');
-        
-        // Check if image is still processing
-        if (imageInput.files.length > 0 && !imageDataInput.value) {
-            alert('দয়া করে অপেক্ষা করুন, ছবি প্রসেস হচ্ছে...');
-            return;
-        }
-        
-        setButtonLoading('registerBtn', true);
+        setButtonLoading('registerBtn', true); // ✅ Loading start
+
         registrationData = new FormData(this);
-        
-        // ✅ If compressed image exists, remove original file and keep only compressed data
-        if (imageDataInput.value) {
-            registrationData.delete('image'); // Remove original file
-            registrationData.set('image_data', imageDataInput.value); // Keep compressed base64
-        }
         
         console.log('Registration data stored:');
         for (let [key, value] of registrationData.entries()) {
-            if (key === 'image_data') {
-                console.log(key + ':', value.substring(0, 80) + '... [compressed base64]');
-            } else {
-                console.log(key + ':', value);
-            }
+            console.log(key + ':', value);
         }
         
         sendOTP(currentEmail, 'register');
