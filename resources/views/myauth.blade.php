@@ -281,7 +281,9 @@
                                 <option value="">Select Country</option>
                                 @if(isset($countries))
                                     @foreach($countries as $country)
-                                        <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                        @if(strtolower($country->name) !== 'international')
+                                            <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                        @endif
                                     @endforeach
                                 @endif
                             </select>
@@ -295,6 +297,170 @@
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
+
+                        <script>
+                            // Searchable Select Dropdown Function
+function makeSelectSearchable(selectElement) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'searchable-select-wrapper';
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    
+    selectElement.parentNode.insertBefore(wrapper, selectElement);
+    wrapper.appendChild(selectElement);
+    
+    // Create search input
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'form-control searchable-select-input';
+    searchInput.placeholder = 'Search...';
+    searchInput.style.display = 'none';
+    
+    // Create dropdown container
+    const dropdownList = document.createElement('div');
+    dropdownList.className = 'searchable-select-dropdown';
+    dropdownList.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 250px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `;
+    
+    // Hide original select
+    selectElement.style.display = 'none';
+    
+    // Display selected value
+    const displayDiv = document.createElement('div');
+    displayDiv.className = 'form-select searchable-select-display';
+    displayDiv.style.cursor = 'pointer';
+    displayDiv.textContent = selectElement.options[selectElement.selectedIndex].text;
+    
+    wrapper.appendChild(displayDiv);
+    wrapper.appendChild(searchInput);
+    wrapper.appendChild(dropdownList);
+    
+    // Get all options
+    function getOptions() {
+        const options = [];
+        for (let i = 0; i < selectElement.options.length; i++) {
+            options.push({
+                value: selectElement.options[i].value,
+                text: selectElement.options[i].text
+            });
+        }
+        return options;
+    }
+    
+    // Render dropdown options
+    function renderOptions(filter = '') {
+        const options = getOptions();
+        dropdownList.innerHTML = '';
+        
+        const filtered = options.filter(opt => 
+            opt.text.toLowerCase().includes(filter.toLowerCase())
+        );
+        
+        filtered.forEach(opt => {
+            const optDiv = document.createElement('div');
+            optDiv.className = 'searchable-select-option';
+            optDiv.textContent = opt.text;
+            optDiv.dataset.value = opt.value;
+            optDiv.style.cssText = `
+                padding: 0.5rem 0.75rem;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            `;
+            
+            optDiv.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#0d6efd';
+                this.style.color = 'white';
+            });
+            
+            optDiv.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'white';
+                this.style.color = 'black';
+            });
+            
+            optDiv.addEventListener('click', function() {
+                selectElement.value = this.dataset.value;
+                displayDiv.textContent = this.textContent;
+                closeDropdown();
+                
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                selectElement.dispatchEvent(event);
+            });
+            
+            dropdownList.appendChild(optDiv);
+        });
+        
+        if (filtered.length === 0) {
+            dropdownList.innerHTML = '<div style="padding: 0.5rem 0.75rem; color: #6c757d;">No results found</div>';
+        }
+    }
+    
+    // Open dropdown
+    function openDropdown() {
+        displayDiv.style.display = 'none';
+        searchInput.style.display = 'block';
+        dropdownList.style.display = 'block';
+        searchInput.focus();
+        renderOptions();
+    }
+    
+    // Close dropdown
+    function closeDropdown() {
+        displayDiv.style.display = 'block';
+        searchInput.style.display = 'none';
+        dropdownList.style.display = 'none';
+        searchInput.value = '';
+    }
+    
+    // Event listeners
+    displayDiv.addEventListener('click', openDropdown);
+    
+    searchInput.addEventListener('input', function() {
+        renderOptions(this.value);
+    });
+    
+    searchInput.addEventListener('blur', function() {
+        setTimeout(closeDropdown, 200);
+    });
+    
+    // Close on click outside
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+}
+
+// Initialize for both selects
+document.addEventListener('DOMContentLoaded', function() {
+    const countrySelect = document.getElementById('register_country');
+    const citySelect = document.getElementById('register_city');
+    
+    if (countrySelect) {
+        makeSelectSearchable(countrySelect);
+    }
+    
+    if (citySelect) {
+        makeSelectSearchable(citySelect);
+    }
+});
+
+// If you're loading cities dynamically via AJAX, call this after loading:
+// makeSelectSearchable(document.getElementById('register_city'));
+                        </script>
 
                         <button type="submit" class="btn btn-primary w-100" id="registerBtn">
                             <span class="btn-text"><i class="bi bi-arrow-right"></i></span>
