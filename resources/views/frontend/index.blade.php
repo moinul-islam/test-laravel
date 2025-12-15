@@ -181,30 +181,53 @@
 
     <div class="row">
         
-        
-        <div class="col-12 mb-3">
-            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
-                <div style="font-size: 2.2rem; margin-right: 18px; color: #0abb87;">
-                    <i class="bi bi-gift-fill"></i>
-                </div>
-                <div style="flex: 1 1 300px;">
-                    <div style="font-weight: 600; font-size: 1.2rem; color: #04595c;">
-                        🎟️ কুতুবপুর বাণিজ্য মেলার টিকেট স্পেশাল সুযোগ!
-                    </div>
-                    <div style="font-size: 1.03rem; margin: 6px 0 4px 0; color: #424242;">
-                        <span style="color: #188068;">•</span> টিকেট রিলিজ হবে <b>১৬ ডিসেম্বর</b>। <br>
-                        <span style="color: #188068;">•</span> প্রতি <b>একাউন্টে ১টি ফ্রি টিকেট</b>। <br>
-                        <span style="color: #188068;">•</span> সাথে এলাকাভিত্তিক পোস্টে পয়েন্ট, প্রতি <b>৩০ পয়েন্টে ১টি করে টিকেট ফ্রি</b>।<br>
-                        <span style="color: #188068;">•</span> বিস্তারিত জানতে WhatsApp করুন : 
-                        <a href="tel:+8801875750099" class="text-decoration-underline" style="color:#388e3c;font-weight:700;">018 7575 0099</a>
-                    </div>
-                    @guest
-                    <span class="badge rounded-pill bg-success" style="font-size: 1rem; cursor:pointer;" data-bs-toggle="modal" data-bs-target="#authModal">Login করে রাখুন!</span>
-                    @endguest
+    @php
+        // Fallback: use currently authenticated user and their points
+        $currentUser = auth()->user();
+        $points = 0;
+        if ($currentUser) {
+            // Use PointController or alternative method to get points
+            try {
+                $points = \App\Http\Controllers\PointController::get($currentUser->id);
+            } catch (\Throwable $e) {
+                $points = 0;
+            }
+        }
+    @endphp
+    @auth
+    @if(Auth::check())
+    <div class="col-12 mb-2">
+        <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+            <div>
+                <div style="color: #04595c;">
+                    <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
+                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন, আপনার মোট পয়েন্টঃ {{ $points }}। আপনি লাইক, কমেন্ট ও পোস্টের মাধ্যমে পয়েন্ট বাড়াতে পারেন। প্রতি ৩০ পয়েন্টে আপনি একটি করে টিকেট ফ্রি পাবেন।
                 </div>
             </div>
         </div>
-        
+    </div>
+    @endif
+    @endauth
+    
+    @guest
+        <div class="col-12 mb-2">
+            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+                
+                <div style="">
+                    
+                    <div style="color: #04595c;" style=" cursor:pointer;" data-bs-toggle="modal" data-bs-target="#authModal">
+                   
+                    <i style=" margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
+             
+                        কুতুবপুরের বাণিজ্য মেলার টিকেট <strong class="text-danger">ফ্রি</strong> পেতে <u>লগইন/রেজিস্টার</u> করুন!
+                    </div>
+                   
+                    
+                    
+                </div>
+            </div>
+        </div>
+        @endguest 
 
         <div class="col-12" id="posts-container">
             @include('frontend.posts-partial', ['posts' => $posts])
