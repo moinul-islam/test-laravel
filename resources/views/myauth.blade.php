@@ -655,13 +655,32 @@ $(document).ready(function() {
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         clearErrors();
-        setButtonLoading('registerBtn', true); // ✅ Loading start
-
+        
+        const imageInput = document.getElementById('register_image');
+        const imageDataInput = document.getElementById('register_imageData');
+        
+        // Check if image is still processing
+        if (imageInput.files.length > 0 && !imageDataInput.value) {
+            alert('দয়া করে অপেক্ষা করুন, ছবি প্রসেস হচ্ছে...');
+            return;
+        }
+        
+        setButtonLoading('registerBtn', true);
         registrationData = new FormData(this);
+        
+        // ✅ If compressed image exists, remove original file and keep only compressed data
+        if (imageDataInput.value) {
+            registrationData.delete('image'); // Remove original file
+            registrationData.set('image_data', imageDataInput.value); // Keep compressed base64
+        }
         
         console.log('Registration data stored:');
         for (let [key, value] of registrationData.entries()) {
-            console.log(key + ':', value);
+            if (key === 'image_data') {
+                console.log(key + ':', value.substring(0, 80) + '... [compressed base64]');
+            } else {
+                console.log(key + ':', value);
+            }
         }
         
         sendOTP(currentEmail, 'register');
