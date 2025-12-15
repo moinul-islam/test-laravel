@@ -282,7 +282,7 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
                 'country_id' => 'required|exists:countries,id',
                 'city_id' => 'required|exists:cities,id',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20048',
                 'fcm_token' => 'nullable|string'  // ✅ FCM token validation
             ]);
 
