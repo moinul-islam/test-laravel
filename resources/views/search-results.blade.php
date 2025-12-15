@@ -81,9 +81,9 @@
                             </a>
                             <small class="price-tag text-success">{{ $item->area ? Str::limit($item->area, 20) : 'No Address' }}</small>
                             
-                            <a href="tel:{{ $item->phone_number }}">
+                            <a href="{{ route('profile.show', $item->username) }}">
                                 <span class="badge {{ $isOwnProfile ? 'bg-secondary' : 'bg-primary' }} cart-badge {{ $isOwnProfile ? 'disabled' : '' }}">
-                                    <i class="bi bi-telephone"></i>
+                                    <i class="bi bi-person"></i>
                                 </span>
                             </a>
                         @else
