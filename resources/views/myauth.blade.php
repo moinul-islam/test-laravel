@@ -98,166 +98,150 @@
                         </div>
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-// Reusable image compression logic (from product-services.blade.php)
-function setupImageProcessing(inputId, dataInputId, statusId, progressId, statusTextId, previewId = null) {
+                        // Single image compress for registration using dashboard post logic
+                        document.addEventListener('DOMContentLoaded', function() {
                             const MAX_WIDTH = 1800;
                             const MAX_HEIGHT = 1800;
-                            const QUALITY = 0.7;
-                        
-                            const imageInput = document.getElementById(inputId);
-                            const imageDataInput = document.getElementById(dataInputId);
-                            const imageProcessingStatus = document.getElementById(statusId);
-                            const imageProgress = document.getElementById(progressId);
-                            const imageStatusText = document.getElementById(statusTextId);
-                            const imagePreview = previewId ? document.getElementById(previewId) : null;
-                        
+                            const IMAGE_QUALITY = 0.7;
+
+                            const imageInput = document.getElementById('register_image');
+                            const imageDataInput = document.getElementById('register_imageData');
+                            const imageProcessingStatus = document.getElementById('registerImageProcessingStatus');
+                            const imageProgress = document.getElementById('registerImageProgress');
+                            const imageStatusText = document.getElementById('registerImageStatusText');
+                            const imagePreview = document.getElementById('registerImagePreview');
+
                             if (!imageInput) return;
-                        
-                            imageInput.addEventListener('change', function(e) {
+
+                            imageInput.addEventListener('change', async function(e) {
                                 const file = this.files[0];
                                 if (!file) return;
-                        
-                                // Clear previous preview
-                                if (imagePreview) imagePreview.src = '';
-                        
-                                // File type validation
-                                const fileExt = file.name.split('.').pop().toLowerCase();
+
+                                // Validate extension
                                 const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-                        
+                                const fileExt = file.name.split('.').pop().toLowerCase();
                                 if (!allowedExts.includes(fileExt)) {
                                     alert('Please upload only JPG, PNG, GIF, WEBP, HEIC or HEIF files!');
                                     this.value = '';
                                     return;
                                 }
-                        
-                                // Show processing status
-                                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+                                // Reset
+                                imagePreview.style.display = 'none';
+                                imagePreview.src = '';
+                                imageStatusText.style.color = '';
                                 imageProcessingStatus.style.display = 'block';
-                                imageProgress.style.width = '10%';
-                        
-                                if (fileExt === 'heic' || fileExt === 'heif') {
-                                    imageStatusText.textContent = `HEIC/HEIF image (${fileSizeMB} MB) is being converted...`;
-                                } else {
-                                    imageStatusText.textContent = `Image (${fileSizeMB} MB) is being optimized...`;
-                                }
-                        
-                                // Process the image
-                                processImage(file, imageDataInput, imageProgress, imageStatusText, imageProcessingStatus, imagePreview);
-                            });
-                        
-                            function processImage(file, dataInput, progress, statusText, processingStatus, preview) {
-                                const originalSize = file.size;
-                                const fileExt = file.name.split('.').pop().toLowerCase();
-                        
-                                if ((fileExt === 'heic' || fileExt === 'heif') && typeof heic2any !== 'undefined') {
-                                    convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
-                                } else {
-                                    loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
-                                }
-                            }
-                        
-                            function convertHeicToJpeg(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
-                                progress.style.width = '20%';
-                        
-                                const fileReader = new FileReader();
-                                fileReader.onload = function(event) {
-                                    const arrayBuffer = event.target.result;
-                        
-                                    heic2any({
-                                        blob: new Blob([arrayBuffer]),
-                                        toType: 'image/jpeg',
-                                        quality: 0.8
-                                    }).then(function(jpegBlob) {
-                                        progress.style.width = '40%';
-                                        statusText.textContent = 'HEIC conversion successful! Now optimizing...';
-                                        loadImageWithOrientation(jpegBlob, originalSize, dataInput, progress, statusText, processingStatus, preview);
-                                    }).catch(function(err) {
-                                        console.error('HEIC conversion error:', err);
-                                        statusText.textContent = 'HEIC conversion error! Trying standard procedure...';
-                                        loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview);
-                                    });
-                                };
-                        
-                                fileReader.readAsArrayBuffer(file);
-                            }
-                        
-                            function loadImageWithOrientation(file, originalSize, dataInput, progress, statusText, processingStatus, preview) {
-                                progress.style.width = '50%';
-                        
-                                const urlReader = new FileReader();
-                                urlReader.onload = function(event) {
-                                    const img = new Image();
-                        
-                                    img.onload = function() {
-                                        progress.style.width = '60%';
-                        
-                                        let width = img.width;
-                                        let height = img.height;
-                                        let targetWidth = width;
-                                        let targetHeight = height;
-                        
-                                        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                                            if (width > height) {
-                                                targetHeight = Math.round(height * (MAX_WIDTH / width));
-                                                targetWidth = MAX_WIDTH;
-                                            } else {
-                                                targetWidth = Math.round(width * (MAX_HEIGHT / height));
-                                                targetHeight = MAX_HEIGHT;
-                                            }
-                                        }
-                        
-                                        const canvas = document.createElement('canvas');
-                                        canvas.width = targetWidth;
-                                        canvas.height = targetHeight;
-                                        const ctx = canvas.getContext('2d');
-                        
-                                        ctx.fillStyle = '#FFFFFF';
-                                        ctx.fillRect(0, 0, targetWidth, targetHeight);
-                                        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                        
-                                        let targetQuality = QUALITY;
-                                        let fileSizeMB = file.size / (1024 * 1024);
-                        
-                                        if (fileSizeMB > 10) targetQuality = 0.5;
-                                        else if (fileSizeMB > 5) targetQuality = 0.6;
-                        
-                                        progress.style.width = '90%';
-                        
-                                        canvas.toBlob(function(blob) {
-                                            finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview);
-                                        }, 'image/jpeg', targetQuality);
-                                    };
-                        
-                                    img.src = event.target.result;
-                                };
-                        
-                                urlReader.readAsDataURL(file);
-                            }
-                        
-                            function finalizeImageProcessing(blob, originalSize, dataInput, statusText, processingStatus, preview) {
-                                const reader = new FileReader();
-                                reader.onload = function(e) {
-                                    if (preview) {
-                                        preview.src = e.target.result;
-                                        preview.style.display = 'block';
-                                        preview.style.border = '3px solid #28a745';
+                                imageProgress.style.width = '8%';
+                                imageStatusText.textContent = (fileExt === 'heic' || fileExt === 'heif')
+                                    ? 'HEIC/HEIF image (' + (file.size/(1024*1024)).toFixed(2) + ' MB) is being converted...'
+                                    : 'Image (' + (file.size/(1024*1024)).toFixed(2) + ' MB) is being optimized...';
+
+                                try {
+                                    let finalBase64;
+                                    if (fileExt === 'heic' || fileExt === 'heif') {
+                                        imageProgress.style.width = '22%';
+                                        const jpegBlob = await convertHeicToJpeg(file);
+                                        imageProgress.style.width = '44%';
+                                        imageStatusText.textContent = 'HEIC conversion successful! Now optimizing...';
+                                        finalBase64 = await compressImage(jpegBlob);
+                                    } else {
+                                        imageProgress.style.width = '44%';
+                                        finalBase64 = await compressImage(file);
                                     }
-                        
-                                    const compressedSize = blob.size;
-                                    const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
-                                    statusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced!)</span>`;
-                                    statusText.style.color = '#28a745';
-                                    processingStatus.style.display = 'none';
-                                };
-                                reader.readAsDataURL(blob);
-                        
-                                const dataReader = new FileReader();
-                                dataReader.onload = function(e) {
-                                    dataInput.value = e.target.result;
-                                };
-                                dataReader.readAsDataURL(blob);
+                                    imageProgress.style.width = '100%';
+                                    imageDataInput.value = finalBase64;
+
+                                    // Show image preview
+                                    imagePreview.src = finalBase64;
+                                    imagePreview.style.display = 'block';
+                                    imagePreview.style.border = '3px solid #28a745';
+
+                                    // Show status
+                                    // Calculate size optimization info
+                                    const originalSize = file.size;
+                                    let result;
+                                    await fetch(finalBase64)
+                                        .then(r => r.blob())
+                                        .then(blob=>{
+                                            const compressedSize = blob.size;
+                                            const compressionRatio = Math.round((1 - (compressedSize / originalSize)) * 100);
+                                            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, ${compressionRatio}% Reduced!)</span>`;
+                                            imageStatusText.style.color = '#28a745';
+                                        });
+
+                                    setTimeout(()=>{
+                                        imageProcessingStatus.style.display = 'none';
+                                    }, 1600);
+
+                                } catch (err) {
+                                    imageStatusText.textContent = "Image optimization failed!";
+                                    imageStatusText.style.color = '#dc3545';
+                                    console.error('Image process error:', err);
+                                    imagePreview.style.display = 'none';
+                                }
+                            });
+
+                            // Functions ported from dashboard.blade.php
+                            function convertHeicToJpeg(file) {
+                                return new Promise((resolve, reject) => {
+                                    const fileReader = new FileReader();
+                                    fileReader.onload = function(event) {
+                                        heic2any({
+                                            blob: new Blob([event.target.result]),
+                                            toType: 'image/jpeg',
+                                            quality: 0.8
+                                        }).then(resolve).catch(reject);
+                                    };
+                                    fileReader.onerror = reject;
+                                    fileReader.readAsArrayBuffer(file);
+                                });
                             }
-                        
+                            function compressImage(file) {
+                                return new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        const img = new Image();
+                                        img.onload = function() {
+                                            let width = img.width;
+                                            let height = img.height;
+                                            let targetWidth = width;
+                                            let targetHeight = height;
+                                            if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                                                if (width > height) {
+                                                    targetHeight = Math.round(height * (MAX_WIDTH / width));
+                                                    targetWidth = MAX_WIDTH;
+                                                } else {
+                                                    targetWidth = Math.round(width * (MAX_HEIGHT / height));
+                                                    targetHeight = MAX_HEIGHT;
+                                                }
+                                            }
+                                            const canvas = document.createElement('canvas');
+                                            canvas.width = targetWidth;
+                                            canvas.height = targetHeight;
+                                            const ctx = canvas.getContext('2d');
+                                            ctx.fillStyle = '#FFFFFF';
+                                            ctx.fillRect(0, 0, targetWidth, targetHeight);
+                                            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                                            let targetQuality = IMAGE_QUALITY;
+                                            let fileSizeMB = file.size / (1024 * 1024);
+                                            if (fileSizeMB > 10) targetQuality = 0.5;
+                                            else if (fileSizeMB > 5) targetQuality = 0.6;
+                                            canvas.toBlob(function(blob) {
+                                                const reader2 = new FileReader();
+                                                reader2.onload = function(evt) {
+                                                    resolve(evt.target.result);
+                                                };
+                                                reader2.onerror = reject;
+                                                reader2.readAsDataURL(blob);
+                                            }, 'image/jpeg', targetQuality);
+                                        };
+                                        img.onerror = reject;
+                                        img.src = e.target.result;
+                                    };
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(file);
+                                });
+                            }
                             function formatFileSize(bytes) {
                                 if (bytes < 1024) {
                                     return bytes + " B";
@@ -267,12 +251,194 @@ function setupImageProcessing(inputId, dataInputId, statusId, progressId, status
                                     return (bytes / 1048576).toFixed(2) + " MB";
                                 }
                             }
-                        }
-                        
-                        // Initialize image processing for register form
-                        document.addEventListener('DOMContentLoaded', function() {
-                            setupImageProcessing('register_image', 'register_imageData', 'registerImageProcessingStatus', 'registerImageProgress', 'registerImageStatusText', 'registerImagePreview');
                         });
+                        </script>
+
+                        <div class="mb-3">
+                            <label for="register_country" class="form-label">Country</label>
+                            <select id="register_country" name="country_id" class="form-select" required>
+                                <option value="">Select Country</option>
+                                @if(isset($countries))
+                                    @foreach($countries as $country)
+                                        @if(strtolower($country->name) !== 'international')
+                                            <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="register_city" class="form-label">City</label>
+                            <select id="register_city" name="city_id" class="form-select" required>
+                                <option value="">Select City</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <script>
+                            // Searchable Select Dropdown Function
+function makeSelectSearchable(selectElement) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'searchable-select-wrapper';
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    
+    selectElement.parentNode.insertBefore(wrapper, selectElement);
+    wrapper.appendChild(selectElement);
+    
+    // Create search input
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'form-control searchable-select-input';
+    searchInput.placeholder = 'Search...';
+    searchInput.style.display = 'none';
+    
+    // Create dropdown container
+    const dropdownList = document.createElement('div');
+    dropdownList.className = 'searchable-select-dropdown';
+    dropdownList.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 250px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `;
+    
+    // Hide original select
+    selectElement.style.display = 'none';
+    
+    // Display selected value
+    const displayDiv = document.createElement('div');
+    displayDiv.className = 'form-select searchable-select-display';
+    displayDiv.style.cursor = 'pointer';
+    displayDiv.textContent = selectElement.options[selectElement.selectedIndex].text;
+    
+    wrapper.appendChild(displayDiv);
+    wrapper.appendChild(searchInput);
+    wrapper.appendChild(dropdownList);
+    
+    // Get all options
+    function getOptions() {
+        const options = [];
+        for (let i = 0; i < selectElement.options.length; i++) {
+            options.push({
+                value: selectElement.options[i].value,
+                text: selectElement.options[i].text
+            });
+        }
+        return options;
+    }
+    
+    // Render dropdown options
+    function renderOptions(filter = '') {
+        const options = getOptions();
+        dropdownList.innerHTML = '';
+        
+        const filtered = options.filter(opt => 
+            opt.text.toLowerCase().includes(filter.toLowerCase())
+        );
+        
+        filtered.forEach(opt => {
+            const optDiv = document.createElement('div');
+            optDiv.className = 'searchable-select-option';
+            optDiv.textContent = opt.text;
+            optDiv.dataset.value = opt.value;
+            optDiv.style.cssText = `
+                padding: 0.5rem 0.75rem;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            `;
+            
+            optDiv.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#0d6efd';
+                this.style.color = 'white';
+            });
+            
+            optDiv.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'white';
+                this.style.color = 'black';
+            });
+            
+            optDiv.addEventListener('click', function() {
+                selectElement.value = this.dataset.value;
+                displayDiv.textContent = this.textContent;
+                closeDropdown();
+                
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                selectElement.dispatchEvent(event);
+            });
+            
+            dropdownList.appendChild(optDiv);
+        });
+        
+        if (filtered.length === 0) {
+            dropdownList.innerHTML = '<div style="padding: 0.5rem 0.75rem; color: #6c757d;">No results found</div>';
+        }
+    }
+    
+    // Open dropdown
+    function openDropdown() {
+        displayDiv.style.display = 'none';
+        searchInput.style.display = 'block';
+        dropdownList.style.display = 'block';
+        searchInput.focus();
+        renderOptions();
+    }
+    
+    // Close dropdown
+    function closeDropdown() {
+        displayDiv.style.display = 'block';
+        searchInput.style.display = 'none';
+        dropdownList.style.display = 'none';
+        searchInput.value = '';
+    }
+    
+    // Event listeners
+    displayDiv.addEventListener('click', openDropdown);
+    
+    searchInput.addEventListener('input', function() {
+        renderOptions(this.value);
+    });
+    
+    searchInput.addEventListener('blur', function() {
+        setTimeout(closeDropdown, 200);
+    });
+    
+    // Close on click outside
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+}
+
+// Initialize for both selects
+document.addEventListener('DOMContentLoaded', function() {
+    const countrySelect = document.getElementById('register_country');
+    const citySelect = document.getElementById('register_city');
+    
+    if (countrySelect) {
+        makeSelectSearchable(countrySelect);
+    }
+    
+    if (citySelect) {
+        makeSelectSearchable(citySelect);
+    }
+});
+
+// If you're loading cities dynamically via AJAX, call this after loading:
+// makeSelectSearchable(document.getElementById('register_city'));
                         </script>
 
                         <button type="submit" class="btn btn-primary w-100" id="registerBtn">
