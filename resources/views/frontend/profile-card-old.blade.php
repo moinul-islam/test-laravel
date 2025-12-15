@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   @if(Auth::id() === $user->id)
                      {{-- Own Profile - Show Add Post Button --}}
                      <button type="button" class="btn btn-primary btn-sm" onclick="checkProfileAndOpenModal()" id="addPostBtn">
-                        <i class="bi bi-plus-circle me-1"></i> Add Product or Service
+                        <i class="bi bi-plus-circle me-1"></i> Add Product/Service
                      </button>
                   @else
                      {{-- Other's Profile - Show Follow/Message Buttons --}}
