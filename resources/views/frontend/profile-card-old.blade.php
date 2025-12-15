@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <!-- Post Count -->
             <div class="row text-center mt-3">
                <div class="col border-end">
-                  <h5 class="mb-0">{{ $posts->total() }}</h5>
-                  <small class="text-muted">Posts</small>
+                    <h5 class="mb-0">{{ $posts->total() }}</h5>
+                  <small class="text-muted">Products</small>
                </div>
                <div class="col text-center{{ $user->category_id ? ' border-end' : '' }}">
                   <h5 class="mb-0" id="followersCount-{{ $user->id }}">{{ $user->followers()->count() ?? 0 }}</h5>
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   @if(Auth::id() === $user->id)
                      {{-- Own Profile - Show Add Post Button --}}
                      <button type="button" class="btn btn-primary btn-sm" onclick="checkProfileAndOpenModal()" id="addPostBtn">
-                        <i class="bi bi-plus-circle me-1"></i> Add Product/Service
+                        <i class="bi bi-plus-circle me-1"></i> Add Product
                      </button>
                   @else
                      {{-- Other's Profile - Show Follow/Message Buttons --}}

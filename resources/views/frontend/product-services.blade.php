@@ -508,7 +508,7 @@
    <div class="modal-dialog modal-lg">
       <div class="modal-content">
          <div class="modal-header">
-            <h5 class="modal-title" id="createPostModalLabel">Create New Post</h5>
+            <h5 class="modal-title" id="createPostModalLabel">Add Product or Service</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
          </div>
          <div class="modal-body">
@@ -516,7 +516,7 @@
                @csrf
                {{-- Post Category Dropdown --}}
                <div class="mb-3">
-                  <label for="category_name" class="form-label">Post Category <span class="text-danger">*</span></label>
+                  <label for="category_name" class="form-label">Product or Service Category <span class="text-danger">*</span></label>
                   <div style="position: relative;">
                      <input type="text" 
                         class="form-control" 
