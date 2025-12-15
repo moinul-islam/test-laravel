@@ -214,15 +214,19 @@
                         </li>
                     @endif -->
 
+                    
+                    
+                    <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+
+
                     @if(auth()->check() && auth()->user()->role === 'delivery')
-                        <li><a class="dropdown-item" href="{{ route('delivery.page') }}"><i class="bi bi-truck me-2"></i>Delivery</a></li>
+                        <li class="border-bottom"><a class="dropdown-item" href="{{ route('delivery.page') }}"><i class="bi bi-truck me-2"></i>Delivery</a></li>
                     @endif
                     
                     @if(auth()->check() && auth()->user()->role === 'admin')
-                        <li><a class="dropdown-item" href="{{ route('admin.page') }}"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
+                        <li class="border-bottom"><a class="dropdown-item" href="{{ route('admin.page') }}"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
                     @endif
-                    
-                    <li class="border-bottom"><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+
                     <li>
                         <form method="POST" action="{{ route('logout') }}" onsubmit="clearCartOnLogout()">
                             @csrf

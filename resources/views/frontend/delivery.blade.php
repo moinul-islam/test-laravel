@@ -1,7 +1,10 @@
 @extends('frontend.master')
 @section('main-content')
 <div class="container container-fluid px-2 py-4">
-@include('frontend.body.admin-nav')
+
+   @if(auth()->check() && auth()->user()->role === 'admin')
+      @include('frontend.body.admin-nav')
+   @endif
    <div class="row">
       <div class="col-12">
          <div class="d-flex justify-content-between align-items-center mb-4">
