@@ -222,7 +222,7 @@
                         <span class="fw-bold text-success">{{ 1 + floor($points / 30) }}</span> টি ফ্রি টিকেট আপনার জন্য প্রস্তুত!
                     </p>
                     <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
-                    <p class="mt-3 text-muted small">টিকেট সংগ্রহণ করতে পারবেন ১৮ তারিখ থেকে। আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
+                    <p class="mt-3 text-muted small">আপনার নিকটে যে কোন বুথ থেকে টিকেট সংগ্রহণ করতে পারবেন। আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
