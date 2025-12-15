@@ -98,7 +98,6 @@
                         </div>
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-// Image compression logic - Fixed and Improved Version
 document.addEventListener('DOMContentLoaded', function() {
     const MAX_WIDTH = 1600;      // Reduced from 1800
     const MAX_HEIGHT = 1600;     // Reduced from 1800
