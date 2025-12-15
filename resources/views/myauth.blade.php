@@ -75,12 +75,6 @@
                             <div class="invalid-feedback"></div>
                         </div>
 
-
-
-
-
-<!-- ///////////////////////////////////// image start ///////////////////////////////////////// -->
-
                         <div class="mb-3">
                             <label for="register_image" class="form-label">Profile Image</label>
                             <input type="file" class="form-control" id="register_image" name="image" accept="image/*">
@@ -280,17 +274,6 @@
                             setupImageProcessing('register_image', 'register_imageData', 'registerImageProcessingStatus', 'registerImageProgress', 'registerImageStatusText', 'registerImagePreview');
                         });
                         </script>
-
-
-
-
-
-<!-- ///////////////////////////////////// image end ///////////////////////////////////////// -->
-
-
-
-
-
 
                         <div class="mb-3">
                             <label for="register_country" class="form-label">Country</label>
