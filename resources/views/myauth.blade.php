@@ -98,11 +98,11 @@
                         </div>
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-// Image compression logic borrowed from dashboard.blade.php (see @file_context_0 for details)
+// Image compression logic - Fixed and Improved Version
 document.addEventListener('DOMContentLoaded', function() {
-    const MAX_WIDTH = 1800;
-    const MAX_HEIGHT = 1800;
-    const IMAGE_QUALITY = 0.7;
+    const MAX_WIDTH = 1600;      // Reduced from 1800
+    const MAX_HEIGHT = 1600;     // Reduced from 1800
+    const IMAGE_QUALITY = 0.6;   // Reduced from 0.7
 
     const imageInput = document.getElementById('register_image');
     const imageDataInput = document.getElementById('register_imageData');
@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const imagePreview = document.getElementById('registerImagePreview');
 
     if (!imageInput) return;
+    
     imageInput.addEventListener('change', async function() {
         const file = this.files && this.files[0];
         if (!file) return;
@@ -123,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imageProcessingStatus.style.display = "block";
         imageProgress.style.width = "0%";
         imageStatusText.textContent = "Processing image...";
+        imageStatusText.style.color = "";
 
         // Validate file
         const fileExt = file.name.split('.').pop().toLowerCase();
@@ -139,36 +141,49 @@ document.addEventListener('DOMContentLoaded', function() {
         imageProgress.style.width = "10%";
 
         try {
-            let processedBase64 = '';
+            let processedData = null;
+            
             if (fileExt === 'heic' || fileExt === 'heif') {
                 imageStatusText.textContent = `HEIC/HEIF image (${fileSizeMB} MB) is being converted...`;
-                processedBase64 = await processHeicForRegister(file);
+                processedData = await processHeicForRegister(file);
             } else {
                 imageStatusText.textContent = `Image (${fileSizeMB} MB) is being optimized...`;
-                processedBase64 = await compressImageForRegister(file);
+                processedData = await compressImageForRegister(file);
             }
+            
             // Show preview and set data
-            imagePreview.src = processedBase64;
+            imagePreview.src = processedData.base64;
             imagePreview.style.display = "block";
             imagePreview.style.border = '3px solid #28a745';
-            imageDataInput.value = processedBase64;
+            imageDataInput.value = processedData.base64;
 
             const origin = file.size;
-            const base64Length = Math.ceil((processedBase64.length - 'data:image/jpeg;base64,'.length) * 3 / 4);
-            const ratio = Math.round((1 - (base64Length / origin)) * 100);
+            const compressed = processedData.size;
+            const ratio = Math.round((1 - (compressed / origin)) * 100);
+            
             imageProgress.style.width = "100%";
-            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(origin)} → ${formatFileSize(base64Length)}, ${ratio}% Reduced!)</span>`;
+            imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(origin)} → ${formatFileSize(compressed)}, ${ratio}% Reduced!)</span>`;
             imageStatusText.style.color = "#28a745";
+            
+            // Hide progress bar after 2 seconds but keep status text visible
             setTimeout(() => {
-                imageProcessingStatus.style.display = 'none';
-            }, 1800);
+                const progressBar = imageProcessingStatus.querySelector('.progress');
+                if (progressBar) progressBar.style.display = 'none';
+            }, 2000);
+            
         } catch (e) {
+            console.error('Image processing error:', e);
             imageStatusText.textContent = 'Image processing error!';
             imageStatusText.style.color = "#dc3545";
             imagePreview.style.display = "none";
             imageDataInput.value = "";
             imageProgress.style.width = "0%";
-            imageProcessingStatus.style.display = "block";
+            
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                imageProcessingStatus.style.display = 'none';
+            }, 5000);
+            
             alert('Image processing failed: ' + (file.name || '') + '\nError: ' + e.message);
         }
     });
@@ -202,6 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file);
         });
         imageProgress.style.width = "60%";
+        
         // Compress/resize
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -216,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         height = MAX_HEIGHT;
                     }
                 }
+                
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
@@ -224,220 +241,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
+                // Improved quality logic with more ranges
                 let quality = IMAGE_QUALITY;
                 const fileSizeMB = file.size ? file.size / (1024*1024) : 0;
-                if (fileSizeMB > 10) quality = 0.5;
-                else if (fileSizeMB > 5) quality = 0.6;
+                
+                if (fileSizeMB > 10) quality = 0.4;
+                else if (fileSizeMB > 5) quality = 0.5;
+                else if (fileSizeMB > 3) quality = 0.55;  // Your 3.9 MB will use this
+                else if (fileSizeMB > 1) quality = 0.6;
                 
                 imageProgress.style.width = "90%";
+                
                 canvas.toBlob(function(blob) {
-                    var reader2 = new FileReader();
+                    if (!blob) {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                        return;
+                    }
+                    
+                    const reader2 = new FileReader();
                     reader2.onload = function(e2) {
-                        resolve(e2.target.result);
+                        // Return object with base64 and actual blob size
+                        resolve({
+                            base64: e2.target.result,
+                            size: blob.size
+                        });
                     };
                     reader2.onerror = reject;
                     reader2.readAsDataURL(blob);
                 }, 'image/jpeg', quality);
             };
-            img.onerror = reject;
+            img.onerror = () => reject(new Error('Image load failed'));
             img.src = base64;
         });
     }
 
     function formatFileSize(bytes) {
-        if (isNaN(bytes)) return '';
+        if (isNaN(bytes) || bytes === null || bytes === undefined) return '';
         if (bytes < 1024) return bytes + " B";
         else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
         else return (bytes / 1048576).toFixed(2) + " MB";
     }
 });
-                        </script>
-
-                        <div class="mb-3">
-                            <label for="register_country" class="form-label">Country</label>
-                            <select id="register_country" name="country_id" class="form-select" required>
-                                <option value="">Select Country</option>
-                                @if(isset($countries))
-                                    @foreach($countries as $country)
-                                        @if(strtolower($country->name) !== 'international')
-                                            <option value="{{ $country->id }}">{{ $country->name }}</option>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="register_city" class="form-label">City</label>
-                            <select id="register_city" name="city_id" class="form-select" required>
-                                <option value="">Select City</option>
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-
-                        <script>
-                            // Searchable Select Dropdown Function
-function makeSelectSearchable(selectElement) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'searchable-select-wrapper';
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
-    
-    selectElement.parentNode.insertBefore(wrapper, selectElement);
-    wrapper.appendChild(selectElement);
-    
-    // Create search input
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.className = 'form-control searchable-select-input';
-    searchInput.placeholder = 'Search...';
-    searchInput.style.display = 'none';
-    
-    // Create dropdown container
-    const dropdownList = document.createElement('div');
-    dropdownList.className = 'searchable-select-dropdown';
-    dropdownList.style.cssText = `
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        max-height: 250px;
-        overflow-y: auto;
-        background: white;
-        border: 1px solid #ced4da;
-        border-top: none;
-        border-radius: 0 0 0.375rem 0.375rem;
-        display: none;
-        z-index: 1000;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    `;
-    
-    // Hide original select
-    selectElement.style.display = 'none';
-    
-    // Display selected value
-    const displayDiv = document.createElement('div');
-    displayDiv.className = 'form-select searchable-select-display';
-    displayDiv.style.cursor = 'pointer';
-    displayDiv.textContent = selectElement.options[selectElement.selectedIndex].text;
-    
-    wrapper.appendChild(displayDiv);
-    wrapper.appendChild(searchInput);
-    wrapper.appendChild(dropdownList);
-    
-    // Get all options
-    function getOptions() {
-        const options = [];
-        for (let i = 0; i < selectElement.options.length; i++) {
-            options.push({
-                value: selectElement.options[i].value,
-                text: selectElement.options[i].text
-            });
-        }
-        return options;
-    }
-    
-    // Render dropdown options
-    function renderOptions(filter = '') {
-        const options = getOptions();
-        dropdownList.innerHTML = '';
-        
-        const filtered = options.filter(opt => 
-            opt.text.toLowerCase().includes(filter.toLowerCase())
-        );
-        
-        filtered.forEach(opt => {
-            const optDiv = document.createElement('div');
-            optDiv.className = 'searchable-select-option';
-            optDiv.textContent = opt.text;
-            optDiv.dataset.value = opt.value;
-            optDiv.style.cssText = `
-                padding: 0.5rem 0.75rem;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            `;
-            
-            optDiv.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#0d6efd';
-                this.style.color = 'white';
-            });
-            
-            optDiv.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = 'white';
-                this.style.color = 'black';
-            });
-            
-            optDiv.addEventListener('click', function() {
-                selectElement.value = this.dataset.value;
-                displayDiv.textContent = this.textContent;
-                closeDropdown();
-                
-                // Trigger change event
-                const event = new Event('change', { bubbles: true });
-                selectElement.dispatchEvent(event);
-            });
-            
-            dropdownList.appendChild(optDiv);
-        });
-        
-        if (filtered.length === 0) {
-            dropdownList.innerHTML = '<div style="padding: 0.5rem 0.75rem; color: #6c757d;">No results found</div>';
-        }
-    }
-    
-    // Open dropdown
-    function openDropdown() {
-        displayDiv.style.display = 'none';
-        searchInput.style.display = 'block';
-        dropdownList.style.display = 'block';
-        searchInput.focus();
-        renderOptions();
-    }
-    
-    // Close dropdown
-    function closeDropdown() {
-        displayDiv.style.display = 'block';
-        searchInput.style.display = 'none';
-        dropdownList.style.display = 'none';
-        searchInput.value = '';
-    }
-    
-    // Event listeners
-    displayDiv.addEventListener('click', openDropdown);
-    
-    searchInput.addEventListener('input', function() {
-        renderOptions(this.value);
-    });
-    
-    searchInput.addEventListener('blur', function() {
-        setTimeout(closeDropdown, 200);
-    });
-    
-    // Close on click outside
-    document.addEventListener('click', function(e) {
-        if (!wrapper.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-}
-
-// Initialize for both selects
-document.addEventListener('DOMContentLoaded', function() {
-    const countrySelect = document.getElementById('register_country');
-    const citySelect = document.getElementById('register_city');
-    
-    if (countrySelect) {
-        makeSelectSearchable(countrySelect);
-    }
-    
-    if (citySelect) {
-        makeSelectSearchable(citySelect);
-    }
-});
-
-// If you're loading cities dynamically via AJAX, call this after loading:
-// makeSelectSearchable(document.getElementById('register_city'));
                         </script>
 
                         <button type="submit" class="btn btn-primary w-100" id="registerBtn">
