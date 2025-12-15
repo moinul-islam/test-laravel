@@ -201,7 +201,31 @@
             <div>
                 <div style="color: #04595c;">
                     <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
-                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন, আপনার মোট পয়েন্টঃ {{ $points }}। আপনি লাইক, কমেন্ট ও পোস্টের মাধ্যমে পয়েন্ট বাড়াতে পারেন। প্রতি ৩০ পয়েন্টে আপনি একটি করে টিকেট ফ্রি পাবেন।
+                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন, আপনার মোট পয়েন্টঃ {{ $points }}। আপনি লাইক, কমেন্ট ও পোস্টের মাধ্যমে পয়েন্ট বাড়াতে পারেন। প্রতি ৩০ পয়েন্টে আপনি একটি করে টিকেট ফ্রি পাবেন। 
+                    <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div class="modal fade" id="ticketModal" tabindex="-1" aria-labelledby="ticketModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ticketModalLabel"><i class="bi bi-gift text-success"></i> আপনার ফ্রি টিকেট</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4 text-center">
+                    <div style="font-size: 48px;" class="mb-2"><i class="bi bi-ticket-perforated text-primary"></i></div>
+                    <p class="h5 mb-3">
+                        <span class="fw-bold text-success">{{ 1 + floor($points / 30) }}</span> টি ফ্রি টিকেট আপনার জন্য প্রস্তুত!
+                    </p>
+                    <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
+                    <p class="mt-3 text-muted small">টিকেট সংগ্রহণ করতে পারবেন ১৮ তারিখ থেকে। আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
