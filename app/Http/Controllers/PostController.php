@@ -56,7 +56,7 @@ class PostController extends Controller
         
         // Additional validation: At least one of description or media must be present
         if (empty($request->description) && empty($request->media_data)) {
-            return back()->withErrors(['validation' => 'অনুগ্রহ করে Description অথবা Image যোগ করুন / Please add either Description or Images'])->withInput();
+            return back()->withErrors(['validation' => 'অনুগ্রহ করে Description অথবা Image/Video যোগ করুন / Please add either Description or Images/Videos'])->withInput();
         }
        
         $categoryId = null;
@@ -82,10 +82,10 @@ class PostController extends Controller
             }
         } while (Post::where('slug', $slug)->exists());
        
-        // Process Media (Images only now)
+        // Process Media (Images and Videos)
         $savedMedia = [
             'images' => [],
-            'videos' => [] // Keep for backward compatibility
+            'videos' => []
         ];
         
         if ($request->filled('media_data')) {
@@ -93,17 +93,27 @@ class PostController extends Controller
             
             if (is_array($mediaDataArray)) {
                 foreach ($mediaDataArray as $media) {
-                    $type = $media['type']; // 'image'
+                    $type = $media['type']; // 'image' or 'video'
                     $data = $media['data'];
                     
-                    // Extract base64 content
-                    $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
+                    // Determine extension based on type
+                    if ($type === 'image') {
+                        // Extract base64 content for image
+                        $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
+                        $extension = '.jpg';
+                    } else if ($type === 'video') {
+                        // Extract base64 content for video
+                        $data = preg_replace('#^data:video/\w+;base64,#i', '', $data);
+                        $extension = '.mp4';
+                    } else {
+                        continue; // Skip unknown types
+                    }
+                    
                     $data = str_replace(' ', '+', $data);
                     $decoded = base64_decode($data);
                     
                     if ($decoded !== false) {
                         // Generate filename
-                        $extension = '.jpg';
                         $name_gen = hexdec(uniqid()) . $extension;
                         
                         // Ensure directory exists
@@ -114,8 +124,12 @@ class PostController extends Controller
                         // Save file
                         file_put_contents(public_path('uploads/' . $name_gen), $decoded);
                         
-                        // Add to images array
-                        $savedMedia['images'][] = $name_gen;
+                        // Add to appropriate array
+                        if ($type === 'image') {
+                            $savedMedia['images'][] = $name_gen;
+                        } else if ($type === 'video') {
+                            $savedMedia['videos'][] = $name_gen;
+                        }
                     }
                 }
             }
@@ -123,6 +137,7 @@ class PostController extends Controller
         
         // Count media files
         $imageCount = count($savedMedia['images']);
+        $videoCount = count($savedMedia['videos']);
        
         // Build post data - title is now optional/auto-generated
         $postData = [
@@ -145,17 +160,17 @@ class PostController extends Controller
         // Store media as JSON in 'image' column (for backward compatibility)
         $mediaColumnName = 'image'; // Change to 'media' if you renamed the column
         
-        if (!empty($savedMedia['images'])) {
+        if (!empty($savedMedia['images']) || !empty($savedMedia['videos'])) {
             $postData[$mediaColumnName] = json_encode($savedMedia);
         }
        
         // Save post to database
         $post = Post::create($postData);
-
+    
         // ✅ POST CREATE POINT (+10)
         PointController::add($user_id, 10);
-
     
+        
         // Send notifications to followers
         try {
             $postCreator = Auth::user();
@@ -165,13 +180,17 @@ class PostController extends Controller
                 'post_id' => $post->id,
                 'creator_id' => $user_id,
                 'followers_count' => $followers->count(),
-                'images_count' => $imageCount
+                'images_count' => $imageCount,
+                'videos_count' => $videoCount
             ]);
     
             foreach ($followers as $follower) {
                 $mediaInfo = [];
                 if ($imageCount > 0) {
                     $mediaInfo[] = $imageCount . ' image(s)';
+                }
+                if ($videoCount > 0) {
+                    $mediaInfo[] = $videoCount . ' video(s)';
                 }
                 $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
                 
@@ -194,11 +213,35 @@ class PostController extends Controller
             ]);
         }
        
+        // Build success message
+        $successMessage = "Post created successfully";
+        $mediaDetails = [];
+        
         if ($imageCount > 0) {
-            return back()->with('success', "Post created successfully with {$imageCount} image(s)!");
-        } else {
-            return back()->with('success', "Post created successfully!");
+            $mediaDetails[] = "{$imageCount} image(s)";
         }
+        if ($videoCount > 0) {
+            $mediaDetails[] = "{$videoCount} video(s)";
+        }
+        
+        if (!empty($mediaDetails)) {
+            $successMessage .= " with " . implode(' and ', $mediaDetails) . "!";
+        } else {
+            $successMessage .= "!";
+        }
+        
+        // store method এর শেষে এই return statement টা change করুন:
+
+// Success response for AJAX
+if ($request->ajax() || $request->wantsJson()) {
+    return response()->json([
+        'success' => true,
+        'message' => $successMessage
+    ]);
+}
+
+// Regular redirect for non-AJAX requests
+return back()->with('success', $successMessage);
     }
 
 

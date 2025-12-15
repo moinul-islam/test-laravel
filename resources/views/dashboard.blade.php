@@ -199,11 +199,11 @@
 
        {{-- Title Field - Removed --}}
 
-       {{-- Image Upload Only (Max 5) --}}
+       {{-- Image & Video Upload (Max 5 Images + 1 Video) --}}
        <div class="mb-4">
-          <label for="media" class="form-label">Choose Images (Maximum 5)</label>
-          <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,.heic,.heif">
-          <small class="text-muted">Upload at least one image OR fill the description field. Max 5 images. Formats: JPG, PNG, HEIC, HEIF</small>
+          <label for="media" class="form-label">Choose Images & Videos</label>
+          <input type="file" name="media[]" class="form-control" id="mediaInput" multiple accept="image/*,video/*,.heic,.heif">
+          <small class="text-muted">Upload at least one image/video OR fill the description field. Max 5 images + 1 video (max 20MB). Formats: JPG, PNG, HEIC, HEIF, MP4, MOV</small>
           
           {{-- Hidden field for processed media data --}}
           <input type="hidden" name="media_data" id="mediaData">
@@ -213,7 +213,7 @@
              <div class="progress mb-2">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="mediaProgress"></div>
              </div>
-             <small id="mediaStatusText">Processing images...</small>
+             <small id="mediaStatusText">Processing media...</small>
           </div>
           
           {{-- Media Preview --}}
@@ -234,7 +234,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const MAX_WIDTH = 1800;
     const MAX_HEIGHT = 1800;
     const IMAGE_QUALITY = 0.7;
-    const MAX_IMAGES = 5; // Maximum 5 images allowed
+    const MAX_IMAGES = 5;
+    const MAX_VIDEOS = 1;
+    const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
     
     const mediaInput = document.getElementById('mediaInput');
     const mediaDataInput = document.getElementById('mediaData');
@@ -251,12 +253,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const files = Array.from(this.files);
         if (files.length === 0) return;
         
-        // Check if total images would exceed the limit
-        const totalImagesAfterUpload = processedMediaArray.length + files.length;
-        if (totalImagesAfterUpload > MAX_IMAGES) {
-            alert(`আপনি সর্বোচ্চ ${MAX_IMAGES}টি ছবি আপলোড করতে পারবেন। বর্তমানে ${processedMediaArray.length}টি ছবি আছে।\n\nYou can upload a maximum of ${MAX_IMAGES} images. Currently you have ${processedMediaArray.length} image(s).`);
-            this.value = ''; // Clear the input
+        // Separate images and videos
+        const imageFiles = files.filter(f => f.type.startsWith('image/') || f.name.match(/\.(heic|heif)$/i));
+        const videoFiles = files.filter(f => f.type.startsWith('video/'));
+        
+        // Count current media
+        const currentImages = processedMediaArray.filter(m => m.type === 'image').length;
+        const currentVideos = processedMediaArray.filter(m => m.type === 'video').length;
+        
+        // Check limits
+        if (currentImages + imageFiles.length > MAX_IMAGES) {
+            alert(`আপনি সর্বোচ্চ ${MAX_IMAGES}টি ছবি আপলোড করতে পারবেন। বর্তমানে ${currentImages}টি ছবি আছে।\n\nYou can upload a maximum of ${MAX_IMAGES} images. Currently you have ${currentImages} image(s).`);
+            this.value = '';
             return;
+        }
+        
+        if (currentVideos + videoFiles.length > MAX_VIDEOS) {
+            alert(`আপনি সর্বোচ্চ ${MAX_VIDEOS}টি ভিডিও আপলোড করতে পারবেন।\n\nYou can upload a maximum of ${MAX_VIDEOS} video.`);
+            this.value = '';
+            return;
+        }
+        
+        // Check video size
+        for (let video of videoFiles) {
+            if (video.size > MAX_VIDEO_SIZE) {
+                alert(`ভিডিও সাইজ সর্বোচ্চ 20MB হতে পারবে। "${video.name}" অনেক বড়।\n\nVideo size must be max 20MB. "${video.name}" is too large.`);
+                this.value = '';
+                return;
+            }
         }
         
         mediaProcessingStatus.style.display = 'block';
@@ -269,31 +293,55 @@ document.addEventListener('DOMContentLoaded', function() {
             mediaProgress.style.width = ((i / files.length) * 100) + '%';
             const file = files[i];
             
-            mediaStatusText.textContent = `Processing image ${i + 1} of ${files.length}...`;
+            const isVideo = file.type.startsWith('video/');
+            mediaStatusText.textContent = `Processing ${isVideo ? 'video' : 'image'} ${i + 1} of ${files.length}...`;
+            
             try {
-                const processedBase64 = await processImage(file);
-                processedMediaArray.push({
-                    type: 'image',
-                    data: processedBase64
-                });
-                addMediaPreview(processedBase64, 'image', processedMediaArray.length - 1);
+                if (isVideo) {
+                    const processedBase64 = await processVideo(file);
+                    processedMediaArray.push({
+                        type: 'video',
+                        data: processedBase64
+                    });
+                    addMediaPreview(processedBase64, 'video', processedMediaArray.length - 1);
+                } else {
+                    const processedBase64 = await processImage(file);
+                    processedMediaArray.push({
+                        type: 'image',
+                        data: processedBase64
+                    });
+                    addMediaPreview(processedBase64, 'image', processedMediaArray.length - 1);
+                }
             } catch (error) {
-                console.error('Image processing failed:', error);
-                alert('Image processing failed: ' + file.name);
+                console.error('Media processing failed:', error);
+                alert('Media processing failed: ' + file.name + '\nError: ' + error.message);
             }
         }
         
         mediaProgress.style.width = '100%';
-        mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> All images processed successfully! (${processedMediaArray.length}/${MAX_IMAGES})`;
+        const imgCount = processedMediaArray.filter(m => m.type === 'image').length;
+        const vidCount = processedMediaArray.filter(m => m.type === 'video').length;
+        mediaStatusText.innerHTML = `<i class="fas fa-check-circle text-success"></i> All media processed! (${imgCount}/${MAX_IMAGES} images, ${vidCount}/${MAX_VIDEOS} video)`;
         mediaDataInput.value = JSON.stringify(processedMediaArray);
         
-        // Clear the file input
         this.value = '';
         
         setTimeout(() => {
             mediaProcessingStatus.style.display = 'none';
         }, 2000);
     });
+    
+    // Process video - just read as base64
+    async function processVideo(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                resolve(e.target.result);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
     
     // Read file as base64
     function readFileAsBase64(file) {
@@ -379,10 +427,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const col = document.createElement('div');
         col.className = 'col-6 col-md-3';
         
+        const mediaElement = type === 'video' 
+            ? `<video src="${base64}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;" controls></video>`
+            : `<img src="${base64}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;">`;
+        
+        const badgeText = type === 'video' ? 'Video' : `Image ${processedMediaArray.filter((m, i) => i <= index && m.type === 'image').length}`;
+        
         col.innerHTML = `
             <div class="position-relative">
-                <img src="${base64}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;">
-                <span class="badge bg-primary position-absolute top-0 start-0 m-1">Image ${index + 1}</span>
+                ${mediaElement}
+                <span class="badge bg-${type === 'video' ? 'success' : 'primary'} position-absolute top-0 start-0 m-1">${badgeText}</span>
                 <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="removeMedia(${index})">
                     <i class="fas fa-times"></i>
                 </button>
@@ -405,7 +459,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show updated count
         if (processedMediaArray.length > 0) {
-            mediaStatusText.innerHTML = `${processedMediaArray.length}/${MAX_IMAGES} images uploaded`;
+            const imgCount = processedMediaArray.filter(m => m.type === 'image').length;
+            const vidCount = processedMediaArray.filter(m => m.type === 'video').length;
+            mediaStatusText.innerHTML = `${imgCount}/${MAX_IMAGES} images, ${vidCount}/${MAX_VIDEOS} video uploaded`;
             mediaProcessingStatus.style.display = 'block';
         }
     };
@@ -416,21 +472,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('category_name');
     const descriptionField = document.getElementById('description');
     
-    // Function to check validation: Category is REQUIRED + at least one of (Description OR Images)
     function validateForm() {
-        // Check if category is filled (REQUIRED)
         const categoryFilled = categorySelect && categorySelect.value !== '';
-        
-        // Check description
         const descriptionFilled = descriptionField && descriptionField.value.trim() !== '';
+        const mediaFilled = processedMediaArray.length > 0;
         
-        // Check images
-        const imagesFilled = processedMediaArray.length > 0;
+        const isValid = categoryFilled && (descriptionFilled || mediaFilled);
         
-        // Category must be filled AND (Description OR Images must be filled)
-        const isValid = categoryFilled && (descriptionFilled || imagesFilled);
-        
-        // Enable submit button if validation passes
         if (submitBtn) {
             submitBtn.disabled = !isValid;
         }
@@ -438,7 +486,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return isValid;
     }
     
-    // Add event listeners to check validation
     if (categorySelect) {
         categorySelect.addEventListener('change', validateForm);
     }
@@ -447,7 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
         descriptionField.addEventListener('input', validateForm);
     }
     
-    // Call validateForm whenever images change
     const originalAddMediaPreview = addMediaPreview;
     window.addMediaPreview = function(...args) {
         originalAddMediaPreview.apply(this, args);
@@ -461,21 +507,110 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
             // Check if media is still processing
             if (mediaProcessingStatus.style.display !== 'none' && mediaStatusText.textContent.includes('Processing')) {
-                e.preventDefault();
-                alert('Please wait for image processing to complete!');
+                alert('Please wait for media processing to complete!');
                 return false;
             }
             
             // Check validation
             if (!validateForm()) {
-                e.preventDefault();
-                alert('অনুগ্রহ করে Category নির্বাচন করুন এবং Description অথবা Image যোগ করুন\n\nPlease select a Category and add either Description or Images');
+                alert('অনুগ্রহ করে Category নির্বাচন করুন এবং Description অথবা Image/Video যোগ করুন\n\nPlease select a Category and add either Description or Images/Videos');
                 return false;
             }
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+            
+            // Show uploading message
+            showToast('আপনার পোস্ট আপলোড হচ্ছে... / Your post is uploading...', 'info');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Prepare form data
+            const formData = new FormData(form);
+            
+            try {
+                // Send AJAX request
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    showToast('পোস্ট সফলভাবে তৈরি হয়েছে! / Post created successfully!', 'success');
+                    
+                    // Reset form
+                    form.reset();
+                    processedMediaArray = [];
+                    mediaPreviewContainer.innerHTML = '';
+                    mediaDataInput.value = '';
+                    
+                    // Reload page after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Error
+                    showToast(result.message || 'পোস্ট তৈরিতে সমস্যা হয়েছে / Error creating post', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span id="submitBtnText">Create Post</span>';
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('নেটওয়ার্ক সমস্যা / Network error', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span id="submitBtnText">Create Post</span>';
+            }
         });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        // Remove any existing toast
+        const existingToast = document.getElementById('uploadToast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        const bgColor = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        const toastHtml = `
+            <div id="uploadToast" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+                <div class="toast show ${bgColor} text-white" role="alert">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fas ${icon} me-2"></i>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            const toast = document.getElementById('uploadToast');
+            if (toast) {
+                toast.remove();
+            }
+        }, 5000);
     }
     
     // Initial validation check
@@ -493,6 +628,9 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 .badge {
     font-size: 10px;
+}
+.toast {
+    min-width: 300px;
 }
 </style>
          <div class="modal-footer">
