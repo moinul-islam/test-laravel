@@ -33,7 +33,7 @@
     <!-- Modal -->
     <div class="modal fade" id="sellTicketModal" tabindex="-1" aria-labelledby="sellTicketModalLabel" aria-hidden="true">
       <div class="modal-dialog">
-        <form method="POST" action="{{ route('moderator.sellTicket') }}">
+        <form method="POST" action="{{ route('moderator.sellTicket') }}" onsubmit="return validatePhoneNumber();">
             @csrf
             <div class="modal-content">
               <div class="modal-header">
@@ -47,7 +47,8 @@
                   </div>
                   <div class="mb-3">
                       <label for="phone_number" class="form-label">ফোন নম্বর</label>
-                      <input type="text" class="form-control" id="phone_number" name="phone_number" required>
+                      <input type="text" class="form-control" id="phone_number" name="phone_number" required pattern="^\d{11}$" maxlength="11" minlength="11" title="১১-সংখ্যার সঠিক ফোন নম্বর দিন (যেমন: 01XXXXXXXXX)">
+                      <small class="text-muted">১১ সংখ্যার মোবাইল নম্বর লিখুন (ex: 01XXXXXXXXX)</small>
                   </div>
                   <div class="mb-3">
                       <label for="ticket_quantity" class="form-label">টিকেট সংখ্যা</label>
@@ -60,6 +61,18 @@
               </div>
             </div>
         </form>
+        <script>
+        function validatePhoneNumber() {
+            const phoneInput = document.getElementById('phone_number');
+            const phone = phoneInput.value.trim();
+            if (!/^\d{11}$/.test(phone)) {
+                alert('অনুগ্রহ করে ১১ সংখ্যার সঠিক ফোন নম্বর লিখুন।');
+                phoneInput.focus();
+                return false;
+            }
+            return true;
+        }
+        </script>
       </div>
     </div>
 

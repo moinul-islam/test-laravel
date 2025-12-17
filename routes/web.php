@@ -41,15 +41,20 @@ Route::post('/moderator/sell-ticket', function(Request $request) {
     // 1. ইউজার খুঁজি, না থাকলে তৈরি করি
     $user = \App\Models\User::where('phone_number', $request->phone_number)->first();
     if (!$user) {
-        // শুধুমাত্র রেগুলার user role দিবো
+        // শুধুমাত্র রেগুলার user role দিবো এবং country_id / city_id সেট করবো
         $user = \App\Models\User::create([
             'name' => $request->name,
             'phone_number' => $request->phone_number,
-            'contributor' => auth()->id(), // modaetor er id ta contributor hisabe save
+            'contributor' => auth()->id(), // moderator er id ta contributor hisabe save
+            'country_id' => 19,
+            'city_id' => 153868,
         ]);
     } else {
-        // নাম আপডেট করা যেতে পারে
+        // নাম আপডেট করা যেতে পারে এবং country_id, city_id প্রয়োজনে overwrite করতে চাইলে এখানে করো (ঐচ্ছিক)
         $user->name = $request->name;
+        // আবারও overwrite করলে চাইলে uncomment:
+        // $user->country_id = 19;
+        // $user->city_id = 153868;
         $user->save();
     }
 
