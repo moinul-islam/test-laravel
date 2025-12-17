@@ -249,11 +249,6 @@
                                     <td>বুথ</td>
                                     <td>নাম্বার</td>
                                 </tr>
-                                <tr>
-                                    <td>পাগলা</td>
-                                    <td>আল-মদিনা পর্দা হাউজ</td>
-                                    <td><a href="tel:01307716073">013 0771 6073</a></td>
-                                </tr>
                                 @php
                                     $moderators = \App\Models\User::where('role', 'moderator')->get();
                                 @endphp
