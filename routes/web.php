@@ -26,6 +26,45 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+// Moderator দ্বারা নতুন টিকেট বিক্রি (user না থাকলে create হবে, থাকলে update হবে এবং টিকেট সেভ হবে)
+Route::post('/moderator/sell-ticket', function(Request $request) {
+    // Only moderator can access
+    if (!auth()->check() || auth()->user()->role !== 'moderator') {
+        abort(403, 'Unauthorized');
+    }
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'phone_number' => 'required|string|max:20',
+        'ticket_quantity' => 'required|integer|min:1',
+    ]);
+
+    // 1. ইউজার খুঁজি, না থাকলে তৈরি করি
+    $user = \App\Models\User::where('phone_number', $request->phone_number)->first();
+    if (!$user) {
+        // শুধুমাত্র রেগুলার user role দিবো
+        $user = \App\Models\User::create([
+            'name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'contributor' => auth()->id(), // modaetor er id ta contributor hisabe save
+        ]);
+    } else {
+        // নাম আপডেট করা যেতে পারে
+        $user->name = $request->name;
+        $user->save();
+    }
+
+    // 2. mela_ticket এ টিকেট যুক্ত করি (একই user_id, ফোন নম্বর, মডারেটর ও কবে যেন একই দিনে একাধিক না হয়)
+    DB::table('mela_ticket')->insert([
+        'user_id' => $user->id,
+        'user_ticket' => $request->ticket_quantity,
+        'moderator_id' => auth()->id(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    return redirect()->back()->with('success', 'নতুন টিকেট সফলভাবে বিক্রি হয়েছে!');
+})->name('moderator.sellTicket')->middleware('auth');
+
+
 Route::post('/claim-mela-ticket', function(Request $request) {
     $request->validate([
         'user_id' => 'required|integer',
