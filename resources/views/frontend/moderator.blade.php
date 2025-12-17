@@ -99,7 +99,15 @@
                     @endphp
                     <tr>
                         <td>
-                            {{ $user?->name ?? '-' }}
+                            @if($user && !empty($user->username))
+                                <a href="{{ route('profile.show', ['username' => $user->username]) }}" target="_blank">
+                                    {{ $user->name }}
+                                </a>
+                            @elseif($user)
+                                {{ $user->name }}
+                            @else
+                                -
+                            @endif
                         </td>
                         <td>
                             @if($user?->phone_number)
