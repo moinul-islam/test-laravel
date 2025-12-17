@@ -41,10 +41,16 @@ Route::post('/moderator/sell-ticket', function(Request $request) {
     // 1. ইউজার খুঁজি, না থাকলে তৈরি করি
     $user = \App\Models\User::where('phone_number', $request->phone_number)->first();
     if (!$user) {
-        // শুধুমাত্র রেগুলার user role দিবো এবং country_id / city_id সেট করবো
+        // random username generate
+        do {
+            $randomUsername = 'user' . rand(100000, 999999);
+        } while (\App\Models\User::where('username', $randomUsername)->exists());
+
+        // শুধুমাত্র রেগুলার user role দিবো এবং country_id / city_id সেট করবো এবং random username ও থাকবো
         $user = \App\Models\User::create([
             'name' => $request->name,
             'phone_number' => $request->phone_number,
+            'username' => $randomUsername,
             'contributor' => auth()->id(), // moderator er id ta contributor hisabe save
             'country_id' => 19,
             'city_id' => 153868,
