@@ -216,6 +216,23 @@
             </div>
         </div>
     </div>
+    @else
+    <div class="col-12 mb-2">
+        <div class="alert alert-success d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e5ffe5 20%, #f7f7e9 100%); border: 1.5px solid #b2eaba;">
+            <div>
+                <div style="color: #116620;">
+                    <i style="margin-right: 5px; color: #0abb87;" class="bi bi-patch-check-fill"></i>
+                    আপনার টিকেটটি ইতোমধ্যে ক্লেইম হয়েছে। নিজ এলাকার টিকেট বিক্রেতার (টিকেট সেলার) থেকে টিকেটটি সংগ্রহ করুন।
+
+                <div class="mt-2">
+                    <span style="color: #207567; font-size: 13px;">
+                        যেকোনো দরকারে <a href="https://wa.me/8801875750099" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: underline;">WhatsApp</a> এ নক করুন: <b>018 7575 0099</b>
+                    </span>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
     @endif
 
     <!-- Ticket Modal -->
