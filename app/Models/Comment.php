@@ -13,11 +13,16 @@ class Comment extends Model
     {
         return $this->belongsTo(Post::class);
     }
-
     public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+{
+    return $this->belongsTo(User::class)->withDefault([
+        'name' => 'Deleted User',
+        'username' => 'deleted',
+        'image' => 'default.png'
+    ]);
+}
+
+   
 
      public function parent()
     {
