@@ -222,7 +222,39 @@
                         <span class="fw-bold text-success">{{ 1 + floor($points / 30) }}</span> টি ফ্রি টিকেট আপনার জন্য প্রস্তুত!
                     </p>
                     <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
-                    <p class="mt-3 text-muted small">আপনার নিকটে যে কোন বুথ থেকে টিকেট সংগ্রহণ করতে পারবেন। আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
+                    <p class="mt-3 text-muted small">আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
+
+
+                <div class="container mb-3">
+                    <table class="table table-bordered text-center align-middle">
+                        <tbody>
+                            <tr>
+                                <td colspan="3">টিকেট সংগ্রহণ এর স্থান</td>
+                            </tr>
+                            <tr>
+                                <td>এলাকা</td>
+                                <td>বুথ</td>
+                                <td>নাম্বার</td>
+                            </tr>
+                            <tr>
+                                <td>নয়ামাটি</td>
+                                <td>নিয়ম আইটি</td>
+                                <td><a href="tel:01875750099">018 7575 0099</a></td>
+                            </tr>
+                            <tr>
+                                <td>পাগলা</td>
+                                <td>আল-মদিনা পর্দা হাউজ</td>
+                                <td><a href="tel:01307716073">013 0771 6073</a></td>
+                            </tr>
+                            <tr>
+                                <td>শাহিবাজার</td>
+                                <td>মাহামুদ</td>
+                                <td><a href="tel:01400724438">014 0072 4438</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
