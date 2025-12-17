@@ -201,7 +201,7 @@
             <div>
                 <div style="color: #04595c;">
                     <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
-                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন, আপনার মোট পয়েন্টঃ {{ $points }}। আপনি লাইক, কমেন্ট ও পোস্টের মাধ্যমে পয়েন্ট বাড়াতে পারেন। প্রতি ৩০ পয়েন্টে আপনি একটি করে টিকেট ফ্রি পাবেন। 
+                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন। 
                     <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
                 </div>
             </div>
