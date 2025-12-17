@@ -3,6 +3,15 @@
 
 <div class="container py-4">
     <h2 class="mb-4">মডারেটর টিকেট তালিকা</h2>
+
+    @php
+        // Moderator কতগুলো টিকেট accept করেছে এবং তার user_ticket গুলোর যোগফল গণনা করা হচ্ছে
+        $myTicketCount = \Illuminate\Support\Facades\DB::table('mela_ticket')
+            ->where('moderator_id', auth()->id())
+            ->sum('user_ticket');
+    @endphp
+    <p>আপনি মোটঃ <strong>{{ $myTicketCount }}</strong> টিকেট দিয়েছেন।</p>
+
     <div class="table-responsive">
         <table class="table table-bordered table-striped align-middle">
             <thead class="table-dark">
@@ -19,7 +28,7 @@
                     // mela_ticket টেবিল থেকে সকল টিকেটের এন্ট্রি
                     $tickets = \Illuminate\Support\Facades\DB::table('mela_ticket')->get();
                 @endphp
-                @foreach($tickets as $ticket)
+                @foreach($tickets->sortByDesc('id') as $ticket)
                     @php
                         $user = \App\Models\User::find($ticket->user_id);
                         $moderator = $ticket->moderator_id ? \App\Models\User::find($ticket->moderator_id) : null;
