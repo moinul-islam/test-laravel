@@ -220,6 +220,30 @@
           <div id="mediaPreviewContainer" class="mt-3 row g-2"></div>
        </div>
 
+       <div class="alert alert-warning mb-3" id="nonAreaPostWarning" style="display:none;">
+           <i class="bi bi-exclamation-triangle"></i>
+           এলাকার পোস্ট বাদে অন্য কোনো পোস্ট করলে পোস্ট রিমুভ হয়ে যাবে।
+           <br>
+           <small>Any post outside your area will be removed automatically.</small>
+       </div>
+       <script>
+       document.addEventListener('DOMContentLoaded', function() {
+           const categorySelect = document.getElementById('category_name');
+           const warningDiv = document.getElementById('nonAreaPostWarning');
+           const areaCategoryNames = @json($categories->where('cat_type', 'post')->where('is_area', 1)->pluck('category_name')->toArray());
+           
+           categorySelect && categorySelect.addEventListener('change', function() {
+               const selected = this.value;
+               // Show warning if not an area category
+               if (selected && !areaCategoryNames.includes(selected)) {
+                   warningDiv.style.display = '';
+               } else {
+                   warningDiv.style.display = 'none';
+               }
+           });
+       });
+       </script>
+
        {{-- Description Field --}}
        <div class="mb-3">
           <label for="description" class="form-label">Post Description</label>
