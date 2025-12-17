@@ -38,7 +38,13 @@
                             {{ $user?->name ?? '-' }}
                         </td>
                         <td>
-                            <small class="text-muted">{{ $user?->phone_number }}</small>
+                            @if($user?->phone_number)
+                                <a href="tel:{{ $user->phone_number }}">
+                                    <small>{{ $user->phone_number }}</small>
+                                </a>
+                            @else
+                                <small class="text-muted">-</small>
+                            @endif
                         </td>
                         <td>
                             <span class="fw-bold">{{ $ticket->user_ticket }}</span>
@@ -47,7 +53,13 @@
                             @if($moderator)
                                 <span class="badge bg-success">{{ $moderator->name }}</span>
                                 <br>
-                                <small>{{ $moderator->phone_number }}</small>
+                                <small>
+                                    @if($moderator->phone_number)
+                                        <a href="tel:{{ $moderator->phone_number }}" class="text-muted">{{ $moderator->phone_number }}</a>
+                                    @else
+                                        -
+                                    @endif
+                                </small>
                             @else
                                 <span class="text-danger">None</span>
                             @endif
