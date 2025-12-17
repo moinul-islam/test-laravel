@@ -19,6 +19,63 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\AuthController;
 
+
+
+
+// টিকেট উত্তলনের জন্য (controller ছাড়া, route এ logic থাকবে)
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+Route::post('/claim-mela-ticket', function(Request $request) {
+    $request->validate([
+        'user_id' => 'required|integer',
+        'user_ticket' => 'required|integer|min:1',
+    ]);
+    // Ticket একবারই উত্তলন করা যাবে - একই user_id হলে insert হবে না
+    $alreadyClaimed = DB::table('mela_ticket')
+        ->where('user_id', $request->user_id)
+        ->exists();
+    if ($alreadyClaimed) {
+        return redirect()->back()->with('error', 'আপনি ইতিমধ্যে টিকেট উত্তলন করেছেন!');
+    }
+    DB::table('mela_ticket')->insert([
+        'user_id' => $request->user_id,
+        'user_ticket' => $request->user_ticket,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    return redirect()->back()->with('success', 'আপনার টিকেট সফলভাবে উত্তলন হয়েছে!');
+})->name('claim.mela.ticket')->middleware('auth');
+
+
+// Moderator দ্বারা টিকেট accept (moderator_id save)
+Route::post('/mela-ticket/accept', function(Request $request) {
+    $request->validate([
+        'ticket_id' => 'required|integer|exists:mela_ticket,id',
+    ]);
+    // Moderator only
+    if (!auth()->check() || auth()->user()->role !== 'moderator') {
+        abort(403, 'Unauthorized');
+    }
+    $ticket = DB::table('mela_ticket')->where('id', $request->ticket_id)->first();
+    if (!$ticket) {
+        return redirect()->back()->with('error', 'Ticket not found!');
+    }
+    if ($ticket->moderator_id) {
+        return redirect()->back()->with('error', 'এই টিকেটটি ইতিমধ্যেই গ্রহণ করা হয়েছে!');
+    }
+    DB::table('mela_ticket')->where('id', $request->ticket_id)->update([
+        'moderator_id' => auth()->id(),
+        'updated_at' => now(),
+    ]);
+    return redirect()->back()->with('success', 'আপনি সফলভাবে টিকেট গ্রহণ করেছেন!');
+})->name('mela_ticket.accept')->middleware('auth');
+
+
+
+
+
+
 Route::get('/myauth', [AuthController::class, 'showAuthPage'])->name('myauth');
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
 Route::post('/send-otp', [AuthController::class, 'sendOTP']);
@@ -61,6 +118,12 @@ Route::view('/terms-and-condition', 'footerpage.terms-and-condition');
     
 Route::middleware(['auth', 'role:admin'])->get('/admin', [DeliveryController::class, 'adminIndex'])
     ->name('admin.page');
+    Route::middleware(['auth', 'role:moderator'])->get('/moderator', [DeliveryController::class, 'moderatorIndex'])
+    ->name('moderator.page');
+
+
+
+
 
 // Category Management Routes
 Route::middleware(['auth', 'role:admin'])->group(function () {

@@ -196,6 +196,15 @@
     @endphp
     @auth
     @if(Auth::check())
+    @php
+        // Check if the current user already claimed a mela ticket
+        $alreadyClaimed = false;
+        if ($currentUser) {
+            $alreadyClaimed = \Illuminate\Support\Facades\DB::table('mela_ticket')->where('user_id', $currentUser->id)->exists();
+        }
+    @endphp
+
+    @if(!$alreadyClaimed)
     <div class="col-12 mb-2">
         <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
             <div>
@@ -207,6 +216,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Ticket Modal -->
     <div class="modal fade" id="ticketModal" tabindex="-1" aria-labelledby="ticketModalLabel" aria-hidden="true">
@@ -214,7 +224,10 @@
             <div class="modal-content shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title" id="ticketModalLabel"><i class="bi bi-gift text-success"></i> আপনার ফ্রি টিকেট</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    
                 </div>
                 <div class="modal-body py-4 text-center">
                     <div style="font-size: 48px;" class="mb-2"><i class="bi bi-ticket-perforated text-primary"></i></div>
@@ -225,40 +238,53 @@
                     <p class="mt-3 text-muted small">আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
                     <p class="mt-3 text-danger small">*টিকেট সংরক্ষণের সময় আপনার ফোনটি সাথে রখুন। নিজ দায়িত্বে টিকেট উত্তলন করুন, টিকেট একবারই উত্তলন করা সম্ভব।</p>
 
-
-                <div class="container mb-3">
-                    <table class="table table-bordered text-center align-middle">
-                        <tbody>
-                            <tr>
-                                <td colspan="3">টিকেট সংগ্রহণ এর স্থান</td>
-                            </tr>
-                            <tr>
-                                <td>এলাকা</td>
-                                <td>বুথ</td>
-                                <td>নাম্বার</td>
-                            </tr>
-                            <tr>
-                                <td>নয়ামাটি</td>
-                                <td>নিয়ম আইটি</td>
-                                <td><a href="tel:01875750099">018 7575 0099</a></td>
-                            </tr>
-                            <tr>
-                                <td>পাগলা</td>
-                                <td>আল-মদিনা পর্দা হাউজ</td>
-                                <td><a href="tel:01307716073">013 0771 6073</a></td>
-                            </tr>
-                            <tr>
-                                <td>শাহিবাজার</td>
-                                <td>মাহামুদ</td>
-                                <td><a href="tel:01400724438">014 0072 4438</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
+                    <div class="container mb-3">
+                        <table class="table table-bordered text-center align-middle">
+                            <tbody>
+                                <tr>
+                                    <td colspan="3">টিকেট সংগ্রহণ এর স্থান</td>
+                                </tr>
+                                <tr>
+                                    <td>এলাকা</td>
+                                    <td>বুথ</td>
+                                    <td>নাম্বার</td>
+                                </tr>
+                                <tr>
+                                    <td>পাগলা</td>
+                                    <td>আল-মদিনা পর্দা হাউজ</td>
+                                    <td><a href="tel:01307716073">013 0771 6073</a></td>
+                                </tr>
+                                @php
+                                    $moderators = \App\Models\User::where('role', 'moderator')->get();
+                                @endphp
+                                @foreach($moderators as $moderator)
+                                    <tr>
+                                        <td>{{ $moderator->area ?? '-' }}</td>
+                                        <td>{{ $moderator->name ?? '-' }}</td>
+                                        <td>
+                                            @if($moderator->phone_number)
+                                                <a href="tel:{{ $moderator->phone_number }}">{{ $moderator->phone_number }}</a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+                    <!-- টিকেট উত্তলন বাটন -->
+                    <form id="claimTicketForm" method="POST" action="{{ route('claim.mela.ticket') }}" style="margin-left: 10px;">
+                        @csrf
+                        <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+                        <input type="hidden" name="user_ticket" value="{{ 1 + floor($points / 30) }}">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                onclick="return confirm('আপনি কি নিশ্চিত যে আপনি টিকেট উত্তলন করতে চান? টিকেট একবারই উত্তলন করা সম্ভব।');">
+                            <i class="bi bi-check2-circle"></i> টিকেট উত্তলন
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
