@@ -247,13 +247,13 @@
                     
                 </div>
                 <div class="modal-body py-4 text-center">
-                    <div style="font-size: 48px;" class="mb-2"><i class="bi bi-ticket-perforated text-primary"></i></div>
+                    <!-- <div style="font-size: 48px;" class="mb-2"><i class="bi bi-ticket-perforated text-primary"></i></div> -->
                     <p class="h5 mb-3">
                         <span class="fw-bold text-success">{{ 1 + floor($points / 30) }}</span> টি ফ্রি টিকেট আপনার জন্য প্রস্তুত!
                     </p>
-                    <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
-                    <p class="mt-3 text-muted small">আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p>
-                    <p class="mt-3 text-danger small">*টিকেট সংরক্ষণের সময় আপনার ফোনটি সাথে রখুন। নিজ দায়িত্বে টিকেট উত্তলন করুন, টিকেট একবারই উত্তলন করা সম্ভব।</p>
+                    <!-- <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
+                    <p class="mt-3 text-muted small">আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p> -->
+                    <p class="mt-3 text-danger small">*টিকেট সংগ্রহণের জন্য আপনার এলাকার এজেন্ট এর সাথে যোগাযোগ করুন এবং তখন <strong>টিকেট উত্তলন</strong> বাটনে ক্লিক করুন। </p>
 
                     <div class="container mb-3">
                         <table class="table table-bordered text-center align-middle">
