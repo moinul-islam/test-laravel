@@ -147,6 +147,8 @@
                         controlsList="nodownload"
                         style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
                         data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
+                        playsinline
+                        webkit-playsinline
                         {{-- muted attribute will be set by JS based on user preference --}}
                         >
                         Your browser does not support the video tag.
