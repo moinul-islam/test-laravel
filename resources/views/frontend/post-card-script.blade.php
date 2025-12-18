@@ -663,4 +663,109 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<script>
+// Global video initialization function
+function initializeVideos(container = document) {
+    // Set global mute preference
+    let globalMutePref = localStorage.getItem('globalVideoMuted');
+    if (globalMutePref === null) globalMutePref = "true";
+    
+    function setAllVideosMuted(muted) {
+        container.querySelectorAll('video.post-carousel-video').forEach(video => {
+            video.muted = muted;
+            if (!video.paused && !muted && video.readyState >= 2) {
+                video.play().catch(()=>{});
+            }
+        });
+    }
+    
+    setAllVideosMuted(globalMutePref === "true");
+    
+    // Volume change listener (only set once globally)
+    if (!window._global_video_mute_listener) {
+        window._global_video_mute_listener = true;
+        document.addEventListener('volumechange', function(event) {
+            let target = event.target;
+            if (target && target.classList && target.classList.contains('post-carousel-video')) {
+                localStorage.setItem('globalVideoMuted', target.muted ? "true" : "false");
+                setAllVideosMuted(target.muted);
+            }
+        }, true);
+    }
+    
+    // Initialize each carousel
+    container.querySelectorAll('[id^="mixedMediaCarousel-"]').forEach(carousel => {
+        const carouselId = carousel.id;
+        const postId = carouselId.replace('mixedMediaCarousel-', '');
+        
+        // Initial video autoplay
+        const activeVideo = carousel.querySelector('.carousel-item.active video.post-carousel-video');
+        if (activeVideo) {
+            activeVideo.play().catch(()=>{});
+            
+            // Intersection observer for auto-pause
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        activeVideo.play().catch(()=>{});
+                    } else {
+                        activeVideo.pause();
+                    }
+                });
+            }, { threshold: 0.5 });
+            observer.observe(activeVideo);
+            
+            // Store observer reference
+            activeVideo._intersectionObserver = observer;
+        }
+        
+        // Carousel slide change handler (remove existing listeners first)
+        const existingListener = carousel._slideListener;
+        if (existingListener) {
+            carousel.removeEventListener('slid.bs.carousel', existingListener);
+        }
+        
+        const slideListener = function(event) {
+            const videos = carousel.querySelectorAll('video.post-carousel-video');
+            videos.forEach((v) => {
+                v.pause();
+                if (v._intersectionObserver) {
+                    v._intersectionObserver.disconnect();
+                }
+            });
+            
+            const newActive = carousel.querySelector('.carousel-item.active video.post-carousel-video');
+            if (newActive) {
+                newActive.play().catch(()=>{});
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            newActive.play().catch(()=>{});
+                        } else {
+                            newActive.pause();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                observer.observe(newActive);
+                newActive._intersectionObserver = observer;
+            }
+        };
+        
+        carousel.addEventListener('slid.bs.carousel', slideListener);
+        carousel._slideListener = slideListener; // Store reference
+    });
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeVideos();
+});
+
+// Lazy loading এর পরে call করার জন্য window এ expose করুন
+window.reinitializeVideos = function(newContainer) {
+    initializeVideos(newContainer || document);
+};
+</script>
+
 @include('frontend.body.share-button')
