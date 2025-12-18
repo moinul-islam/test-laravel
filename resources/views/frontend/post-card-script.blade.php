@@ -35,59 +35,124 @@
                }
            });
        }
-       
+
+
        function loadMorePosts() {
-           isLoading = true;
-           const currentPage = parseInt(currentPageInput.value);
-           const nextPage = currentPage + 1;
-           const loadingSpinner = document.getElementById('loading-spinner');
+    isLoading = true;
+    const currentPage = parseInt(currentPageInput.value);
+    const nextPage = currentPage + 1;
+    const loadingSpinner = document.getElementById('loading-spinner');
+    
+    if (loadingSpinner) {
+        loadingSpinner.style.display = 'block';
+    }
+    
+    // ✅ আপনার original URL handling রাখলাম
+    fetch(`{{ url()->current() }}?page=${nextPage}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        if (data.posts) {
+            const container = document.getElementById('posts-container');
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data.posts;
+            
+            // ✅ নতুন যোগ: Store new posts before appending
+            const newPosts = Array.from(tempDiv.children);
+            
+            while (tempDiv.firstChild) {
+                container.appendChild(tempDiv.firstChild);
+            }
+            
+            // ✅ নতুন যোগ: Initialize videos for newly loaded posts
+            if (typeof window.reinitializeVideos === 'function') {
+                newPosts.forEach(post => {
+                    window.reinitializeVideos(post);
+                });
+            }
+            
+            currentPageInput.value = nextPage;
+            
+            if (!data.hasMore) {
+                hasMorePages.value = '0';
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+            }
+            
+            isLoading = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        isLoading = false;
+    });
+}
+       
+    //    function loadMorePosts() {
+    //        isLoading = true;
+    //        const currentPage = parseInt(currentPageInput.value);
+    //        const nextPage = currentPage + 1;
+    //        const loadingSpinner = document.getElementById('loading-spinner');
            
-           if (loadingSpinner) {
-               loadingSpinner.style.display = 'block';
-           }
+    //        if (loadingSpinner) {
+    //            loadingSpinner.style.display = 'block';
+    //        }
            
-           fetch(`{{ url()->current() }}?page=${nextPage}`, {
-               method: 'GET',
-               headers: {
-                   'X-Requested-With': 'XMLHttpRequest',
-                   'Accept': 'application/json'
-               }
-           })
-           .then(response => response.json())
-           .then(data => {
-               if (loadingSpinner) {
-                   loadingSpinner.style.display = 'none';
-               }
+    //        fetch(`{{ url()->current() }}?page=${nextPage}`, {
+    //            method: 'GET',
+    //            headers: {
+    //                'X-Requested-With': 'XMLHttpRequest',
+    //                'Accept': 'application/json'
+    //            }
+    //        })
+    //        .then(response => response.json())
+    //        .then(data => {
+    //            if (loadingSpinner) {
+    //                loadingSpinner.style.display = 'none';
+    //            }
                
-               if (data.posts) {
-                   const container = document.getElementById('posts-container');
-                   const tempDiv = document.createElement('div');
-                   tempDiv.innerHTML = data.posts;
+    //            if (data.posts) {
+    //                const container = document.getElementById('posts-container');
+    //                const tempDiv = document.createElement('div');
+    //                tempDiv.innerHTML = data.posts;
                    
-                   while (tempDiv.firstChild) {
-                       container.appendChild(tempDiv.firstChild);
-                   }
+    //                while (tempDiv.firstChild) {
+    //                    container.appendChild(tempDiv.firstChild);
+    //                }
                    
-                   currentPageInput.value = nextPage;
+    //                currentPageInput.value = nextPage;
                    
-                   if (!data.hasMore) {
-                       hasMorePages.value = '0';
-                       if (loadingSpinner) {
-                           loadingSpinner.remove();
-                       }
-                   }
+    //                if (!data.hasMore) {
+    //                    hasMorePages.value = '0';
+    //                    if (loadingSpinner) {
+    //                        loadingSpinner.remove();
+    //                    }
+    //                }
                    
-                   isLoading = false;
-               }
-           })
-           .catch(error => {
-               console.error('Error:', error);
-               if (loadingSpinner) {
-                   loadingSpinner.style.display = 'none';
-               }
-               isLoading = false;
-           });
-       }
+    //                isLoading = false;
+    //            }
+    //        })
+    //        .catch(error => {
+    //            console.error('Error:', error);
+    //            if (loadingSpinner) {
+    //                loadingSpinner.style.display = 'none';
+    //            }
+    //            isLoading = false;
+    //        });
+    //    }
    
        // ===== COMMENT TOGGLE =====
        document.addEventListener('click', function(e) {

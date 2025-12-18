@@ -134,29 +134,21 @@
                         onclick="openImageModal('{{ asset('uploads/' . $item['file']) }}')"
                         id="img-zoomer"
                         >
-                     @elseif($item['type'] === 'video')
-                     <div style="background:#000;max-height:400px;overflow:hidden;display:flex;align-items:center;">
-                        @php
-                        // Store mute preference in localStorage, fallback to true (muted) if not set
-                        $mutePref = 'true';
-                        @endphp
-                        <video 
-                        src="{{ asset('uploads/' . $item['file']) }}"
-                        class="w-100 post-carousel-video"
-                        controls
-                        controlsList="nodownload"
-                        style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
-                        data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
-                        playsinline
-                        webkit-playsinline
-                        {{-- muted attribute will be set by JS based on user preference --}}
-                        >
-                        Your browser does not support the video tag.
-                        </video>
-                       
-                     </div>
-                     
-                     @endif
+                        @elseif($item['type'] === 'video')
+<div style="background:#000;max-height:400px;overflow:hidden;display:flex;align-items:center;">
+    <video 
+        src="{{ asset('uploads/' . $item['file']) }}"
+        class="w-100 post-carousel-video"
+        controls
+        controlsList="nodownload"
+        style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
+        data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
+        playsinline
+        webkit-playsinline>
+        Your browser does not support the video tag.
+    </video>
+</div>
+@endif
                   </div>
                   @endforeach
                </div>
