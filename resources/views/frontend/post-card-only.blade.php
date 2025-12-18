@@ -130,7 +130,7 @@
                         src="{{ asset('uploads/' . $item['file']) }}" 
                         alt="Post Image {{ $index + 1 }}" 
                         class="img-fluid d-block w-100"
-                        style="width: 100%; height: 400px; object-fit: cover; cursor: pointer;"
+                        style="width: 100%; {{ count($allMedia) === 1 ? 'max-height:400px;' : 'height:400px;' }} object-fit: cover; cursor: pointer;"
                         onclick="openImageModal('{{ asset('uploads/' . $item['file']) }}')"
                         id="img-zoomer"
                         >
