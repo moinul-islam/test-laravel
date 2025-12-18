@@ -130,7 +130,7 @@
                         src="{{ asset('uploads/' . $item['file']) }}" 
                         alt="Post Image {{ $index + 1 }}" 
                         class="img-fluid d-block w-100"
-                        style="width: 100%; {{ count($allMedia) === 1 ? 'max-height:400px;' : 'height:400px;' }} object-fit: cover; cursor: pointer;"
+                        style="width: 100%; height: 400px; object-fit: cover; cursor: pointer;"
                         onclick="openImageModal('{{ asset('uploads/' . $item['file']) }}')"
                         id="img-zoomer"
                         >
@@ -141,122 +141,109 @@
                         $mutePref = 'true';
                         @endphp
                         <video 
-                            src="{{ asset('uploads/' . $item['file']) }}"
-                            class="w-100 post-carousel-video"
-                            controls
-                            controlsList="nodownload"
-                            style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
-                            data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
-                            playsinline
-                            webkit-playsinline
-                            {{-- muted attribute will be set by JS based on user preference --}}
+                        src="{{ asset('uploads/' . $item['file']) }}"
+                        class="w-100 post-carousel-video"
+                        controls
+                        controlsList="nodownload"
+                        style="max-height:400px;object-fit:contain;width:100%;background:#000;border-radius:0;margin-bottom:0;"
+                        data-carousel-id="mixedMediaCarousel-{{ $post->id }}"
+                        {{-- muted attribute will be set by JS based on user preference --}}
                         >
                         Your browser does not support the video tag.
                         </video>
                         <script>
+                           // Unified mute/unmute handling for all videos
+                           document.addEventListener('DOMContentLoaded', function () {
+                               let globalMutePref = localStorage.getItem('globalVideoMuted');
+                               if (globalMutePref === null) globalMutePref = "true"; // default: muted
+                           
+                               function setAllVideosMuted(muted) {
+                                   document.querySelectorAll('video.post-carousel-video').forEach(video => {
+                                       video.muted = muted;
+                                       // For some browsers, changing mute requires reloading playback state
+                                       if (!video.paused && !muted && video.readyState >= 2) {
+                                           video.play().catch(()=>{});
+                                       }
+                                   });
+                               }
+                           
+                               // Set the mute state initially
+                               setAllVideosMuted(globalMutePref === "true");
+                           
+                               // Listen for mute/unmute actions on any .post-carousel-video
+                               let listening = false;
+                               if (!window._global_video_mute_listener) {
+                                   window._global_video_mute_listener = true;
+                                   document.addEventListener('volumechange', function(event) {
+                                       let target = event.target;
+                                       if (target && target.classList && target.classList.contains('post-carousel-video')) {
+                                           localStorage.setItem('globalVideoMuted', target.muted ? "true" : "false");
+                                           setAllVideosMuted(target.muted);
+                                       }
+                                   }, true);
+                                   // For browsers that do not propagate 'volumechange' outside video, use event delegation
+                                   document.body.addEventListener('click', function(e) {
+                                       if (e.target && e.target.tagName === 'VIDEO' && e.target.classList.contains('post-carousel-video')) {
+                                           setTimeout(() => {
+                                               localStorage.setItem('globalVideoMuted', e.target.muted ? "true" : "false");
+                                               setAllVideosMuted(e.target.muted);
+                                           }, 50);
+                                       }
+                                   }, true);
+                               }
+                           });
+                        </script>
+                     </div>
+                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
-                            // 1. Mute/unmute global logic: sync all video mute status via localStorage
-                            let globalMutePref = localStorage.getItem('globalVideoMuted');
-                            if (globalMutePref === null) globalMutePref = "true";
-                            function setAllVideosMuted(muted) {
-                                document.querySelectorAll('video.post-carousel-video').forEach(video => {
-                                    video.muted = muted;
-                                });
+                            const video = document.querySelector('#mixedMediaCarousel-{{ $post->id }} .carousel-item.active video.post-carousel-video');
+                            if (video) {
+                                // Autoplay when the slide is shown
+                                video.play().catch(()=>{});
                             }
-                            setAllVideosMuted(globalMutePref === "true");
-
-                            // For mute/unmute UI: keep all in sync if one is changed by user
-                            if (!window._global_video_mute_listener) {
-                                window._global_video_mute_listener = true;
-
-                                // Listen on volumechange & sync mute value to all others, also persist
-                                document.addEventListener('volumechange', function(event) {
-                                    let target = event.target;
-                                    if (target && target.classList && target.classList.contains('post-carousel-video')) {
-                                        localStorage.setItem('globalVideoMuted', target.muted ? "true" : "false");
-                                        setAllVideosMuted(target.muted);
-                                    }
-                                }, true);
-
-                                // For browsers where mute changes don't propagate via 'volumechange'
-                                document.body.addEventListener('click', function(e) {
-                                    if (e.target && e.target.tagName === 'VIDEO' && e.target.classList.contains('post-carousel-video')) {
-                                        setTimeout(() => {
-                                            localStorage.setItem('globalVideoMuted', e.target.muted ? "true" : "false");
-                                            setAllVideosMuted(e.target.muted);
-                                        }, 50);
-                                    }
-                                }, true);
-                            }
-
-                            // 2. Autoplay only active slide video, stop others
-                            const carouselId = 'mixedMediaCarousel-{{ $post->id }}';
-                            const carousel = document.getElementById(carouselId);
-
-                            // Helper: find all videos in this carousel
-                            function getCarouselVideos() {
-                                if (!carousel) return [];
-                                return Array.from(carousel.querySelectorAll('video.post-carousel-video'));
-                            }
-
-                            // Pause all except the given video
-                            function pauseOtherVideos(currentVideo) {
-                                getCarouselVideos().forEach(video => {
-                                    if (video !== currentVideo) {
-                                        video.pause();
-                                        try { video.currentTime = 0; } catch(e) {}
-                                    }
-                                });
-                            }
-
-                            let slideVisibilityObserver = null;
-
-                            function handleSlideVideoAutoplay() {
-                                getCarouselVideos().forEach(video => { video.pause(); });
-                                // Autoplay only the active video (if any)
-                                const activeVideo = carousel ? carousel.querySelector('.carousel-item.active video.post-carousel-video') : null;
-                                if (activeVideo) {
-                                    pauseOtherVideos(activeVideo);
-
-                                    // Autoplay if allowed by browser
-                                    if (activeVideo.readyState > 1) {
-                                        activeVideo.play().catch(()=>{});
-                                    } else {
-                                        activeVideo.addEventListener('canplay', function handler() {
-                                            activeVideo.removeEventListener('canplay', handler);
-                                            activeVideo.play().catch(()=>{});
-                                        });
-                                    }
-
-                                    // Remove old observer
-                                    if (slideVisibilityObserver) {
-                                        slideVisibilityObserver.disconnect();
-                                    }
-                                    // Intersection observer: pause if not visible enough (auto stop)
-                                    slideVisibilityObserver = new window.IntersectionObserver(entries => {
-                                        entries.forEach(entry => {
-                                            if (entry.isIntersecting) {
-                                                activeVideo.play().catch(()=>{});
-                                            } else {
-                                                activeVideo.pause();
-                                            }
-                                        });
-                                    }, { threshold: 0.5 });
-                                    slideVisibilityObserver.observe(activeVideo);
-                                }
-                            }
-
-                            // On DOM ready or slide change: ensure only current active video is playing
+                        
+                            let observer;
+                            // Auto-pause when scrolled out of view
+                            setTimeout(function () {
+                                const vid = document.querySelector('#mixedMediaCarousel-{{ $post->id }} .carousel-item.active video.post-carousel-video');
+                                if (!vid) return;
+                                observer = new IntersectionObserver((entries) => {
+                                    entries.forEach(entry => {
+                                        if (entry.isIntersecting) {
+                                            vid.play().catch(()=>{});
+                                        } else {
+                                            vid.pause();
+                                        }
+                                    });
+                                }, { threshold: 0.5 }); // 50% visible threshold
+                                observer.observe(vid);
+                            }, 400);
+                        
+                            // When slide changes, play new, pause previous
+                            const carousel = document.getElementById('mixedMediaCarousel-{{ $post->id }}');
                             if (carousel) {
-                                // Initially set
-                                setTimeout(handleSlideVideoAutoplay, 350);
-
                                 carousel.addEventListener('slid.bs.carousel', function(event) {
-                                    handleSlideVideoAutoplay();
+                                    const videos = carousel.querySelectorAll('video.post-carousel-video');
+                                    videos.forEach((v, idx) => v.pause());
+                                    const newActive = carousel.querySelector('.carousel-item.active video.post-carousel-video');
+                                    if (newActive) {
+                                        newActive.play().catch(()=>{});
+                                        if (observer) observer.disconnect();
+                                        observer = new IntersectionObserver((entries) => {
+                                            entries.forEach(entry => {
+                                                if (entry.isIntersecting) {
+                                                    newActive.play().catch(()=>{});
+                                                } else {
+                                                    newActive.pause();
+                                                }
+                                            });
+                                        }, { threshold: 0.5 });
+                                        observer.observe(newActive);
+                                    }
                                 });
                             }
                         });
-                        </script>
+                     </script>
                      @endif
                   </div>
                   @endforeach
