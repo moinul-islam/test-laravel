@@ -186,7 +186,6 @@
         $currentUser = auth()->user();
         $points = 0;
         if ($currentUser) {
-            // Use PointController or alternative method to get points
             try {
                 $points = \App\Http\Controllers\PointController::get($currentUser->id);
             } catch (\Throwable $e) {
@@ -197,42 +196,63 @@
     @auth
     @if(Auth::check())
     @php
-        // Check if the current user already claimed a mela ticket
+        // Check mela_ticket data for current user
         $alreadyClaimed = false;
+        $ticketData = null;
         if ($currentUser) {
-            $alreadyClaimed = \Illuminate\Support\Facades\DB::table('mela_ticket')->where('user_id', $currentUser->id)->exists();
+            $ticketData = \Illuminate\Support\Facades\DB::table('mela_ticket')
+                ->where('user_id', $currentUser->id)
+                ->first();
+            $alreadyClaimed = $ticketData ? true : false;
         }
+        $isCollectedFromModerator = $alreadyClaimed && $ticketData->moderator_id;
     @endphp
 
     @if(!$alreadyClaimed)
-    <div class="col-12 mb-2">
-        <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
-            <div>
-                <div style="color: #04595c;">
-                    <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
-                    অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন। 
-                    <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
+        <div class="col-12 mb-2">
+            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+                <div>
+                    <div style="color: #04595c;">
+                        <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
+                        অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন। 
+                        <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    @else
-    <div class="col-12 mb-2">
-        <div class="alert alert-success d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e5ffe5 20%, #f7f7e9 100%); border: 1.5px solid #b2eaba;">
-            <div>
-                <div style="color: #116620;">
-                    <i style="margin-right: 5px; color: #0abb87;" class="bi bi-patch-check-fill"></i>
-                    আপনার টিকেটটি ইতোমধ্যে ক্লেইম হয়েছে। নিজ এলাকার টিকেট বিক্রেতার (টিকেট সেলার) থেকে টিকেটটি সংগ্রহ করুন।
-
-                <div class="mt-2">
-                    <span style="color: #207567; font-size: 13px;">
-                        যেকোনো দরকারে <a href="https://wa.me/8801875750099" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: underline;">WhatsApp</a> এ নক করুন: <b>018 7575 0099</b>
-                    </span>
-                </div>
+    @elseif($alreadyClaimed && !$isCollectedFromModerator)
+        <div class="col-12 mb-2">
+            <div class="alert alert-success d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e5ffe5 20%, #f7f7e9 100%); border: 1.5px solid #b2eaba;">
+                <div>
+                    <div style="color: #116620;">
+                        <i style="margin-right: 5px; color: #0abb87;" class="bi bi-patch-check-fill"></i>
+                        আপনার টিকেটটি ইতোমধ্যে ক্লেইম হয়েছে। নিজ এলাকার টিকেট বিক্রেতার (টিকেট সেলার) থেকে টিকেটটি সংগ্রহ করুন।
+                        <div class="mt-2">
+                            <span style="color: #207567; font-size: 13px;">
+                                যেকোনো দরকারে <a href="https://wa.me/8801875750099" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: underline;">WhatsApp</a> এ নক করুন: <b>018 7575 0099</b>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    @elseif($alreadyClaimed && $isCollectedFromModerator)
+        <div class="col-12 mb-2">
+            <div class="alert alert-primary d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e3f7e9 20%, #fffbe7 100%); border: 1.5px solid #b2eaba;">
+                <div>
+                    <div style="color: #0b770c;">
+                        <i style="margin-right: 5px; color: #3bb94e;" class="bi bi-emoji-smile-fill"></i>
+                        <strong>অভিনন্দন!</strong> আপনি সফলভাবে টিকেট উত্তোলন সম্পন্ন করেছেন।  
+                        <div class="mt-2">
+                            টিকেটটি সংগ্রহের জন্য ধন্যবাদ।  
+                            <span style="color: #207567; font-size: 13px;">
+                                আরও কোনো তথ্য বা সহায়তার প্রয়োজন হলে <a href="https://wa.me/8801875750099" target="_blank" style="color: #25D366; font-weight: bold; text-decoration: underline;">WhatsApp</a> এ যোগাযোগ করুন: <b>018 7575 0099</b>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
     <!-- Ticket Modal -->
