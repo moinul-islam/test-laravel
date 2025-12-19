@@ -92,6 +92,12 @@
                     // mela_ticket টেবিল থেকে সকল টিকেটের এন্ট্রি
                     $tickets = \Illuminate\Support\Facades\DB::table('mela_ticket')->get();
                 @endphp
+                <!-- সার্চ বক্স শুরু -->
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="ticketTableSearch" placeholder="সার্চ করুন (নাম, ফোন, মডারেটর)">
+                </div>
+                <!-- সার্চ বক্স শেষ -->
+
                 @foreach($tickets->sortByDesc('id') as $ticket)
                     @php
                         $user = \App\Models\User::find($ticket->user_id);
@@ -151,6 +157,28 @@
                         </td>
                     </tr>
                 @endforeach
+
+                <script>
+                // সার্চ ফাংশন
+                document.addEventListener("DOMContentLoaded", function() {
+                    const searchInput = document.getElementById('ticketTableSearch');
+                    const table = searchInput ? searchInput.closest('.table-responsive').querySelector('table') : null;
+                    if(searchInput && table) {
+                        searchInput.addEventListener('keyup', function() {
+                            const filter = searchInput.value.toLowerCase();
+                            const rows = table.querySelectorAll('tbody tr');
+                            rows.forEach(function(row) {
+                                let rowText = row.innerText.toLowerCase();
+                                if (rowText.indexOf(filter) > -1) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                        });
+                    }
+                });
+                </script>
             </tbody>
         </table>
     </div>
