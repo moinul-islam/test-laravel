@@ -295,7 +295,10 @@
                                         <td>{{ $moderator->name ?? '-' }}</td>
                                         <td>
                                             @if($moderator->phone_number)
-                                                <a href="tel:{{ $moderator->phone_number }}">{{ $moderator->phone_number }}</a>
+                                                <a href="tel:{{ $moderator->phone_number }}"><i class="bi bi-telephone-fill me-2"></i></a>
+                                                <a href="https://wa.me/{{ preg_replace('/\D/', '', $moderator->phone_number) }}" target="_blank" style="margin-left: 5px;">
+                                                    <i class="bi bi-whatsapp" style="color: #25D366;"></i>
+                                                </a>
                                             @else
                                                 -
                                             @endif
