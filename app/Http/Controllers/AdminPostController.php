@@ -13,6 +13,66 @@ use Illuminate\Routing\Controllers\Middleware;
 
 class AdminPostController extends Controller implements HasMiddleware
 {
+
+    // app/Http/Controllers/AdminController.php
+
+
+
+   
+        public function postApproval(Request $request)
+        {
+            $query = Post::with('category', 'user');
+            
+            // Date filtering
+            if ($request->start_date) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+            
+            // Status filtering
+            if ($request->has('status') && $request->status !== '') {
+                $query->where('status', $request->status);
+            }
+            
+            $posts = $query->orderBy('created_at', 'desc')->paginate(15);
+            $categories = Category::all();
+            
+            return view('admin.post-approval', compact('posts', 'categories'));
+        }
+
+        public function updatePostStatus(Request $request, $id)
+        {
+            $post = Post::findOrFail($id);
+            $post->status = $request->status;
+            $post->save();
+            
+            return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+        }
+
+        public function updatePost(Request $request, $id)
+        {
+            $request->validate([
+                'category_id' => 'required|exists:categories,id',
+                'status' => 'required|in:0,1'
+            ]);
+            
+            $post = Post::findOrFail($id);
+            $post->category_id = $request->category_id;
+            $post->status = $request->status;
+            $post->save();
+            
+            return redirect()->back()->with('success', 'Post updated successfully');
+        }
+
+        public function viewPost($id)
+        {
+            $post = Post::with('category', 'user')->findOrFail($id);
+            return view('admin.post-view', compact('post'));
+        }
+   
+
     /**
      * Get the middleware that should be assigned to the controller.
      */

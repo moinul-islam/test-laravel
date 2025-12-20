@@ -17,31 +17,86 @@ class LocationController extends Controller
 
 
     public function usernameWiseHome($username, $categorySlug = null)
-{
-    // প্রথমে check করুন এটি কোনো valid location path কিনা
-    $validLocationPaths = ['international'];
-    
-    // Check if it's a country username
-    $isCountry = \App\Models\Country::where('username', $username)->exists();
-    
-    // Check if it's a city username
-    $isCity = \App\Models\City::where('username', $username)->exists();
-    
-    // Check if it's a user username
-    $isUser = User::where('username', $username)->exists();
-    
-    // যদি কোনোটাই না হয়, তাহলে home page এ redirect করুন
-    if (!$isUser && !$isCountry && !$isCity && !in_array($username, $validLocationPaths)) {
-        return redirect('/')->with('error', 'Page not found');
-    }
-    
-    // যদি user হয় (Dashboard)
-    if ($isUser) {
-        $user = User::where('username', $username)->first();
+    {
+        // প্রথমে check করুন এটি কোনো valid location path কিনা
+        $validLocationPaths = ['international'];
         
-        // Posts query start
+        // Check if it's a country username
+        $isCountry = \App\Models\Country::where('username', $username)->exists();
+        
+        // Check if it's a city username
+        $isCity = \App\Models\City::where('username', $username)->exists();
+        
+        // Check if it's a user username
+        $isUser = User::where('username', $username)->exists();
+        
+        // যদি কোনোটাই না হয়, তাহলে home page এ redirect করুন
+        if (!$isUser && !$isCountry && !$isCity && !in_array($username, $validLocationPaths)) {
+            return redirect('/')->with('error', 'Page not found');
+        }
+        
+        // ✅ যদি user হয় (Profile/Dashboard) - সব posts দেখাবে
+        if ($isUser) {
+            $user = User::where('username', $username)->first();
+            
+            // Posts query start
+            $postsQuery = Post::with(['user', 'category'])
+                        ->where('user_id', $user->id);
+            // ✅ Profile page এ কোন status filter নেই - সব posts আসবে
+            
+            // Category filter
+            $category = null;
+            if ($categorySlug) {
+                $category = Category::where('slug', $categorySlug)
+                                  ->where('cat_type', 'post')
+                                  ->first();
+                if ($category) {
+                    $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+                    $categoryIds[] = $category->id;
+                    $postsQuery->whereIn('category_id', $categoryIds);
+                }
+            }
+            
+            $posts = $postsQuery->latest()->paginate(12);
+            
+            // AJAX request এর জন্য
+            if (request()->ajax()) {
+                return response()->json([
+                    'posts' => view('frontend.posts-partial', compact('posts'))->render(),
+                    'hasMore' => $posts->hasMorePages()
+                ]);
+            }
+            
+            $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
+            return view("dashboard", compact('posts', 'user', 'categories', 'category'));
+        }
+        
+        // ✅ Location based posts (country/city/international) - শুধু status=1 posts
+        $path = $username;
+        $userIds = [];
+        
+        if ($path == 'international') {
+            $userIds = User::pluck('id')->toArray();
+        } else {
+            $country = \App\Models\Country::where('username', $path)->first();
+            if ($country) {
+                $userIds = User::where('country_id', $country->id)
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                $city = \App\Models\City::where('username', $path)->first();
+                if ($city) {
+                    $userIds = User::where('city_id', $city->id)
+                        ->pluck('id')
+                        ->toArray();
+                }
+            }
+        }
+        
+        // Posts fetch করুন
         $postsQuery = Post::with(['user', 'category'])
-                    ->where('user_id', $user->id);
+                    ->whereIn('user_id', $userIds)
+                    ->where('status', 1); // ✅ Home page এ শুধু active posts (status=1)
         
         // Category filter
         $category = null;
@@ -49,12 +104,12 @@ class LocationController extends Controller
             $category = Category::where('slug', $categorySlug)
                               ->where('cat_type', 'post')
                               ->first();
-            
-            if ($category) {
-                $categoryIds = $this->getAllDescendantCategoryIds($category->id);
-                $categoryIds[] = $category->id;
-                $postsQuery->whereIn('category_id', $categoryIds);
+            if (!$category) {
+                abort(404, 'Category not found');
             }
+            $categoryIds = $this->getAllDescendantCategoryIds($category->id);
+            $categoryIds[] = $category->id;
+            $postsQuery->whereIn('category_id', $categoryIds);
         }
         
         $posts = $postsQuery->latest()->paginate(12);
@@ -67,65 +122,8 @@ class LocationController extends Controller
             ]);
         }
         
-        $categories = \App\Models\Category::whereIn('cat_type', ['product', 'service','post'])->get();
-        
-        return view("dashboard", compact('posts', 'user', 'categories', 'category'));
+        return view("frontend.index", compact('posts', 'category'));
     }
-    
-    // Location based posts (country/city/international)
-    $path = $username;
-    $userIds = [];
-    
-    if ($path == 'international') {
-        $userIds = User::pluck('id')->toArray();
-    } else {
-        $country = \App\Models\Country::where('username', $path)->first();
-        if ($country) {
-            $userIds = User::where('country_id', $country->id)
-                ->pluck('id')
-                ->toArray();
-        } else {
-            $city = \App\Models\City::where('username', $path)->first();
-            if ($city) {
-                $userIds = User::where('city_id', $city->id)
-                    ->pluck('id')
-                    ->toArray();
-            }
-        }
-    }
-    
-    // Posts fetch করুন
-    $postsQuery = Post::with(['user', 'category'])
-                ->whereIn('user_id', $userIds);
-    
-    // Category filter
-    $category = null;
-    if ($categorySlug) {
-        $category = Category::where('slug', $categorySlug)
-                          ->where('cat_type', 'post')
-                          ->first();
-        
-        if (!$category) {
-            abort(404, 'Category not found');
-        }
-        
-        $categoryIds = $this->getAllDescendantCategoryIds($category->id);
-        $categoryIds[] = $category->id;
-        $postsQuery->whereIn('category_id', $categoryIds);
-    }
-    
-    $posts = $postsQuery->latest()->paginate(12);
-    
-    // AJAX request এর জন্য
-    if (request()->ajax()) {
-        return response()->json([
-            'posts' => view('frontend.posts-partial', compact('posts'))->render(),
-            'hasMore' => $posts->hasMorePages()
-        ]);
-    }
-    
-    return view("frontend.index", compact('posts', 'category'));
-}
 
 /**
  * Get all descendant category IDs recursively
