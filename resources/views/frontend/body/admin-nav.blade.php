@@ -5,11 +5,17 @@
             $currentPath = request()->path();
         @endphp
         <div class="btn-group me-2 mb-2 flex-nowrap overflow-auto" role="group" aria-label="Admin navigation group" style="white-space:nowrap; scrollbar-width:auto; -webkit-overflow-scrolling:touch;">
+            
             <a href="/admin"
-                class="btn flex-shrink-0 btn-outline-primary{{ ($currentPath === 'admin') ? ' active btn-primary text-white' : '' }}">
+                class="btn flex-shrink-0 btn-outline-primary{{ ($currentRouteName === 'admin.page') ? ' active btn-success text-white' : '' }}">
                 Admin 
-                @if($currentPath === 'admin')
-                    <span class="ms-1 text-primary">&#10003;</span>
+                @if($currentRouteName === 'admin.page')
+                @endif
+            </a>
+            <a href="/admin/posts/approval"
+                class="btn flex-shrink-0 btn-outline-danger{{ ($currentRouteName === 'admin.posts.approval') ? ' active btn-danger text-white' : '' }}">
+                Post Approval 
+                @if($currentRouteName === 'admin.posts.approval')
                 @endif
             </a>
             <a href="/categories"

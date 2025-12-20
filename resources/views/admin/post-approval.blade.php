@@ -2,6 +2,7 @@
 @section('main-content')
 
 <div class="container-fluid py-4">
+@include('frontend.body.admin-nav')
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
