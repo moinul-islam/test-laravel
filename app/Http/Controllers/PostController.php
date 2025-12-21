@@ -212,6 +212,17 @@ class PostController extends Controller
                 'post_id' => $post->id
             ]);
         }
+
+
+        // ✅ SEND NOTIFICATIONS TO ALL MODERATORS (NEW CODE)
+        try {
+            $this->notifyModerators($post, Auth::user(), $imageCount, $videoCount);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send notifications to moderators', [
+                'error' => $e->getMessage(),
+                'post_id' => $post->id
+            ]);
+        }
        
         // Build success message
         $successMessage = "Post created successfully";
@@ -840,19 +851,22 @@ public function showByCategory(Request $request, $username, $slug)
     private function notifyModerators($post, $postCreator, $imageCount = 0, $videoCount = 0)
     {
         try {
-            // Get all moderators
-            $moderators = \App\Models\User::where('role', 'moderator')
-                ->orWhere('role', 'Moderator')
-                ->orWhere('role', 'admin') // Admin-o jodi notify korte chan
-                ->get();
+            // Get all moderators (adjust role names according to your database)
+            $moderators = \App\Models\User::where(function($query) {
+                $query->where('role', 'moderator')
+                    ->orWhere('role', 'Moderator')
+                    ->orWhere('role', 'admin')
+                    ->orWhere('role', 'Admin');
+            })->get();
             
             \Log::info('Notifying moderators about new post', [
                 'post_id' => $post->id,
+                'post_creator' => $postCreator->name,
                 'moderators_count' => $moderators->count()
             ]);
             
             if ($moderators->isEmpty()) {
-                \Log::info('No moderators found to notify');
+                \Log::warning('No moderators found in database');
                 return false;
             }
             
@@ -866,29 +880,39 @@ public function showByCategory(Request $request, $username, $slug)
             }
             $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
             
-            $priceText = $post->price ? " - Price: {$post->price}" : "";
+            $priceText = $post->price ? " - Price: ৳{$post->price}" : "";
+            
+            $notificationsSent = 0;
             
             // Send notification to each moderator
             foreach ($moderators as $moderator) {
-                // Moderator nijei post create korle take notify korbo na
+                // Skip if moderator is the post creator
                 if ($moderator->id === $postCreator->id) {
+                    \Log::info('Skipping notification - moderator is post creator', [
+                        'moderator_id' => $moderator->id
+                    ]);
                     continue;
                 }
                 
-                $this->sendBrowserNotification(
+                $sent = $this->sendBrowserNotification(
                     $moderator->id,
                     '🔔 New Post for Review',
-                    "{$postCreator->name} created: {$post->title}{$mediaText}{$priceText}",
+                    "{$postCreator->name} created a new post: {$post->title}{$mediaText}{$priceText}",
                     $post->id,
                     url('/post/' . $post->slug),
-                    'post_moderation', // Different notification type
+                    'post_moderation',
                     $post->slug
                 );
+                
+                if ($sent) {
+                    $notificationsSent++;
+                }
             }
             
-            \Log::info('Moderator notifications sent successfully', [
+            \Log::info('Moderator notifications completed', [
                 'post_id' => $post->id,
-                'notified_count' => $moderators->count()
+                'total_moderators' => $moderators->count(),
+                'notifications_sent' => $notificationsSent
             ]);
             
             return true;
@@ -896,7 +920,8 @@ public function showByCategory(Request $request, $username, $slug)
         } catch (\Exception $e) {
             \Log::error('Error notifying moderators', [
                 'post_id' => $post->id ?? null,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return false;
         }
