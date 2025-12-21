@@ -1,7 +1,7 @@
 @extends('frontend.master')
 @section('main-content')
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     @if(auth()->check() && auth()->user()->role === 'admin')
         @include('frontend.body.admin-nav')
     @endif
@@ -35,16 +35,13 @@
                     <a href="{{ route('admin.posts.approval', ['date' => \Carbon\Carbon::now()->toDateString()]) }}" class="btn btn-secondary">Today</a>
                 </div>
             </form>
-            <div class="alert alert-info py-2 px-3 small mb-0">
-                <i class="bi bi-info-circle text-primary"></i>
-                এখানে শুধুমাত্র আজকের পোস্টগুলো দেখা যাবে। পুরাতন পোস্ট দেখতে চাইলে, উপরের তারিখ সিলেক্ট করুন।
-            </div>
+            
         </div>
     </div>
 
     <div class="row g-3">
         @forelse($posts as $post)
-            <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="col-12">
                 <div class="card shadow-sm h-100 d-flex flex-column">
                     <div class="d-flex align-items-center justify-content-between card-body pb-1">
                         <div class="d-flex align-items-center">
@@ -62,17 +59,28 @@
                                     <small class="text-muted">
                                         <i class="{{ $post->category->image }}"></i>
                                         {{ $post->category->category_name }}
+                                        <i class="bi bi-clock"></i> {{ $post->created_at->diffForHumans() }}
                                     </small>
                                 @endif
                                 <small class="text-muted d-block">
-                                    <i class="bi bi-clock"></i> {{ $post->created_at->diffForHumans() }}
+                                    
                                 </small>
                             </div>
                         </div>
                         <div class="dropdown">
+                        <div class="form-check form-switch d-inline-block ms-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="statusSwitch-{{ $post->id }}"
+                                    @if($post->status == 1) checked @endif
+                                    onchange="updateStatus({{ $post->id }}, this.checked ? 1 : 0)">
+                                <label class="form-check-label" for="statusSwitch-{{ $post->id }}">
+                                    {{ $post->status == 1 ? 'On' : 'Off' }}
+                                </label>
+                            </div>
                             <button class="btn text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
+
+
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item" href="{{ route('post.details', $post->slug) }}" target="_blank">
@@ -85,6 +93,7 @@
                                     </a>
                                 </li>
                             </ul>
+                            
                         </div>
                     </div>
                     @php
@@ -214,25 +223,7 @@
                         </div>
                     @endif
 
-                    <div class="card-body pt-2 pb-2">
-                        <div class="d-flex flex-wrap gap-2 mt-2">
-                            @if($post->status == 0)
-                                <button type="button" class="btn btn-sm btn-success" onclick="updateStatus({{ $post->id }}, 1)">
-                                    <i class="bi bi-check2"></i> Approve
-                                </button>
-                            @else
-                                <button type="button" class="btn btn-sm btn-warning" onclick="updateStatus({{ $post->id }}, 0)">
-                                    <i class="bi bi-arrow-counterclockwise"></i> Pending
-                                </button>
-                            @endif
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openEditModal({{ $post->id }})">
-                                <i class="bi bi-pencil-square"></i> Edit
-                            </button>
-                            <a href="{{ route('post.details', $post->slug) }}" class="btn btn-sm btn-info" target="_blank">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                        </div>
-                    </div>
+                   
 
                     {{-- Edit Modal --}}
                     <div class="modal fade" id="editModal{{ $post->id }}" tabindex="-1">
@@ -251,9 +242,11 @@
                                             <select name="category_id" class="form-select" required>
                                                 <option value="">Select Category</option>
                                                 @foreach($categories as $category)
-                                                    <option value="{{ $category->id }}" {{ $post->category_id == $category->id ? 'selected' : '' }}>
-                                                        {{ $category->name ?? $category->category_name }}
-                                                    </option>
+                                                    @if(isset($category->cat_type) && $category->cat_type === 'post')
+                                                        <option value="{{ $category->id }}" {{ $post->category_id == $category->id ? 'selected' : '' }}>
+                                                            {{ $category->name ?? $category->category_name }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         </div>
@@ -284,7 +277,11 @@
     </div>
     {{-- Pagination --}}
     <div class="d-flex justify-content-center mt-4">
-        {{ $posts->links('pagination::bootstrap-4') }}
+        <div class="w-100" style="overflow-x: auto; max-width: 100vw;">
+            <div class="d-inline-block">
+                {{ $posts->links('pagination::bootstrap-4') }}
+            </div>
+        </div>
     </div>
 </div>
 
