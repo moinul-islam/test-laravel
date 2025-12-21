@@ -2,7 +2,9 @@
 @section('main-content')
 
 <div class="container-fluid py-4">
-@include('frontend.body.admin-nav')
+@if(auth()->check() && auth()->user()->role === 'admin')
+    @include('frontend.body.admin-nav')
+@endif
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">

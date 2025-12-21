@@ -172,7 +172,7 @@ Route::middleware(['auth', 'role:admin'])->get('/admin', [DeliveryController::cl
     ->name('moderator.page');
 
 // Post Approval Routes - role:admin middleware add korte hobe
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:admin|moderator'])->group(function () {
     Route::get('/admin/posts/approval', [AdminPostController::class, 'postApproval'])->name('admin.posts.approval');
     Route::post('/admin/posts/{id}/status', [AdminPostController::class, 'updatePostStatus']);
     Route::put('/admin/posts/{id}', [AdminPostController::class, 'updatePost'])->name('admin.posts.update');

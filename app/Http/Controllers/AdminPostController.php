@@ -81,7 +81,7 @@ class AdminPostController extends Controller implements HasMiddleware
         return [
             'auth',
             new Middleware(function ($request, $next) {
-                if (!Auth::check() || Auth::user()->role !== 'admin') {
+                if (!Auth::check() || !in_array(Auth::user()->role, ['admin', 'moderator'])) {
                     return redirect()->route('home')->with('error', 'Unauthorized access. Admin only!');
                 }
                 return $next($request);

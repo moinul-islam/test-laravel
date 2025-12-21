@@ -2,6 +2,13 @@
 @section('main-content')
 
 <div class="container py-4">
+
+    <a href="/admin/posts/approval">
+        
+        Post Approval 
+       
+    </a>
+
     <h2 class="mb-4">মডারেটর টিকেট তালিকা</h2>
 
     @php
