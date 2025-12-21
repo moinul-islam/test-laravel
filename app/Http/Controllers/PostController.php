@@ -828,4 +828,78 @@ public function showByCategory(Request $request, $username, $slug)
         // Show the post details view
         return view('frontend.post-details', compact('post'));
     }
+
+
+
+
+
+
+    /**
+     * Notify all moderators about new post
+     */
+    private function notifyModerators($post, $postCreator, $imageCount = 0, $videoCount = 0)
+    {
+        try {
+            // Get all moderators
+            $moderators = \App\Models\User::where('role', 'moderator')
+                ->orWhere('role', 'Moderator')
+                ->orWhere('role', 'admin') // Admin-o jodi notify korte chan
+                ->get();
+            
+            \Log::info('Notifying moderators about new post', [
+                'post_id' => $post->id,
+                'moderators_count' => $moderators->count()
+            ]);
+            
+            if ($moderators->isEmpty()) {
+                \Log::info('No moderators found to notify');
+                return false;
+            }
+            
+            // Media info prepare
+            $mediaInfo = [];
+            if ($imageCount > 0) {
+                $mediaInfo[] = $imageCount . ' image(s)';
+            }
+            if ($videoCount > 0) {
+                $mediaInfo[] = $videoCount . ' video(s)';
+            }
+            $mediaText = !empty($mediaInfo) ? ' [' . implode(', ', $mediaInfo) . ']' : '';
+            
+            $priceText = $post->price ? " - Price: {$post->price}" : "";
+            
+            // Send notification to each moderator
+            foreach ($moderators as $moderator) {
+                // Moderator nijei post create korle take notify korbo na
+                if ($moderator->id === $postCreator->id) {
+                    continue;
+                }
+                
+                $this->sendBrowserNotification(
+                    $moderator->id,
+                    '🔔 New Post for Review',
+                    "{$postCreator->name} created: {$post->title}{$mediaText}{$priceText}",
+                    $post->id,
+                    url('/post/' . $post->slug),
+                    'post_moderation', // Different notification type
+                    $post->slug
+                );
+            }
+            
+            \Log::info('Moderator notifications sent successfully', [
+                'post_id' => $post->id,
+                'notified_count' => $moderators->count()
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('Error notifying moderators', [
+                'post_id' => $post->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
 }
