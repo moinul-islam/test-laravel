@@ -899,7 +899,7 @@ public function showByCategory(Request $request, $username, $slug)
                     '🔔 New Post for Review',
                     "{$postCreator->name} created a new post: {$post->title}{$mediaText}{$priceText}",
                     $post->id,
-                    url('/post/' . $post->slug),
+                    url('/admin/posts/approval'),
                     'post_moderation',
                     $post->slug
                 );
