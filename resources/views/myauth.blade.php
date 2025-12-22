@@ -89,30 +89,81 @@
                             <div class="invalid-feedback"></div>
                         </div>
 
-                        <!-- <div class="mb-3">
-                            <label for="register_image" class="form-label">Profile Image</label>
-                            <input type="file" class="form-control" id="register_image" name="image" accept="image/*">
-                            <input type="hidden" name="image_data" id="register_imageData">
-                            <div id="registerImageProcessingStatus" style="display: none;" class="mt-2">
-                                <div class="progress">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                         role="progressbar"
-                                         style="width: 0%" 
-                                         id="registerImageProgress"></div>
-                                </div>
-                                <small id="registerImageStatusText">Image processing...</small>
-                            </div>
-                            <div class="mt-2">
-                                <img id="registerImagePreview"
-                                     src=""
-                                     alt="Preview"
-                                     style="max-width: 180px; display: none; border-radius: 6px; border: 2px solid #ddd;">
-                            </div>
-                            <div class="invalid-feedback"></div>
-                        </div> -->
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-                        // kept as is
+                        // ✅ Image compression function
+                        function compressImage(file, maxWidth = 800, quality = 0.7) {
+                            return new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                
+                                reader.onload = function(e) {
+                                    const img = new Image();
+                                    
+                                    img.onload = function() {
+                                        const canvas = document.createElement('canvas');
+                                        let width = img.width;
+                                        let height = img.height;
+                                        
+                                        // Resize if needed
+                                        if (width > maxWidth) {
+                                            height = (height * maxWidth) / width;
+                                            width = maxWidth;
+                                        }
+                                        
+                                        canvas.width = width;
+                                        canvas.height = height;
+                                        
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        
+                                        // Convert to blob
+                                        canvas.toBlob(
+                                            (blob) => {
+                                                resolve(blob);
+                                            },
+                                            'image/jpeg',
+                                            quality
+                                        );
+                                    };
+                                    
+                                    img.onerror = reject;
+                                    img.src = e.target.result;
+                                };
+                                
+                                reader.onerror = reject;
+                                reader.readAsDataURL(file);
+                            });
+                        }
+
+                        // ✅ Usage in your registration form
+                        $('#register_image').on('change', async function(e) {
+                            const file = e.target.files[0];
+                            
+                            if (file) {
+                                try {
+                                    // Compress image
+                                    const compressedBlob = await compressImage(file, 800, 0.7);
+                                    
+                                    // Create new file from blob
+                                    const compressedFile = new File(
+                                        [compressedBlob], 
+                                        file.name, 
+                                        { type: 'image/jpeg' }
+                                    );
+                                    
+                                    // Create new FileList
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(compressedFile);
+                                    e.target.files = dataTransfer.files;
+                                    
+                                    console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
+                                    console.log('Compressed size:', (compressedFile.size / 1024).toFixed(2), 'KB');
+                                    
+                                } catch (error) {
+                                    console.error('Compression failed:', error);
+                                }
+                            }
+                        });
                         </script>
 
                         <div class="mb-3">
