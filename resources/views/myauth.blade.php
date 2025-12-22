@@ -27,9 +27,17 @@
                         @csrf
                         <div class="mb-3">
                             <label for="auth_email" class="form-label">Email or Phone Number</label>
-                            <input type="text" class="form-control" id="auth_email" name="email" 
-                                   pattern="(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)|(^\+?\d{10,15}$)"
-                                   title="Please enter a valid email address or phone number" required>
+                            <input 
+                                type="text"
+                                class="form-control"
+                                id="auth_email"
+                                name="email"
+                                pattern="(^[0-9]{11}$)|(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)"
+                                title="Enter a valid email address or a valid 11-digit phone number"
+                                required
+                                autocomplete="off"
+                            >
+
                             <div class="invalid-feedback"></div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100" id="emailBtn">
@@ -104,201 +112,7 @@
                         </div> -->
                         <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
                         <script>
-                        
-                        // document.addEventListener('DOMContentLoaded', function() {
-                        //     const MAX_WIDTH = 1800;
-                        //     const MAX_HEIGHT = 1800;
-                        //     const IMAGE_QUALITY = 0.7;
-
-                        //     const imageInput = document.getElementById('register_image');
-                        //     const imageDataInput = document.getElementById('register_imageData');
-                        //     const imageProcessingStatus = document.getElementById('registerImageProcessingStatus');
-                        //     const imageProgress = document.getElementById('registerImageProgress');
-                        //     const imageStatusText = document.getElementById('registerImageStatusText');
-                        //     const imagePreview = document.getElementById('registerImagePreview');
-
-                        //     if (!imageInput) return;
-
-                        //     imageInput.addEventListener('change', async function(e) {
-                        //         const file = this.files[0];
-                        //         if (!file) return;
-
-                        //         // Only allow images (by input filter, but double-check)
-                        //         const fileExt = file.name.split('.').pop().toLowerCase();
-                        //         const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-                        //         if (!allowedExts.includes(fileExt)) {
-                        //             alert('Please upload only JPG, PNG, GIF, WEBP, HEIC or HEIF files!');
-                        //             this.value = '';
-                        //             return;
-                        //         }
-
-                        //         // Show processing UI
-                        //         imageProcessingStatus.style.display = 'block';
-                        //         imageProgress.style.width = '10%';
-                        //         imageStatusText.textContent = fileExt === 'heic' || fileExt === 'heif'
-                        //             ? 'HEIC/HEIF image is being converted...'
-                        //             : 'Image is being optimized...';
-                        //         if (imagePreview) {
-                        //             imagePreview.src = '';
-                        //             imagePreview.style.display = 'none';
-                        //             imagePreview.style.border = '2px solid #ddd';
-                        //         }
-
-                        //         try {
-                        //             let processedBase64 = '';
-
-                        //             if (fileExt === 'heic' || fileExt === 'heif') {
-                        //                 imageProgress.style.width = '20%';
-                        //                 processedBase64 = await processHeicToCompressedJpeg(file);
-                        //             } else {
-                        //                 processedBase64 = await compressImage(file);
-                        //             }
-
-                        //             imageProgress.style.width = '100%';
-
-                        //             // Set preview and data
-                        //             if (imagePreview) {
-                        //                 imagePreview.src = processedBase64;
-                        //                 imagePreview.style.display = 'block';
-                        //                 imagePreview.style.border = '3px solid #28a745';
-                        //             }
-                        //             imageDataInput.value = processedBase64;
-
-                        //             // Show complete text
-                        //             const inputSize = file.size;
-                        //             let outputSize = await getBase64Size(processedBase64);
-                        //             let compressionRatio = Math.round((1 - (outputSize / inputSize)) * 100);
-
-                        //             imageStatusText.innerHTML = `<i class="fas fa-check-circle"></i> Optimization complete! <span class="text-success">(${formatFileSize(inputSize)} → ${formatFileSize(outputSize)}, ${compressionRatio}% Reduced!)</span>`;
-                        //             imageStatusText.style.color = '#28a745';
-
-                        //             setTimeout(() => {
-                        //                 imageProcessingStatus.style.display = 'none';
-                        //             }, 1500);
-
-                        //         } catch (err) {
-                        //             imageStatusText.textContent = 'Image processing failed: ' + err.message;
-                        //             imageStatusText.style.color = '#dc3545';
-                        //             imagePreview.src = '';
-                        //             imagePreview.style.display = 'none';
-                        //             imageDataInput.value = '';
-                        //             imageProcessingStatus.style.display = 'none';
-                        //             this.value = '';
-                        //         }
-                        //     });
-
-                        //     // ----- Helper functions -----
-                        //     async function processHeicToCompressedJpeg(file) {
-                        //         // Convert HEIC to JPEG Blob
-                        //         const arrayBuffer = await readFileAsArrayBuffer(file);
-                        //         const jpegBlob = await heic2any({
-                        //             blob: new Blob([arrayBuffer]),
-                        //             toType: 'image/jpeg',
-                        //             quality: 0.8
-                        //         });
-                        //         imageProgress.style.width = '45%';
-                        //         return await compressImage(jpegBlob);
-                        //     }
-
-                        //     async function compressImage(file) {
-                        //         const dataUrl = await readFileAsDataURL(file);
-                        //         const img = await loadImage(dataUrl);
-
-                        //         let width = img.width, height = img.height;
-                        //         let targetWidth = width, targetHeight = height;
-
-                        //         // Resize logic
-                        //         if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-                        //             if (width > height) {
-                        //                 targetHeight = Math.round(height * (MAX_WIDTH / width));
-                        //                 targetWidth = MAX_WIDTH;
-                        //             } else {
-                        //                 targetWidth = Math.round(width * (MAX_HEIGHT / height));
-                        //                 targetHeight = MAX_HEIGHT;
-                        //             }
-                        //         }
-                        //         imageProgress.style.width = '70%';
-
-                        //         const canvas = document.createElement('canvas');
-                        //         canvas.width = targetWidth;
-                        //         canvas.height = targetHeight;
-                        //         const ctx = canvas.getContext('2d');
-                        //         ctx.fillStyle = '#FFF';
-                        //         ctx.fillRect(0, 0, targetWidth, targetHeight);
-                        //         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-
-                        //         // Adjust quality for large images
-                        //         let targetQuality = IMAGE_QUALITY;
-                        //         let originalSize = file.size / (1024 * 1024);
-                        //         if (originalSize > 10) targetQuality = 0.5;
-                        //         else if (originalSize > 5) targetQuality = 0.6;
-
-                        //         imageProgress.style.width = '90%';
-
-                        //         // Get compressed DataURL
-                        //         return await canvasToDataURL(canvas, 'image/jpeg', targetQuality);
-                        //     }
-
-                        //     // Utility Promises
-                        //     function readFileAsArrayBuffer(file) {
-                        //         return new Promise((resolve, reject) => {
-                        //             const reader = new FileReader();
-                        //             reader.onload = e => resolve(e.target.result);
-                        //             reader.onerror = reject;
-                        //             reader.readAsArrayBuffer(file);
-                        //         });
-                        //     }
-
-                        //     function readFileAsDataURL(file) {
-                        //         return new Promise((resolve, reject) => {
-                        //             const reader = new FileReader();
-                        //             reader.onload = e => resolve(e.target.result);
-                        //             reader.onerror = reject;
-                        //             reader.readAsDataURL(file);
-                        //         });
-                        //     }
-
-                        //     function loadImage(src) {
-                        //         return new Promise((resolve, reject) => {
-                        //             const img = new Image();
-                        //             img.onload = () => resolve(img);
-                        //             img.onerror = reject;
-                        //             img.src = src;
-                        //         });
-                        //     }
-
-                        //     function canvasToDataURL(canvas, type, quality) {
-                        //         return new Promise((resolve, reject) => {
-                        //             canvas.toBlob(blob => {
-                        //                 if (!blob) return reject(new Error('Canvas conversion failed'));
-                        //                 const reader = new FileReader();
-                        //                 reader.onload = () => resolve(reader.result);
-                        //                 reader.onerror = reject;
-                        //                 reader.readAsDataURL(blob);
-                        //             }, type, quality);
-                        //         });
-                        //     }
-
-                        //     // Get base64 DataURL to actual size in bytes
-                        //     async function getBase64Size(dataUrl) {
-                        //         // Remove base64 prefix
-                        //         let head = dataUrl.indexOf(',')+1;
-                        //         let b64 = dataUrl.substring(head);
-                        //         // Calculate byte length
-                        //         return Math.ceil((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
-                        //     }
-
-                        //     function formatFileSize(bytes) {
-                        //         if (bytes < 1024) {
-                        //             return bytes + " B";
-                        //         } else if (bytes < 1048576) {
-                        //             return (bytes / 1024).toFixed(1) + " KB";
-                        //         } else {
-                        //             return (bytes / 1048576).toFixed(2) + " MB";
-                        //         }
-                        //     }
-
-                        // });
+                        // kept as is
                         </script>
 
                         <div class="mb-3">
@@ -325,7 +139,7 @@
                         </div>
 
                         <script>
-                            // Searchable Select Dropdown Function
+                            // kept as is
 function makeSelectSearchable(selectElement) {
     const wrapper = document.createElement('div');
     wrapper.className = 'searchable-select-wrapper';
@@ -615,6 +429,15 @@ $(document).ready(function() {
         $('.invalid-feedback').text('');
     }
 
+    // Custom email or phone number validation function
+    function isValidEmailOrPhone(input) {
+        // 11-digit phone
+        const phonePattern = /^[0-9]{11}$/;
+        // Email
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return phonePattern.test(input) || emailPattern.test(input);
+    }
+
     // Step 1: Check Email
     $('#emailForm').on('submit', function(e) {
         e.preventDefault();
@@ -623,6 +446,13 @@ $(document).ready(function() {
         
         const email = $('#auth_email').val().trim();
         currentEmail = email;
+
+        // Validation enforced here
+        if (!isValidEmailOrPhone(email)) {
+            setButtonLoading('emailBtn', false);
+            showError('auth_email', 'Please enter a valid email address or an 11-digit phone number.');
+            return;
+        }
 
         $.ajax({
             url: '/check-email',
