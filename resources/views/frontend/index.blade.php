@@ -230,7 +230,18 @@
                                 href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url('/app')) }}&quote={{ urlencode('কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?') }}"
                                 target="_blank"
                                 style="font-size:12px;"
-                                onclick="window.open(this.href, 'fbShareWindow', 'height=500,width=650,top=50,left=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=no'); return false;">
+                                onclick="
+                                    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                                    if(isIOS){
+                                        // On iPhone, open link in the Facebook app if installed, otherwise in Safari
+                                        // Try to use FB dialogs as fallback if available
+                                        window.location.href = this.href; // Let default browser handle it (will open in Safari)
+                                        return false;
+                                    } else {
+                                        window.open(this.href, 'fbShareWindow', 'height=500,width=650,top=50,left=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=no');
+                                        return false;
+                                    }
+                                ">
                                 Facebook এ শেয়ার করে জিতে নিন পুরস্কার
                             </a>
                         </div>
