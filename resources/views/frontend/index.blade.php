@@ -219,15 +219,15 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
                 
                     <div style="color: #04595c; text-align:center;">
                         
                         কুতুবপুরের সোস্যাল মিডিয়া <b>#eINFO App</b> এ আমি আছি! <span style="color:#0abb87;font-weight:bold;">আপনি আছেন তো?</span>
                         <br/>
                         <div class="d-flex justify-content-center mt-2">
-                            <a class="btn btn-primary" 
-                                href="" 
+                            <a class="btn btn-primary"
+                                href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url('/')) }}&quote={{ urlencode('কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?') }}"
                                 target="_blank"
                                 style="font-size:12px;"
                                 onclick="window.open(this.href, 'fbShareWindow', 'height=500,width=650,top=50,left=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=no'); return false;">
@@ -236,7 +236,7 @@
                         </div>
                     </div>
                 
-            </div> -->
+            </div>
         </div>
     @elseif($alreadyClaimed && !$isCollectedFromModerator)
         <div class="col-12 mb-2">
