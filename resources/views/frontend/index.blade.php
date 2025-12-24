@@ -231,11 +231,18 @@
                                 target="_blank"
                                 style="font-size:12px;"
                                 onclick="
-                                    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                                    if(isIOS){
-                                        // On iPhone, open link in the Facebook app if installed, otherwise in Safari
-                                        // Try to use FB dialogs as fallback if available
-                                        window.location.href = this.href; // Let default browser handle it (will open in Safari)
+                                    var ua = navigator.userAgent || navigator.vendor || window.opera;
+                                    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+                                    var isFbApp = ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1;
+
+                                    if(isIOS && isFbApp){
+                                        // iPhone FB App detected: must let system handle (usually goes to in-app browser, not external apps)
+                                        // window.location.href = this.href; // Optionally force
+                                        return true; // Let default action happen (in-app)
+                                    } else if(isIOS) {
+                                        // iPhone Safari (not in FB App)
+                                        // Try to open via window.open; fallback to default behavior
+                                        window.open(this.href, '_blank');
                                         return false;
                                     } else {
                                         window.open(this.href, 'fbShareWindow', 'height=500,width=650,top=50,left=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=no');
