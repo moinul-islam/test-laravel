@@ -214,7 +214,7 @@
                 <div>
                     <div style="color: #04595c;">
                         <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
-                        অভিনন্দন! আপনি <strong class="text-danger">{{ 1 + floor($points / 30) }}</strong> টি টিকেট ফ্রি পেয়েছেন। 
+                        অভিনন্দন! আপনি <strong class="text-danger">1</strong> টি টিকেট ফ্রি পেয়েছেন। 
                         <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
                     </div>
                 </div>
@@ -304,12 +304,10 @@
                 </div>
                 <div class="modal-body py-4 text-center">
                     <!-- <div style="font-size: 48px;" class="mb-2"><i class="bi bi-ticket-perforated text-primary"></i></div> -->
-                    <p class="h5 mb-3">
-                        <span class="fw-bold text-success">{{ 1 + floor($points / 30) }}</span> টি ফ্রি টিকেট আপনার জন্য প্রস্তুত!
-                    </p>
+                    
                     <!-- <p>আপনি <span class="text-info">{{ $points }}</span> পয়েন্ট অর্জন করেছেন। প্রতি ৩০ পয়েন্টে ১টি করে টিকেট ফ্রি!</p>
                     <p class="mt-3 text-muted small">আরও টিকেট পেতে আরও পয়েন্ট বাড়ান!</p> -->
-                    <p class="mt-3 text-danger small">*টিকেট সংগ্রহণের জন্য আপনার এলাকার এজেন্ট এর সাথে যোগাযোগ করুন এবং তখন <strong>টিকেট উত্তলন</strong> বাটনে ক্লিক করুন। </p>
+                    <p class="text-danger small">*টিকেট সংগ্রহণের জন্য আপনার এলাকার এজেন্ট এর সাথে যোগাযোগ করুন এবং তখন <strong>টিকেট উত্তলন</strong> বাটনে ক্লিক করুন। </p>
 
                     <div class="container mb-3">
                         <table class="table table-bordered text-center align-middle">
@@ -350,7 +348,7 @@
                     <form id="claimTicketForm" method="POST" action="{{ route('claim.mela.ticket') }}" style="margin-left: 10px;">
                         @csrf
                         <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
-                        <input type="hidden" name="user_ticket" value="{{ 1 + floor($points / 30) }}">
+                        <input type="hidden" name="user_ticket" value="1">
                         <button type="submit" class="btn btn-primary btn-sm"
                                 onclick="return confirm('আপনি কি নিশ্চিত যে আপনি টিকেট উত্তলন করতে চান? টিকেট একবারই উত্তলন করা সম্ভব।');">
                             <i class="bi bi-check2-circle"></i> টিকেট উত্তলন
