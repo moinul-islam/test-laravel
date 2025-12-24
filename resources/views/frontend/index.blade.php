@@ -227,7 +227,7 @@
                         <br/>
                         <div class="d-flex justify-content-center mt-2">
                             <a class="btn btn-primary"
-                                href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url('/')) }}&quote={{ urlencode('কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?') }}"
+                                href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url('/app')) }}&quote={{ urlencode('কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?') }}"
                                 target="_blank"
                                 style="font-size:12px;"
                                 onclick="window.open(this.href, 'fbShareWindow', 'height=500,width=650,top=50,left=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=no'); return false;">
