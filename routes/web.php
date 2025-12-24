@@ -21,6 +21,7 @@ use App\Http\Controllers\AuthController;
 
 
 
+Route::view('/app', 'frontend.app');
 
 // টিকেট উত্তলনের জন্য (controller ছাড়া, route এ logic থাকবে)
 use Illuminate\Http\Request;
