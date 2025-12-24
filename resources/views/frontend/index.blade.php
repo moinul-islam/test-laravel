@@ -210,7 +210,7 @@
 
     @if(!$alreadyClaimed)
         <div class="col-12 mb-2">
-            <!-- <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
                 <div>
                     <div style="color: #04595c;">
                         <i style="margin-right: 5px; color: #0abb87;" class="bi bi-gift-fill"></i>
@@ -218,8 +218,8 @@
                         <a href="#" class="" data-bs-toggle="modal" data-bs-target="#ticketModal">টিকেট সংগ্রহ করুন</a>
                     </div>
                 </div>
-            </div> -->
-            <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
+            </div>
+            <!-- <div class="alert alert-info d-flex align-items-center shadow-sm flex-wrap" style="border-radius: 16px; background: linear-gradient(93deg, #e0f7fa 20%, #f1f8e9 100%); border: 1.5px solid #b2ebf2;">
                 
                     <div style="color: #04595c; text-align:center;">
                         
@@ -236,7 +236,7 @@
                         </div>
                     </div>
                 
-            </div>
+            </div> -->
         </div>
     @elseif($alreadyClaimed && !$isCollectedFromModerator)
         <div class="col-12 mb-2">
