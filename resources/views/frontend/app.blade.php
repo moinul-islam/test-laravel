@@ -51,7 +51,7 @@
 <body>
 
 <div class="box">
-    <img src="https://einfo.site/assets/logo.png" alt="eINFO">
+    <img src="https://einfo.site/logo.png" alt="eINFO">
     <h2>eINFO App</h2>
     <p>আপনাকে অ্যাপে নিয়ে যাওয়া হচ্ছে…</p>
 
