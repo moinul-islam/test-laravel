@@ -5,9 +5,9 @@
     <title>eINFO App</title>
 
     <!-- Open Graph for Facebook -->
-    <meta property="og:title" content="কুতুবপুরের সোস্যাল মিডিয়া #eINFO App" />
+    <meta property="og:title" content="কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?" />
     <meta property="og:description" content="কুতুবপুরের সোস্যাল মিডিয়া #eINFO App এ আমি আছি! আপনি আছেন তো?" />
-    <meta property="og:image" content="https://einfo.site/assets/einfo-share.png" />
+    <meta property="og:image" content="https://einfo.site/uploads/1852374301183479.jpg" />
     <meta property="og:url" content="https://einfo.site/app" />
     <meta property="og:type" content="website" />
 
