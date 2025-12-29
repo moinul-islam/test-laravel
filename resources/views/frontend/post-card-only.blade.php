@@ -47,28 +47,42 @@
             $desc = $post->description;
             $descLength = mb_strlen($desc);
             $hasDesc = $descLength > 0;
-            // Calculate which style to use:
+            $lineBreaks = preg_match_all("/\r\n|\r|\n/", $desc, $matches);
+            $shouldCollapse = false;
+            // Collapse if over maxLength or over 3 line breaks
+            if($descLength > $maxLength || $lineBreaks > 3) $shouldCollapse = true;
             $bodyStyle = 'padding-top:0;';
             if(!$hasDesc) $bodyStyle .= 'padding-bottom:0;';
          @endphp
          <div class="card-body" style="{{ $bodyStyle }}">
             <!-- <h2>{{ $post->title }}</h2> -->
-            @if($descLength > $maxLength)
-            <p class="m-0 post-desc-short" style="display: block; ">
-               {!! nl2br(e(mb_substr($desc, 0, $maxLength))) !!}...
-               <a href="javascript:void(0);" class="see-more-link text-primary" onclick="toggleDescription(this)">See more</a>
-            </p>
-            <p class="m-0 post-desc-full" style="display: none; ">
-               {!! nl2br(e($desc)) !!}
-               <a href="javascript:void(0);" class="see-less-link text-primary" onclick="toggleDescription(this)">See less</a>
-            </p>
+            @if($shouldCollapse && $descLength > 0)
+               @php
+                  // For line count, split for 3 lines
+                  $lines = preg_split('/\r\n|\r|\n/', $desc);
+                  $firstThree = implode("\n", array_slice($lines, 0, 3));
+                  // Also limit char count if needed
+                  $shortPart = mb_substr($desc, 0, $maxLength);
+                  // If linebreaks > 3, show first 3 lines, else show up to maxlen
+                  $displayShort = $lineBreaks > 3 ? $firstThree : $shortPart;
+                  // Always end with ... when collapsed
+               @endphp
+               <p class="m-0 post-desc-short" style="display: block;">
+                  {!! nl2br(e($displayShort)) !!}...
+                  <a href="javascript:void(0);" class="see-more-link text-primary" onclick="toggleDescription(this)">See more</a>
+               </p>
+               <p class="m-0 post-desc-full" style="display: none;">
+                  {!! nl2br(e($desc)) !!}
+                  <a href="javascript:void(0);" class="see-less-link text-primary" onclick="toggleDescription(this)">See less</a>
+               </p>
             @elseif($descLength > 0)
-            <p class="m-0" style="">{!! nl2br(e($desc)) !!}</p>
+               <p class="m-0">{!! nl2br(e($desc)) !!}</p>
             @endif
             <script>
                function toggleDescription(link) {
-                   const shortDesc = link.closest('.card-body').querySelector('.post-desc-short');
-                   const fullDesc = link.closest('.card-body').querySelector('.post-desc-full');
+                   const wrap = link.closest('.card-body');
+                   const shortDesc = wrap.querySelector('.post-desc-short');
+                   const fullDesc = wrap.querySelector('.post-desc-full');
                    if (shortDesc && fullDesc) {
                        if (shortDesc.style.display === 'none') {
                            shortDesc.style.display = 'block';
