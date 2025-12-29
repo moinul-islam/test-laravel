@@ -54,16 +54,16 @@
          <div class="card-body" style="{{ $bodyStyle }}">
             <!-- <h2>{{ $post->title }}</h2> -->
             @if($descLength > $maxLength)
-            <p class="m-0 post-desc-short" style="display: block;">
-               {{ mb_substr($desc, 0, $maxLength) }}...
+            <p class="m-0 post-desc-short" style="display: block; ">
+               {!! nl2br(e(mb_substr($desc, 0, $maxLength))) !!}...
                <a href="javascript:void(0);" class="see-more-link text-primary" onclick="toggleDescription(this)">See more</a>
             </p>
-            <p class="m-0 post-desc-full" style="display: none;">
-               {{ $desc }}
+            <p class="m-0 post-desc-full" style="display: none; ">
+               {!! nl2br(e($desc)) !!}
                <a href="javascript:void(0);" class="see-less-link text-primary" onclick="toggleDescription(this)">See less</a>
             </p>
             @elseif($descLength > 0)
-            <p class="m-0">{{ $desc }}</p>
+            <p class="m-0" style="">{!! nl2br(e($desc)) !!}</p>
             @endif
             <script>
                function toggleDescription(link) {
