@@ -6,38 +6,6 @@
         @include('frontend.body.admin-nav')
     @endif
 
-    <div class="row mb-3">
-        <div class="col-12">
-            {{-- Filter section - only for date and status --}}
-            <form method="GET" action="{{ route('admin.posts.approval') }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
-                <div>
-                    <label class="form-label mb-1" for="date">Date</label>
-                    <input 
-                        type="date" 
-                        id="date" 
-                        name="date" 
-                        class="form-control" 
-                        style="min-width:150px;"
-                        value="{{ request('date', \Carbon\Carbon::now()->toDateString()) }}"
-                        required
-                    >
-                </div>
-                <div>
-                    <label class="form-label mb-1" for="status">Status</label>
-                    <select name="status" id="status" class="form-select" style="min-width:110px;">
-                        <option value="">All</option>
-                        <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pending</option>
-                        <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Approved</option>
-                    </select>
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-primary me-2">Filter</button>
-                    <a href="{{ route('admin.posts.approval', ['date' => \Carbon\Carbon::now()->toDateString()]) }}" class="btn btn-secondary">Today</a>
-                </div>
-            </form>
-            
-        </div>
-    </div>
 
     <div class="row g-3">
         @forelse($posts as $post)
