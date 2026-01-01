@@ -95,8 +95,19 @@ class LocationController extends Controller
         
         // Posts fetch করুন
         $postsQuery = Post::with(['user', 'category'])
-                    ->whereIn('user_id', $userIds)
-                    ->where('status', 1); // ✅ Home page এ শুধু active posts (status=1)
+            ->whereIn('user_id', $userIds)
+            ->where(function($query) {
+                if (auth()->check()) {
+                    // Show all status=1 except for own posts, show all (status 0 or 1) for own posts
+                    $query->where('status', 1)
+                        ->orWhere(function($q){
+                            $q->where('user_id', auth()->id());
+                        });
+                } else {
+                    // Not logged in, only show status=1
+                    $query->where('status', 1);
+                }
+            });
         
         // Category filter
         $category = null;
