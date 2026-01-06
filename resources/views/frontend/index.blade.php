@@ -57,7 +57,7 @@
         <div class="scroll-content">
 
             <button href="" class="nav-item-custom" id="openSidebarBtn">
-                <span><i class="bi bi-list"></i></span>
+                <span><i class="bi bi-cart"></i></span>
             </button>
 
             <!--
@@ -271,10 +271,10 @@
                     <div class="me-2" style="min-width: 130px;">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-white border-end-0" style="padding:.25rem .5rem;">
-                                <i class="bi bi-folder2-open" title="Category"></i>
+                                <i class="bi bi-tag" title="Category"></i>
                             </span>
                             <select class="form-select form-select-sm border-start-0" id="simple_category_name" name="category_name" required style="border-left:0;">
-                                <option value="">Select a category...</option>
+                                <option value="">Category</option>
                                 @foreach($categories as $category)
                                     @if($category->cat_type === 'post')
                                         <option value="{{ $category->category_name }}">{{ $category->category_name }}</option>

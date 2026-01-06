@@ -41,7 +41,6 @@
                 @if(Auth::id() === $user->id || $hasProductServices)
                     <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
                         <span><i class="bi bi-cart"></i></span>
-                        <span>Product & Services</span>
                     </a>
                 @endif
             @endauth
@@ -49,7 +48,6 @@
                 @if($hasProductServices)
                     <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
                         <span><i class="bi bi-cart"></i></span>
-                        <span>Product & Services</span>
                     </a>
                 @endif
             @endguest
