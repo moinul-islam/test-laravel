@@ -430,7 +430,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const MAX_WIDTH = 1800, MAX_HEIGHT = 1800, IMAGE_QUALITY = 0.7;
-        const MAX_IMAGES = 5, MAX_VIDEOS = 1, MAX_VIDEO_SIZE = 20 * 1024 * 1024;
+        const MAX_IMAGES = 5, MAX_VIDEOS = 1, MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 
         const mediaInput = document.getElementById('simpleMediaInput');
         const mediaDataInput = document.getElementById('simpleMediaData');

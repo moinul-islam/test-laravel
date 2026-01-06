@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const IMAGE_QUALITY = 0.7;
     const MAX_IMAGES = 5;
     const MAX_VIDEOS = 1;
-    const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
     
     const mediaInput = document.getElementById('mediaInput');
     const mediaDataInput = document.getElementById('mediaData');
