@@ -268,13 +268,13 @@
 
                 <div class="d-flex align-items-center">
                     {{-- Category with icon --}}
-                    <div class="me-2" style="min-width: 130px;">
+                    <div class="me-2">
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0" style="padding:.25rem .5rem;">
+                            <span class="input-group-text bg-white border-end-0">
                                 <i class="bi bi-tag" title="Category"></i>
                             </span>
-                            <select class="form-select form-select-sm border-start-0" id="simple_category_name" name="category_name" required style="border-left:0;">
-                                <option value="">Category</option>
+                            <select class="form-select form-select-sm border-start-0" id="simple_category_name" name="category_name" required style="border-left:0; padding-right: 0px;">
+                                <option value="">Add Category</option>
                                 @foreach($categories as $category)
                                     @if($category->cat_type === 'post')
                                         <option value="{{ $category->category_name }}">{{ $category->category_name }}</option>
@@ -285,7 +285,7 @@
                     </div>
 
                     {{-- Media with icon, trigger input only by clicking image icon --}}
-                    <div class="me-2" style="min-width:120px;">
+                    <div class="me-2">
                         <div class="input-group input-group-sm align-items-center" style="height: 100%;">
                             <span class="input-group-text bg-white border-rounded" style="padding:.25rem .5rem; cursor:pointer;" id="simpleMediaIconTrigger">
                                 <i class="bi bi-image" title="Add images/videos"></i>
@@ -302,8 +302,10 @@
                     {{-- Post button right --}}
                     <div class="ms-auto">
                         <button type="submit" class="btn btn-primary btn-sm" id="simpleSubmitBtn" disabled style="min-width:64px; width:100%;">
+                           
                             <span id="simpleSubmitBtnText">Post</span>
                             <span id="simpleSubmitBtnSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status" aria-hidden="true"></span>
+                           
                         </button>
                     </div>
                 </div>
