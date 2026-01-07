@@ -152,8 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
          
 @php
-    use App\Http\Controllers\PointController;
-    $points = PointController::get($user->id);
+    $points = $user->users_points ?? 0;
 @endphp
 
             <img src="{{ $user->image ? asset('profile-image/'.$user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
