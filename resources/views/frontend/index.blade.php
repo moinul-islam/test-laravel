@@ -57,7 +57,7 @@
         <div class="scroll-content">
 
             <button href="" class="nav-item-custom" id="openSidebarBtn">
-                <span><i class="bi bi-cart"></i></span>
+                <span><i class="bi bi-shop"></i></span>
             </button>
 
             <!--
