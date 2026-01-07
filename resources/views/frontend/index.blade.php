@@ -179,7 +179,7 @@
 
 
     @guest
-        <div class="alert alert-info mb-3 login-popup-trigger" role="alert" style="cursor:pointer;" 
+        <div class="alert alert-info mb-4 login-popup-trigger" role="alert" style="cursor:pointer;" 
              onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();">
             পোস্ট করতে 
             <span class="alert-link">লগইন করুন</span>।
@@ -256,7 +256,7 @@
         </div>
     </div>
 
-    <div class="card mb-3 shadow-sm">
+    <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form action="{{ route('post.store') }}" method="POST" enctype="multipart/form-data" id="simpleCreatePostForm">
                 @csrf
