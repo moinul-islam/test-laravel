@@ -115,6 +115,9 @@
     $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
 @endphp
 
+<a href="{{ route('popular.users') }}" class="btn btn-outline-primary">
+            <i class="bi bi-stars me-2"></i>Popular Users
+        </a>
 {{-- All Posts Link --}}
 <a href="{{ url('/' . $visitorLocationPath) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">

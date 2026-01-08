@@ -20,7 +20,17 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 class ProfileController extends Controller
 {
 
-
+    
+    public function popularUsers()
+    {
+        $users = User::orderByDesc('users_points')
+                     ->take(100)
+                     ->get();
+    
+        // যদি Blade ফাইল frontend folder এর মধ্যে থাকে
+        return view('frontend.popular-users', compact('users'));
+    }
+    
  
 
 // Update method for AJAX

@@ -27,7 +27,7 @@ Route::view('/app', 'frontend.app');
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-
+Route::get('/popular-users', [ProfileController::class, 'popularUsers'])->name('popular.users');
 
 Route::get('/myauth', [AuthController::class, 'showAuthPage'])->name('myauth');
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
