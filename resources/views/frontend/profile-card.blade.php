@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $points = $user->users_points ?? 0;
 @endphp
 
-            <img src="{{ $user->image ? asset('profile-image/'.$user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
+            <img id="img-zoomer" src="{{ $user->image ? asset('profile-image/'.$user->image) : 'https://cdn-icons-png.flaticon.com/512/219/219983.png' }}"
                class="rounded-circle mb-3"
                alt="Profile Photo"
                style="width:100px; height:100px; object-fit:cover;">
