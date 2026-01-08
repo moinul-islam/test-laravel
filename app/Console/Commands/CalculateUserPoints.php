@@ -56,11 +56,11 @@ class CalculateUserPoints extends Command
                 /* ========= FOLLOWS ========= */
                 $followGiven = DB::table('follows')
                     ->where('follower_id', $userId)
-                    ->count() * 2;
+                    ->count() * 1;
 
                 $followReceived = DB::table('follows')
                     ->where('following_id', $userId)
-                    ->count() * 1;
+                    ->count() * 2;
 
                 /* ========= REVIEWS ========= */
                 // Reviews given → +1
