@@ -115,14 +115,15 @@
     $selectedCategorySlug = isset($category) ? $category->slug : request()->get('category');
 @endphp
 
-<a href="{{ route('popular.users') }}" class="btn btn-outline-primary">
-            <i class="bi bi-stars me-2"></i>Popular Users
-        </a>
+
 {{-- All Posts Link --}}
 <a href="{{ url('/' . $visitorLocationPath) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
    <span><i class="bi bi-file-post"></i></span>
    <span>All Posts</span>
+</a>
+<a href="{{ route('popular.users') }}" class="btn btn-outline-primary">
+    <i class="bi bi-stars me-2"></i>Popular Users
 </a>
 
 @if($navCategories->count() > 0)
