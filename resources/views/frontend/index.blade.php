@@ -122,8 +122,8 @@
    <span><i class="bi bi-file-post"></i></span>
    <span>All Posts</span>
 </a>
-<a href="{{ route('popular.users') }}" class="btn">
-    <i class="bi bi-stars me-2"></i>Popular
+<a href="{{ route('popular.users') }}" class="nav-item-custom">
+    <i class="bi bi-stars"></i>Popular
 </a>
 
 @if($navCategories->count() > 0)
