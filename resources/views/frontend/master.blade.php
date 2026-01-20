@@ -5,7 +5,35 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
       <meta name="csrf-token" content="{{ csrf_token() }}">
       <meta name="user-authenticated" content="{{ auth()->check() ? 'true' : 'false' }}">
-      <title>eINFO</title>
+
+      <!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="https://einfo.site/logo.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://einfo.site/logo.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://einfo.site/logo.png">
+<link rel="manifest" href="https://einfo.site/logo.png">
+
+      <title>eINFO – Local Business, Posts & Marketplace Platform</title>
+
+      <meta name="keywords" content="local business, marketplace, eINFO">
+      <meta name="author" content="eINFO Team">
+      <meta name="description" content="eINFO is a location-based platform to explore local posts, nearby businesses, services and marketplace in your area.">
+
+
+      <!-- for meta -->
+    <meta property="og:title" content="eINFO – Local Platform">
+    <meta property="og:description" content="Find nearby businesses, local posts and services using eINFO app.">
+    <meta property="og:image" content="https://einfo.site/logo.png">
+    <meta property="og:url" content="https://einfo.site">
+    <meta property="og:type" content="website">
+
+    <!-- for twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="eINFO – Local Platform">
+<meta name="twitter:description" content="Explore local businesses and community posts.">
+<meta name="twitter:image" content="https://einfo.site/logo.png">
+
+
+
       <!-- Bootstrap CSS -->
       <link rel="stylesheet" href="{{ asset('css/style.css') }}">
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
