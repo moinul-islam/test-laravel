@@ -220,35 +220,38 @@
             @enderror
         </div>
 
-        <!-- Area -->
+    <!-- Area 
         <div class="col-12 col-area">
             <input type="text" name="area_id" id="area_id" class="form-control @error('area_id') is-invalid @enderror"
                    value="{{ old('area_id', auth()->user()->area_id) }}" placeholder="Enter Area">
             @error('area_id')
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
+        </div> -->
         </div>
-    </div>
 </div>
 
 
 
 <!-- Username -->
 <div class="mb-3">
-                  <label for="username" class="form-label">Username</label>
-                  <input type="text" 
-                     name="username" 
-                     id="username" 
-                     class="form-control @error('username') is-invalid @enderror" 
-                     value="{{ old('username', auth()->user()->username) }}" 
-                     placeholder="Enter your username (minimum 4 characters)"
-                     minlength="4">
-                  <!-- <small class="form-text text-muted">Username must be at least 4 characters long and can contain letters, numbers, dashes and underscores.</small> -->
-                  @error('username')
-                  <div class="text-danger mt-1">{{ $message }}</div>
-                  @enderror
-               </div>
-
+    <label for="username" class="form-label">Username</label>
+    <input type="text" 
+       name="username" 
+       id="username" 
+       class="form-control @error('username') is-invalid @enderror" 
+       value="{{ old('username', auth()->user()->username) }}" 
+       placeholder="Enter your username (a-z, 0-9 only, minimum 4 characters, no spaces)"
+       minlength="4" 
+       pattern="^[a-z0-9]{4,}$"
+       autocomplete="off"
+       inputmode="lowercase"
+       title="Username must be at least 4 characters and contain only lowercase letters and numbers. No spaces.">
+    
+    @error('username')
+      <div class="text-danger mt-1">{{ $message }}</div>
+    @enderror
+</div>
 
 
 
