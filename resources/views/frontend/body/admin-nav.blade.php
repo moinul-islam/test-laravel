@@ -8,35 +8,8 @@
             
             <a href="/admin"
                 class="btn flex-shrink-0 btn-outline-primary{{ ($currentRouteName === 'admin.page') ? ' active btn-success text-white' : '' }}">
-                Admin 
+                Users 
                 @if($currentRouteName === 'admin.page')
-                @endif
-            </a>
-            <a href="/admin/posts/approval"
-                class="btn flex-shrink-0 btn-outline-danger{{ ($currentRouteName === 'admin.posts.approval') ? ' active btn-danger text-white' : '' }}">
-                Post Approval 
-                @if($currentRouteName === 'admin.posts.approval')
-                @endif
-            </a>
-            <a href="/categories"
-                class="btn flex-shrink-0 btn-outline-success{{ ($currentPath === 'categories') ? ' active btn-success text-white' : '' }}">
-                Categories 
-                @if($currentPath === 'categories')
-                    <span class="ms-1 text-success">&#10003;</span>
-                @endif
-            </a>
-            <a href="/admin/create-post"
-                class="btn flex-shrink-0 btn-outline-info{{ (\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post')) ? ' active btn-info text-white' : '' }}">
-                Add Post 
-                @if(\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post'))
-                    <span class="ms-1 text-info">&#10003;</span>
-                @endif
-            </a>
-            <a class="btn flex-shrink-0 btn-outline-warning{{ $currentRouteName === 'delivery.page' ? ' active btn-warning text-white' : '' }}"
-                href="{{ route('delivery.page') }}">
-                Delivery
-                @if($currentRouteName === 'delivery.page')
-                    <span class="ms-1 text-warning">&#10003;</span>
                 @endif
             </a>
             <a class="btn flex-shrink-0 btn-outline-danger{{ $currentRouteName === 'contribute' ? ' active btn-danger text-white' : '' }}"
@@ -46,6 +19,34 @@
                     <span class="ms-1 text-danger">&#10003;</span>
                 @endif
             </a>
+            <a href="/admin/posts/approval"
+                class="btn flex-shrink-0 btn-outline-danger{{ ($currentRouteName === 'admin.posts.approval') ? ' active btn-danger text-white' : '' }}">
+                Post Approval 
+                @if($currentRouteName === 'admin.posts.approval')
+                @endif
+            </a>
+            <a href="/admin/create-post"
+                class="btn flex-shrink-0 btn-outline-info{{ (\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post')) ? ' active btn-info text-white' : '' }}">
+                Add Post 
+                @if(\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post'))
+                    <span class="ms-1 text-info">&#10003;</span>
+                @endif
+            </a>
+            <a href="/categories"
+                class="btn flex-shrink-0 btn-outline-success{{ ($currentPath === 'categories') ? ' active btn-success text-white' : '' }}">
+                Categories 
+                @if($currentPath === 'categories')
+                    <span class="ms-1 text-success">&#10003;</span>
+                @endif
+            </a>
+            <a class="btn flex-shrink-0 btn-outline-warning{{ $currentRouteName === 'delivery.page' ? ' active btn-warning text-white' : '' }}"
+                href="{{ route('delivery.page') }}">
+                Delivery
+                @if($currentRouteName === 'delivery.page')
+                    <span class="ms-1 text-warning">&#10003;</span>
+                @endif
+            </a>
+            
         </div>
     </div>
     <style>
