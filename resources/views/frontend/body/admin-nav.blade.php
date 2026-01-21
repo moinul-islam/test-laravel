@@ -19,19 +19,6 @@
                     <span class="ms-1 text-danger">&#10003;</span>
                 @endif
             </a>
-            <a href="/admin/posts/approval"
-                class="btn flex-shrink-0 btn-outline-danger{{ ($currentRouteName === 'admin.posts.approval') ? ' active btn-danger text-white' : '' }}">
-                Post Approval 
-                @if($currentRouteName === 'admin.posts.approval')
-                @endif
-            </a>
-            <a href="/admin/create-post"
-                class="btn flex-shrink-0 btn-outline-info{{ (\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post')) ? ' active btn-info text-white' : '' }}">
-                Add Post 
-                @if(\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post'))
-                    <span class="ms-1 text-info">&#10003;</span>
-                @endif
-            </a>
             <a href="/categories"
                 class="btn flex-shrink-0 btn-outline-success{{ ($currentPath === 'categories') ? ' active btn-success text-white' : '' }}">
                 Categories 
@@ -46,7 +33,19 @@
                     <span class="ms-1 text-warning">&#10003;</span>
                 @endif
             </a>
-            
+            <a href="/admin/posts/approval"
+                class="btn flex-shrink-0 btn-outline-danger{{ ($currentRouteName === 'admin.posts.approval') ? ' active btn-danger text-white' : '' }}">
+                Post Approval 
+                @if($currentRouteName === 'admin.posts.approval')
+                @endif
+            </a>
+            <a href="/admin/create-post"
+                class="btn flex-shrink-0 btn-outline-info{{ (\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post')) ? ' active btn-info text-white' : '' }}">
+                Add Post 
+                @if(\Illuminate\Support\Str::startsWith($currentPath, 'admin/create-post'))
+                    <span class="ms-1 text-info">&#10003;</span>
+                @endif
+            </a>       
         </div>
     </div>
     <style>
