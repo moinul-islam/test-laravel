@@ -224,7 +224,7 @@
                     @endif
                     
                     @if(auth()->check() && auth()->user()->role === 'admin')
-                        <li class="border-bottom"><a class="dropdown-item" href="{{ route('admin.page') }}"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
+                        <li class="border-bottom"><a class="dropdown-item" href="/admin/posts/approval"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
                     @endif
 
                     @if(auth()->check() && auth()->user()->role === 'moderator')
