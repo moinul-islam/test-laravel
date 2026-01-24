@@ -8,6 +8,30 @@
     <div class="sidebar-body">
         <div class="accordion" id="categoryAccordion">
             @php
+                // Helper function to get all descendant category IDs (including the category itself)
+                function getAllDescendantCategoryIds($categoryId) {
+                    $categoryIds = [$categoryId];
+                    $children = \App\Models\Category::where('parent_cat_id', $categoryId)->get();
+                    foreach($children as $child) {
+                        $categoryIds = array_merge($categoryIds, getAllDescendantCategoryIds($child->id));
+                    }
+                    return $categoryIds;
+                }
+                
+                // Helper function to check if a category has data (posts or users)
+                function categoryHasData($category) {
+                    // Get all descendant category IDs including the category itself
+                    $categoryIds = getAllDescendantCategoryIds($category->id);
+                    
+                    // Check if any of these categories have posts (for product/service/post)
+                    $hasPosts = \App\Models\Post::whereIn('category_id', $categoryIds)->exists();
+                    
+                    // Check if any of these categories have users (for profile)
+                    $hasUsers = \App\Models\User::whereIn('category_id', $categoryIds)->exists();
+                    
+                    return $hasPosts || $hasUsers;
+                }
+                
                 $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();
                 $currentCategoryId = null;
                 $currentParentId = null;
@@ -29,11 +53,20 @@
                         }
                     }
                 }
+                
+                // Filter universal categories to only show those that have data
+                $universalCategories = $universalCategories->filter(function($category) {
+                    return categoryHasData($category);
+                });
             @endphp
             
             @foreach($universalCategories as $universalCategory)
                 @php
                     $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get();
+                    // Filter subcategories to only show those that have data
+                    $allSubCategories = $allSubCategories->filter(function($subCategory) {
+                        return categoryHasData($subCategory);
+                    });
                     $isActiveParent = ($currentGrandParentId == $universalCategory->id || $currentParentId == $universalCategory->id || $currentCategoryId == $universalCategory->id);
                 @endphp
                 
@@ -100,6 +133,10 @@
                                 @foreach($sortedSubCategories as $subCategory)
                                     @php
                                         $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get();
+                                        // Filter sub-subcategories to only show those that have data
+                                        $subSubCategories = $subSubCategories->filter(function($subSubCategory) {
+                                            return categoryHasData($subSubCategory);
+                                        });
                                         $isActiveSubParent = ($currentParentId == $subCategory->id || $currentCategoryId == $subCategory->id);
                                     @endphp
                                     
