@@ -56,9 +56,52 @@
     <div class="scroll-container mb-4">
         <div class="scroll-content">
 
-            <button href="" class="nav-item-custom" id="openSidebarBtn">
-                <span><i class="bi bi-shop"></i></span>
+            <button href="" class="nav-item-custom animated-rgb-border-color" id="openSidebarBtn">
+                <span><i class="bi bi-shop animated-rgb-text-color"></i></span>
             </button>
+            <style>
+            @keyframes rgb-border-bg-color {
+                0% { 
+                    border-color: #0d6efd; 
+                    background-color: rgba(13,110,253,0.08); 
+                    color: #0d6efd;
+                }
+                20% { 
+                    border-color: #198754; 
+                    background-color: rgba(25,135,84,0.08);
+                    color: #198754;
+                }
+                40% { 
+                    border-color: #ffc107; 
+                    background-color: rgba(255,193,7,0.08);
+                    color: #ffc107;
+                }
+                60% { 
+                    border-color: #dc3545; 
+                    background-color: rgba(220,53,69,0.08);
+                    color: #dc3545;
+                }
+                80% { 
+                    border-color: #6610f2; 
+                    background-color: rgba(102,16,242,0.08);
+                    color: #6610f2;
+                }
+                100% { 
+                    border-color: #0d6efd; 
+                    background-color: rgba(13,110,253,0.08); 
+                    color: #0d6efd;
+                }
+            }
+            .animated-rgb-border-color {
+                
+                animation: rgb-border-bg-color 2s linear infinite;
+                background-color: rgba(13,110,253,0.08);
+                transition: background 0.3s, border-color 0.3s, color 0.3s;
+            }
+            .animated-rgb-text-color {
+                animation: rgb-border-bg-color 2s linear infinite;
+            }
+            </style>
 
             <!--
             

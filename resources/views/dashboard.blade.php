@@ -39,18 +39,61 @@
 
             @auth
                 @if(Auth::id() === $user->id || $hasProductServices)
-                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-                        <span><i class="bi bi-cart"></i></span>
+                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom animated-rgb-border-color">
+                        <span><i class="bi bi-cart animated-rgb-text-color"></i></span>
                     </a>
                 @endif
             @endauth
             @guest
                 @if($hasProductServices)
-                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom">
-                        <span><i class="bi bi-cart"></i></span>
+                    <a href="/{{ $user->username }}/products-services" class="nav-item-custom animated-rgb-border-color">
+                        <span><i class="bi bi-cart animated-rgb-text-color"></i></span>
                     </a>
                 @endif
             @endguest
+
+            <style>
+            @keyframes rgb-border-bg-color {
+                0% { 
+                    border-color: #0d6efd; 
+                    background-color: rgba(13,110,253,0.08); 
+                    color: #0d6efd;
+                }
+                20% { 
+                    border-color: #198754; 
+                    background-color: rgba(25,135,84,0.08);
+                    color: #198754;
+                }
+                40% { 
+                    border-color: #ffc107; 
+                    background-color: rgba(255,193,7,0.08);
+                    color: #ffc107;
+                }
+                60% { 
+                    border-color: #dc3545; 
+                    background-color: rgba(220,53,69,0.08);
+                    color: #dc3545;
+                }
+                80% { 
+                    border-color: #6610f2; 
+                    background-color: rgba(102,16,242,0.08);
+                    color: #6610f2;
+                }
+                100% { 
+                    border-color: #0d6efd; 
+                    background-color: rgba(13,110,253,0.08); 
+                    color: #0d6efd;
+                }
+            }
+            .animated-rgb-border-color {
+                animation: rgb-border-bg-color 2s linear infinite;
+                background-color: rgba(13,110,253,0.08);
+                transition: background 0.3s, border-color 0.3s, color 0.3s;
+            }
+            .animated-rgb-text-color {
+                animation: rgb-border-bg-color 2s linear infinite;
+            }
+            </style>
 
             @php
             // User এর post করা সব unique categories খুঁজুন (শুধু post type)
