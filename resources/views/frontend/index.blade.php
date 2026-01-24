@@ -122,9 +122,9 @@
    <span><i class="bi bi-file-post"></i></span>
    <span>All Posts</span>
 </a>
-<a href="{{ route('popular.users') }}" class="nav-item-custom">
+<!-- <a href="{{ route('popular.users') }}" class="nav-item-custom">
     <i class="bi bi-stars"></i>Popular
-</a>
+</a> -->
 
 @if($navCategories->count() > 0)
     {{-- Show determined post categories --}}
