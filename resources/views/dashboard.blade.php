@@ -90,9 +90,7 @@
                 background-color: rgba(13,110,253,0.08);
                 transition: background 0.3s, border-color 0.3s, color 0.3s;
             }
-            .animated-rgb-text-color {
-                animation: rgb-border-bg-color 2s linear infinite;
-            }
+            
             </style>
 
             @php
