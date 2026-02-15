@@ -161,7 +161,7 @@
 <a href="{{ url('/' . $visitorLocationPath) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
    <span><i class="bi bi-file-post"></i></span>
-   <span>All Posts</span>
+   <span>All</span>
 </a>
 <!-- <a href="{{ route('popular.users') }}" class="nav-item-custom">
     <i class="bi bi-stars"></i>Popular
