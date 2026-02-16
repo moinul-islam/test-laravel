@@ -139,7 +139,7 @@
             <a href="{{ url('/' . $user->username) }}" 
                class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
             <span><i class="bi bi-file-post"></i></span>
-            <span>All Posts</span>
+            <span>All</span>
             </a>
             @if($navCategories->count() > 0)
             {{-- Show user's post categories --}}
