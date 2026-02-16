@@ -44,6 +44,13 @@
                 @if($currentRouteName === 'delivery.page')
                     <span class="ms-1 text-warning">&#10003;</span>
                 @endif
+            </a>
+            <a href="{{ route('admin.notifications.form') }}"
+               class="btn flex-shrink-0 btn-outline-secondary{{ ($currentPath === 'send-notification') ? ' active btn-secondary text-white' : '' }}">
+                Send Notification
+                @if($currentPath === 'send-notification')
+                    <span class="ms-1 text-secondary">&#10003;</span>
+                @endif
             </a>       
         </div>
     </div>

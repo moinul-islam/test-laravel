@@ -107,6 +107,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // AJAX route for getting user data - এইটা add করো
     Route::get('/admin/users/{userId}/data', [ProfileController::class, 'getUserData'])->name('admin.users.data');
     Route::put('/admin/users/{userId}', [ProfileController::class, 'adminUserUpdate'])->name('admin.users.update');
+
+    // Admin-only notification send page
+    Route::get('/send-notification', [NotificationController::class, 'showAdminSendForm'])->name('admin.notifications.form');
+    Route::post('/send-notification', [NotificationController::class, 'sendAdminNotification'])->name('admin.notifications.send');
 });
 
 // web.php এ add করুন
