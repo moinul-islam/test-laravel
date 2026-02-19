@@ -1,0 +1,19 @@
+[19-Feb-2026 08:27:45 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'wihima_db.users' doesn't exist in /home/wihima/public_html/index.php:7
+Stack trace:
+#0 /home/wihima/public_html/index.php(7): PDOStatement->execute()
+#1 {main}
+  thrown in /home/wihima/public_html/index.php on line 7
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 10
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 10
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 11
+[19-Feb-2026 08:27:52 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 11
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 9
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 10
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 10
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 11
+[19-Feb-2026 08:27:59 UTC] PHP Warning:  Trying to access array offset on value of type bool in /home/wihima/public_html/index.php on line 11
