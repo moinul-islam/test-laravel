@@ -310,7 +310,7 @@
     align-items: center;
     gap: 6px;
     overflow-x: auto;
-    padding: 6px 4px 10px;
+    /* padding: 6px 4px 10px; */
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: smooth;
