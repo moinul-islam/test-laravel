@@ -255,7 +255,7 @@
 
 <style>
 .card { border-radius: 8px; }
-.card-body { font-size: 1rem; }
+.card-body { font-size: 1rem; font-size: .93rem; }
 .card img, .carousel img { border-radius: 4px; }
 .badge.bg-warning { color: #644f00 !important; }
 .btn-group .btn, .btn { border-radius: 0.25rem; }

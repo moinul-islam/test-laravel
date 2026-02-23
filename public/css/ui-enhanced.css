@@ -148,6 +148,7 @@ footer select {
 
 .card-body {
   padding: 1rem 1.25rem;
+  font-size: .93rem;
 }
 
 /* ===== Post Card Specific ===== */
@@ -157,6 +158,7 @@ footer select {
 
 .post-item .card-body:first-of-type {
   padding: 1rem 1.25rem;
+  font-size: .93rem;
 }
 
 .post-item .btn.text-muted:hover:not(.love-btn) {
@@ -263,6 +265,7 @@ footer select {
 
 .profile-card .card-body {
   padding: 1.5rem;
+  font-size: .93rem;
 }
 
 .profile-card .rounded-circle {
