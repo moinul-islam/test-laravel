@@ -363,7 +363,7 @@
 
 [data-bs-theme="dark"] .snav__item { color: #aaa; }
 
-.snav__item:hover {
+.snav__item {
     background: rgba(0,0,0,.05);
     color: #222;
     transform: translateY(-1px);
@@ -379,7 +379,7 @@
     background: #1c1410;
     color: #fff !important;
     border-color: #1c1410;
-    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    /* box-shadow: 0 4px 14px rgba(0,0,0,.18); */
 }
 
 [data-bs-theme="dark"] .snav__item--active {
@@ -394,7 +394,7 @@
 /* Icon-only button */
 .snav__item--icon {
     padding: 7px 13px;
-    font-size: 15px;
+    /* font-size: 15px; */
 }
 
 /* Inner icon */
