@@ -67,7 +67,10 @@
 
             @foreach($universalCategories as $universalCategory)
                 @php
-                    $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get()
+                    // Only get direct children with cat_type profile
+                    $profileSubs = \App\Models\Category::where('parent_cat_id', $universalCategory->id)
+                        ->where('cat_type', 'profile')
+                        ->get()
                         ->filter(fn($s) => categoryHasData($s));
 
                     $isActiveParent = (
@@ -75,14 +78,9 @@
                         $currentParentId      == $universalCategory->id ||
                         $currentCategoryId    == $universalCategory->id
                     );
-
-                    /* ── sort: profile-type first, then by id ── */
-                    $profileSubs = $allSubCategories->where('cat_type', 'profile');
-                    $otherSubs   = $allSubCategories->where('cat_type', '!=', 'profile')->sortBy('id');
-                    $sortedSubCategories = $profileSubs->concat($otherSubs);
                 @endphp
 
-                @if($allSubCategories->count() > 0)
+                @if($profileSubs->count() > 0)
                 <div class="cat-group {{ $isActiveParent ? 'is-open' : '' }}"
                      data-group-id="{{ $universalCategory->id }}">
 
@@ -110,8 +108,7 @@
                     {{-- ── Collapsible panel ── --}}
                     <div class="cat-group__panel" id="group-{{ $universalCategory->id }}">
                         <ul class="cat-list">
-
-                            @foreach($sortedSubCategories as $subCategory)
+                            @foreach($profileSubs as $subCategory)
                                 @php
                                     $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get()
                                         ->filter(fn($ss) => categoryHasData($ss));
@@ -161,7 +158,6 @@
                                                 @endforeach
                                             </ul>
                                         </div>
-
                                     @else
                                         {{-- Leaf sub-category --}}
                                         <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}"
@@ -174,13 +170,11 @@
                                     @endif
                                 </li>
                             @endforeach
-
                         </ul>
                     </div>
                 </div>
                 @endif
             @endforeach
-
         </div>
     </div>
 </div>
