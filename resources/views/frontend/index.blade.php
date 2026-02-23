@@ -222,7 +222,7 @@
         </div>
     </div>
 
-
+<!-- 
     @guest
         <div class="alert alert-info mb-4 login-popup-trigger" role="alert" style="cursor:pointer;" 
              onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();">
@@ -281,10 +281,10 @@
                 }
             })();
         </script>
-    @endguest
+    @endguest -->
 
     {{-- Simple Create Post Form (like create-post-modal.php but inline, not popup) --}}
-    @auth
+    <!-- @auth
     @php
         // Ensure $categories is always defined to avoid "undefined variable" error
         if (!isset($categories)) {
@@ -329,13 +329,13 @@
                         </div>
                     </div>
 
-                    {{-- Media with icon, trigger input only by clicking image icon --}}
+                    
                     <div class="me-2">
                         <div class="input-group input-group-sm align-items-center" style="height: 100%;">
                             <span class="input-group-text bg-white border-rounded" style="padding:.25rem .5rem; cursor:pointer;" id="simpleMediaIconTrigger">
                                 <i class="bi bi-image" title="Add images/videos"></i>
                             </span>
-                            <!-- The input is visually hidden and only triggered by the icon -->
+                            
                             <input type="file" name="media[]" class="form-control form-control-sm border d-none"
                                    id="simpleMediaInput" multiple accept="image/*,video/*,.heic,.heif">
                         </div>
@@ -344,7 +344,7 @@
                     <input type="hidden" name="media_data" id="simpleMediaData">
                     <input type="hidden" id="simple_category_id" name="category_id" value="">
 
-                    {{-- Post button right --}}
+                   
                     <div class="ms-auto">
                         <button type="submit" class="btn btn-primary btn-sm" id="simpleSubmitBtn" disabled style="min-width:64px; width:100%;">
                            
@@ -472,7 +472,7 @@
         </div>
     </div>
 
-    {{-- Inline JS for this form (minimal, trimmed/adapted from modal) --}}
+   
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -674,7 +674,7 @@
         opacity: 0.7;
     }
     </style>
-    @endauth
+    @endauth -->
 
     <div class="row">
         <div class="col-12" id="posts-container">

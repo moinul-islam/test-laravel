@@ -50,8 +50,11 @@
       <link rel="stylesheet" href="{{ asset('css/ui-enhanced.css') }}">
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-      <style>
+<style>
 
+body {
+    background-color: #f4f6fb !important;
+}
 
 form {
     margin: 0 !important;
