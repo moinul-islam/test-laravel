@@ -2,7 +2,7 @@
 @section('main-content')
 
 {{-- Posts Container --}}
-<div class="container mt-4">
+<div class="container">
 
 
 
@@ -53,12 +53,12 @@
        @endphp
 
     <!-- Horizontal Scrollable Navigation -->
-    <div class="scroll-container mb-4">
+    <div class="scroll-container">
         <div class="scroll-content">
 
-            <button href="" class="nav-item-custom animated-rgb-border-color" id="openSidebarBtn">
+            <!-- <button href="" class="nav-item-custom animated-rgb-border-color" id="openSidebarBtn">
                 <span><i class="bi bi-shop animated-rgb-text-color"></i></span>
-            </button>
+            </button> -->
             <style>
             @keyframes rgb-border-bg-color {
                 0% { 
@@ -158,23 +158,23 @@
 
 
 {{-- All Posts Link --}}
-<a href="{{ url('/' . $visitorLocationPath) }}" 
+<!-- <a href="{{ url('/' . $visitorLocationPath) }}" 
    class="nav-item-custom {{ !$selectedCategorySlug ? 'active' : '' }}">
    <span><i class="bi bi-file-post"></i></span>
    <span>All</span>
-</a>
+</a> -->
 <!-- <a href="{{ route('popular.users') }}" class="nav-item-custom">
     <i class="bi bi-stars"></i>Popular
 </a> -->
 
 @if($navCategories->count() > 0)
     {{-- Show determined post categories --}}
-    @foreach($navCategories as $navCat)
+    <!-- @foreach($navCategories as $navCat)
         <a href="{{ url('/' . $visitorLocationPath . '/' . $navCat->slug) }}" 
         class="nav-item-custom {{ $selectedCategorySlug == $navCat->slug ? 'active' : '' }}">
             <span>{{ $navCat->category_name }}</span>
         </a>
-    @endforeach
+    @endforeach -->
 @else
     {{-- Show all parent post categories --}}
     @php
@@ -192,7 +192,7 @@
                                 ->get();
         @endphp
         
-        @if($subCategories->count() > 0)
+        <!-- @if($subCategories->count() > 0)
             <div class="dropdown nav-item-custom">
                 <a href="#" class="nav-item-custom dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <span>{{ $parentCat->category_name }}</span>
@@ -216,11 +216,293 @@
                 </span>
                 <span>{{ $parentCat->category_name }}</span>
             </a>
-        @endif
+        @endif -->
     @endforeach
 @endif
         </div>
     </div>
+
+
+    {{-- ═══════════════════════════════════════════════════
+     HORIZONTAL SCROLL NAV — Replace your existing
+     .scroll-container block with this
+═══════════════════════════════════════════════════ --}}
+
+<div class="snav mb-4">
+    <div class="snav__track">
+
+        {{-- Categories sidebar trigger --}}
+        <button class="snav__item snav__item--icon animated-rgb-border-color" id="openSidebarBtn">
+            <i class="bi bi-shop animated-rgb-text-color"></i>
+        </button>
+
+        {{-- All posts --}}
+        <a href="{{ url('/' . $visitorLocationPath) }}"
+           class="snav__item {{ !$selectedCategorySlug ? 'snav__item--active' : '' }}">
+            <i class="bi bi-grid-3x3-gap-fill snav__item-icon"></i>
+            <span>All</span>
+        </a>
+
+        @if($navCategories->count() > 0)
+            @foreach($navCategories as $navCat)
+                <a href="{{ url('/' . $visitorLocationPath . '/' . $navCat->slug) }}"
+                   class="snav__item {{ $selectedCategorySlug == $navCat->slug ? 'snav__item--active' : '' }}">
+                    <span>{{ $navCat->category_name }}</span>
+                </a>
+            @endforeach
+        @else
+            @php
+                $parentCategories = \App\Models\Category::where('cat_type', 'post')
+                    ->whereNull('parent_cat_id')->whereHas('posts')->get();
+            @endphp
+
+            @foreach($parentCategories as $parentCat)
+                @php
+                    $subCategories = \App\Models\Category::where('parent_cat_id', $parentCat->id)
+                        ->where('cat_type', 'post')->whereHas('posts')->get();
+                @endphp
+
+                @if($subCategories->count() > 0)
+                    <div class="snav__dropdown">
+                        <button class="snav__item snav__item--drop">
+                            <span>{{ $parentCat->category_name }}</span>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:4px;opacity:.6">
+                                <path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <ul class="snav__dropdown-menu">
+                            @foreach($subCategories as $subCat)
+                                <li>
+                                    <a href="{{ url('/' . $visitorLocationPath . '/' . $subCat->slug) }}"
+                                       class="snav__dropdown-item">
+                                        {{ $subCat->category_name }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @else
+                    <a href="{{ url('/' . $visitorLocationPath . '/' . $parentCat->slug) }}"
+                       class="snav__item {{ $selectedCategorySlug == $parentCat->slug ? 'snav__item--active' : '' }}">
+                        @if($parentCat->image)
+                            <i class="bi {{ $parentCat->image }} snav__item-icon"></i>
+                        @endif
+                        <span>{{ $parentCat->category_name }}</span>
+                    </a>
+                @endif
+            @endforeach
+        @endif
+
+    </div>
+</div>
+
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
+/* ── Track ── */
+.snav {
+    position: relative;
+}
+
+.snav__track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 6px 4px 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+
+.snav__track::-webkit-scrollbar { display: none; }
+
+/* Fade edges */
+.snav::before,
+.snav::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 10px;
+    width: 32px;
+    pointer-events: none;
+    z-index: 2;
+}
+/* 
+.snav::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bs-body-bg, #fff), transparent);
+} 
+
+.snav::after {
+    right: 0;
+    background: linear-gradient(to left, var(--bs-body-bg, #fff), transparent);
+}*/
+
+/* ── Base pill ── */
+.snav__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    background: transparent;
+    color: #666;
+    transition: all .22s ease;
+    position: relative;
+    letter-spacing: .01em;
+}
+
+[data-bs-theme="dark"] .snav__item { color: #aaa; }
+
+.snav__item:hover {
+    background: rgba(0,0,0,.05);
+    color: #222;
+    transform: translateY(-1px);
+}
+
+[data-bs-theme="dark"] .snav__item:hover {
+    background: rgba(255,255,255,.07);
+    color: #eee;
+}
+
+/* Active state */
+.snav__item--active {
+    background: #1c1410;
+    color: #fff !important;
+    border-color: #1c1410;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+
+[data-bs-theme="dark"] .snav__item--active {
+    background: #f0ebe4;
+    color: #1c1410 !important;
+    border-color: #f0ebe4;
+    box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+
+.snav__item--active:hover { transform: translateY(-1px); }
+
+/* Icon-only button */
+.snav__item--icon {
+    padding: 7px 13px;
+    font-size: 15px;
+}
+
+/* Inner icon */
+.snav__item-icon { font-size: 13px; opacity: .75; }
+
+/* ── RGB animated border (shop button) ── */
+@keyframes rgb-border-bg-color {
+    0%   { border-color: #0d6efd; background: rgba(13,110,253,.08); color: #0d6efd; }
+    20%  { border-color: #198754; background: rgba(25,135,84,.08);  color: #198754; }
+    40%  { border-color: #ffc107; background: rgba(255,193,7,.08);  color: #e6a800; }
+    60%  { border-color: #dc3545; background: rgba(220,53,69,.08);  color: #dc3545; }
+    80%  { border-color: #6610f2; background: rgba(102,16,242,.08); color: #6610f2; }
+    100% { border-color: #0d6efd; background: rgba(13,110,253,.08); color: #0d6efd; }
+}
+
+.animated-rgb-border-color {
+    animation: rgb-border-bg-color 2.5s linear infinite;
+}
+
+/* ── Dropdown ── */
+.snav__dropdown { position: relative; flex-shrink: 0; }
+
+.snav__item--drop {
+    /* inherits .snav__item */
+}
+
+.snav__dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid rgba(0,0,0,.1);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.14);
+    padding: 6px;
+    list-style: none;
+    margin: 0;
+    min-width: 160px;
+    z-index: 200;
+    animation: dropIn .18s ease;
+}
+
+@keyframes dropIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.snav__dropdown:hover .snav__dropdown-menu,
+.snav__dropdown.is-open .snav__dropdown-menu { display: block; }
+
+.snav__dropdown-item {
+    display: block;
+    padding: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #444;
+    text-decoration: none;
+    border-radius: 9px;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+}
+
+.snav__dropdown-item:hover {
+    background: rgba(0,0,0,.05);
+    color: #111;
+}
+
+[data-bs-theme="dark"] .snav__dropdown-item { color: #ccc; }
+[data-bs-theme="dark"] .snav__dropdown-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    /* ── Auto-center active item ── */
+    const track  = document.querySelector('.snav__track');
+    const active = track && track.querySelector('.snav__item--active');
+
+    if (track && active) {
+        const offset = active.offsetLeft - track.clientWidth / 2 + active.offsetWidth / 2;
+        track.scrollTo({ left: offset, behavior: 'smooth' });
+    }
+
+    /* ── Click: center item ── */
+    track && track.querySelectorAll('.snav__item').forEach(function (item) {
+        item.addEventListener('click', function () {
+            const offset = item.offsetLeft - track.clientWidth / 2 + item.offsetWidth / 2;
+            track.scrollTo({ left: offset, behavior: 'smooth' });
+        });
+    });
+
+    /* ── Dropdown touch/click support ── */
+    document.querySelectorAll('.snav__dropdown').forEach(function (dd) {
+        dd.querySelector('.snav__item--drop').addEventListener('click', function (e) {
+            e.stopPropagation();
+            dd.classList.toggle('is-open');
+        });
+    });
+
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.snav__dropdown.is-open')
+                .forEach(function (dd) { dd.classList.remove('is-open'); });
+    });
+});
+</script>
+
 
 <!-- 
     @guest
