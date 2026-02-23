@@ -2,11 +2,10 @@
 @section('main-content')
 <!-- Page Header -->
 <div class="container mt-4">
-
-
-<div class="">
+<div class="row justify-content-center">
+<div class="col-12 col-md-8 col-lg-5">
     <div class="">
-        <div class="card shadow-sm rounded-3">
+        <div class="card shadow-sm rounded-3 border-0">
             <div class="card-body p-4">
                 <h3 class="mb-4 text-center">Login</h3>
 
@@ -77,9 +76,11 @@
         </div>
 
         <div class="mt-4 text-center">
-            <a href="/register">Create a Account</a>
+            <a href="/register" class="text-decoration-none fw-medium">Create an Account</a>
         </div>
     </div>
+</div>
+</div>
 </div>
 
 </div>

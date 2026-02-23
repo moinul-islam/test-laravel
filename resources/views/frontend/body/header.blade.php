@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top" style="backdrop-filter: blur(8px);">
     <div class="container-fluid d-flex align-items-center">
         <!-- Left: Logo -->
         <a class="navbar-brand" href="/">

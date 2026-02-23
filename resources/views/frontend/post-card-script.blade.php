@@ -8,8 +8,12 @@
    background-color: #f8f9fa;
    }
    .comment-like-btn.active,
-   .reply-like-btn.active {
-   color: #0d6efd !important;
+   .reply-like-btn.active,
+   .like-btn.liked {
+   color: #dc3545 !important;
+   }
+   .love-btn:hover {
+   color: #dc3545 !important;
    }
    .reply-item {
    margin-left: 20px;
@@ -181,12 +185,12 @@
                const icon = btn.querySelector('i');
                
                if (btn.classList.contains('liked')) {
-                   btn.classList.remove('liked', 'text-primary');
-                   icon.className = 'bi bi-hand-thumbs-up me-1';
+                   btn.classList.remove('liked', 'text-danger');
+                   icon.className = 'bi bi-heart me-1';
                    actionCount.textContent = parseInt(actionCount.textContent) - 1;
                } else {
-                   btn.classList.add('liked', 'text-primary');
-                   icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                   btn.classList.add('liked', 'text-danger');
+                   icon.className = 'bi bi-heart-fill me-1';
                    actionCount.textContent = parseInt(actionCount.textContent) + 1;
                }
            }
@@ -200,12 +204,12 @@
                const icon = btn.querySelector('i');
                
                if (btn.classList.contains('active')) {
-                   btn.classList.remove('active', 'text-primary');
-                   icon.className = 'bi bi-hand-thumbs-up me-1';
+                   btn.classList.remove('active', 'text-danger');
+                   icon.className = 'bi bi-heart me-1';
                    actionCount.textContent = parseInt(actionCount.textContent) - 1;
                } else {
-                   btn.classList.add('active', 'text-primary');
-                   icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                   btn.classList.add('active', 'text-danger');
+                   icon.className = 'bi bi-heart-fill me-1';
                    actionCount.textContent = parseInt(actionCount.textContent) + 1;
                }
            }
@@ -278,11 +282,11 @@
                        actionCount.textContent = data.likes_count;
                        
                        if (data.liked) {
-                           btn.classList.add('liked', 'text-primary');
-                           icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                           btn.classList.add('liked', 'text-danger');
+                           icon.className = 'bi bi-heart-fill me-1';
                        } else {
-                           btn.classList.remove('liked', 'text-primary');
-                           icon.className = 'bi bi-hand-thumbs-up me-1';
+                           btn.classList.remove('liked', 'text-danger');
+                           icon.className = 'bi bi-heart me-1';
                        }
                    }
                })
@@ -317,11 +321,11 @@
                        actionCount.textContent = data.likes_count;
                        
                        if (data.liked) {
-                           btn.classList.add('active', 'text-primary');
-                           icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                           btn.classList.add('active', 'text-danger');
+                           icon.className = 'bi bi-heart-fill me-1';
                        } else {
-                           btn.classList.remove('active', 'text-primary');
-                           icon.className = 'bi bi-hand-thumbs-up me-1';
+                           btn.classList.remove('active', 'text-danger');
+                           icon.className = 'bi bi-heart me-1';
                        }
                    }
                })
@@ -402,9 +406,9 @@
                                        </div>
                                        <div class="comment-actions-bar d-flex align-items-center mt-1">
                                            <small class="text-muted me-3">Just now</small>
-                                           <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn" 
+                                           <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn love-btn" 
                                                    data-comment-id="${data.comment.id}">
-                                               <i class="bi bi-hand-thumbs-up me-1"></i>
+                                               <i class="bi bi-heart me-1"></i>
                                                <span class="action-count">0</span>
                                            </button>
                                            <button class="btn btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="${data.comment.id}">
@@ -555,10 +559,10 @@
                                        <small class="text-muted me-2" style="font-size: 11px;">
                                            Just now
                                        </small>
-                                       <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn" 
+                                       <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn love-btn" 
                                                data-reply-id="${data.comment.id}" 
                                                style="font-size: 11px;">
-                                           <i class="bi bi-hand-thumbs-up me-1"></i>
+                                           <i class="bi bi-heart me-1"></i>
                                            <span class="action-count">0</span>
                                        </button>
                                        <button class="btn btn-sm text-muted p-0 nested-reply-btn" 

@@ -67,8 +67,8 @@
                <div class="card-footer bg-white rounded-bottom border-0 pt-0">
                   {{-- Action Buttons - Only Icons and Counts --}}
                   <div class="d-flex justify-content-around text-muted border-top pt-2">
-                     <button class="btn btn-link text-muted d-flex align-items-center like-btn" data-post-id="{{ $post->id }}">
-                     <i class="bi bi-hand-thumbs-up me-1"></i> 
+                     <button class="btn btn-link text-muted d-flex align-items-center like-btn love-btn" data-post-id="{{ $post->id }}">
+                     <i class="bi bi-heart me-1"></i> 
                      <span class="action-count">24</span>
                      </button>
                      <button class="btn btn-link text-muted d-flex align-items-center comment-toggle-btn" data-post-id="{{ $post->id }}">
@@ -142,9 +142,9 @@
                                  <small class="text-muted me-3">{{ $comment->created_at->diffForHumans() }}</small>
                                  
                                  @auth
-                                    <button class="btn btn-link btn-sm text-muted p-0 me-2 comment-like-btn" 
+                                    <button class="btn btn-link btn-sm text-muted p-0 me-2 comment-like-btn love-btn" 
                                        data-comment-id="{{ $comment->id }}">
-                                    <i class="bi bi-hand-thumbs-up me-1"></i>
+                                    <i class="bi bi-heart me-1"></i>
                                     <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
                                     </button>
                                     <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-btn" data-comment-id="{{ $comment->id }}">
@@ -153,7 +153,7 @@
                                     </button>
                                  @else
                                     <span class="text-muted me-2" style="font-size: 12px;">
-                                       <i class="bi bi-hand-thumbs-up me-1"></i>
+                                       <i class="bi bi-heart me-1"></i>
                                        <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
                                     </span>
                                     <a href="{{ route('login') }}" class="btn btn-link btn-sm text-muted p-0 me-2" style="font-size: 12px;">
@@ -213,9 +213,9 @@
                                           </small>
                                           
                                           @auth
-                                             <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-like-btn" 
+                                             <button class="btn btn-link btn-sm text-muted p-0 me-2 reply-like-btn love-btn" 
                                                 data-reply-id="{{ $reply->id }}" style="font-size: 11px;">
-                                             <i class="bi bi-hand-thumbs-up me-1"></i>
+                                             <i class="bi bi-heart me-1"></i>
                                              <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
                                              </button>
                                              <button class="btn btn-link btn-sm text-muted p-0 nested-reply-btn" 
@@ -227,7 +227,7 @@
                                              </button>
                                           @else
                                              <span class="text-muted me-2" style="font-size: 11px;">
-                                                <i class="bi bi-hand-thumbs-up me-1"></i>
+                                                <i class="bi bi-heart me-1"></i>
                                                 <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
                                              </span>
                                              <a href="{{ route('login') }}" class="btn btn-link btn-sm text-muted p-0" style="font-size: 11px;">
@@ -257,12 +257,12 @@
                                     const icon = btn.querySelector('i');
                                     
                                     if (btn.classList.contains('active')) {
-                                        btn.classList.remove('active', 'text-primary');
-                                        icon.className = 'bi bi-hand-thumbs-up me-1';
+                                        btn.classList.remove('active', 'text-danger');
+                                        icon.className = 'bi bi-heart me-1';
                                         actionCount.textContent = parseInt(actionCount.textContent) - 1;
                                     } else {
-                                        btn.classList.add('active', 'text-primary');
-                                        icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                                        btn.classList.add('active', 'text-danger');
+                                        icon.className = 'bi bi-heart-fill me-1';
                                         actionCount.textContent = parseInt(actionCount.textContent) + 1;
                                     }
                                 }
@@ -309,8 +309,12 @@
                         background-color: #f8f9fa;
                         }
                         .comment-like-btn.active,
-                        .reply-like-btn.active {
-                        color: #0d6efd !important;
+                        .reply-like-btn.active,
+                        .like-btn.liked {
+                        color: #dc3545 !important;
+                        }
+                        .love-btn:hover {
+                        color: #dc3545 !important;
                         }
                         .reply-item {
                         margin-left: 20px;
@@ -386,12 +390,12 @@
                   const icon = btn.querySelector('i');
                   
                   if (btn.classList.contains('liked')) {
-                  btn.classList.remove('liked', 'text-primary');
-                  icon.className = 'bi bi-hand-thumbs-up me-1';
+                  btn.classList.remove('liked', 'text-danger');
+                  icon.className = 'bi bi-heart me-1';
                   actionCount.textContent = parseInt(actionCount.textContent) - 1;
                   } else {
-                  btn.classList.add('liked', 'text-primary');
-                  icon.className = 'bi bi-hand-thumbs-up-fill me-1';
+                  btn.classList.add('liked', 'text-danger');
+                  icon.className = 'bi bi-heart-fill me-1';
                   actionCount.textContent = parseInt(actionCount.textContent) + 1;
                   }
                   }

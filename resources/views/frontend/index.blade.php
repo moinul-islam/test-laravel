@@ -301,7 +301,7 @@
         </div>
     </div>
 
-    <div class="card mb-4 shadow-sm">
+    <div class="card mb-4 shadow-sm border-0">
         <div class="card-body">
             <form action="{{ route('post.store') }}" method="POST" enctype="multipart/form-data" id="simpleCreatePostForm">
                 @csrf

@@ -1,0 +1,458 @@
+/**
+ * eINFO UI Enhancement - Standard & Beautiful Design
+ * All features preserved - visual improvements only
+ */
+
+/* ===== Design Tokens - Colorful Theme ===== */
+:root {
+  --einfo-primary: #0d6efd;
+  --einfo-primary-hover: #0b5ed7;
+  --einfo-primary-light: rgba(13, 110, 253, 0.08);
+  --einfo-success: #198754;
+  --einfo-danger: #dc3545;
+  --einfo-love: #e91e63;
+  --einfo-purple: #7c3aed;
+  --einfo-orange: #f59e0b;
+  --einfo-teal: #14b8a6;
+  --einfo-border: #e9ecef;
+  --einfo-border-focus: #86b7fe;
+  --einfo-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --einfo-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --einfo-shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+  --einfo-radius: 12px;
+  --einfo-radius-sm: 8px;
+  --einfo-transition: 0.2s ease;
+}
+
+/* ===== Base Typography ===== */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Navbar Enhancement ===== */
+.navbar.navbar-expand-lg {
+  box-shadow: 0 2px 12px rgba(13, 110, 253, 0.08);
+  padding: 0.5rem 0 !important;
+  border-bottom: 1px solid rgba(13, 110, 253, 0.1);
+}
+
+.navbar .navbar-brand img {
+  transition: transform var(--einfo-transition);
+}
+
+.navbar .navbar-brand:hover img {
+  transform: scale(1.05);
+}
+
+.navbar .form-control {
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--einfo-border);
+  transition: border-color var(--einfo-transition), box-shadow var(--einfo-transition);
+}
+
+.navbar .form-control:focus {
+  border-color: var(--einfo-border-focus);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.navbar .nav-link img.rounded-circle {
+  transition: transform var(--einfo-transition);
+}
+
+.navbar .nav-link:hover img.rounded-circle {
+  transform: scale(1.08);
+}
+
+/* Dropdown menu polish */
+.navbar .dropdown-menu {
+  border-radius: var(--einfo-radius-sm);
+  box-shadow: var(--einfo-shadow);
+  border: 1px solid var(--einfo-border);
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+}
+
+.navbar .dropdown-item {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin: 0 4px;
+  transition: background var(--einfo-transition);
+}
+
+.navbar .dropdown-item:hover {
+  background: var(--einfo-primary-light);
+}
+
+/* ===== Love Button ===== */
+.love-btn.liked,
+.like-btn.liked,
+.comment-like-btn.active,
+.reply-like-btn.active {
+  color: var(--einfo-love) !important;
+}
+
+.love-btn:hover {
+  color: var(--einfo-love) !important;
+}
+
+/* ===== Footer Enhancement ===== */
+footer.py-4 {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #fef3c7 100%);
+  margin-top: 3rem !important;
+}
+
+footer .list-inline-item a {
+  transition: color var(--einfo-transition);
+}
+
+footer .list-inline-item a:hover {
+  color: var(--einfo-primary) !important;
+}
+
+footer select {
+  border-radius: var(--einfo-radius-sm);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--einfo-border);
+}
+
+/* ===== Card Enhancement ===== */
+.card {
+  border: 1px solid var(--einfo-border);
+  border-radius: var(--einfo-radius);
+  transition: box-shadow var(--einfo-transition), transform var(--einfo-transition);
+}
+
+.card:hover {
+  box-shadow: var(--einfo-shadow);
+}
+
+.card.shadow-sm {
+  box-shadow: var(--einfo-shadow-sm) !important;
+}
+
+.card.shadow-sm:hover {
+  box-shadow: var(--einfo-shadow) !important;
+}
+
+.card.border-0 {
+  border: none !important;
+  box-shadow: var(--einfo-shadow-sm);
+}
+
+.card.border-0:hover {
+  box-shadow: var(--einfo-shadow);
+}
+
+.card-body {
+  padding: 1rem 1.25rem;
+}
+
+/* ===== Post Card Specific ===== */
+.post-item .card {
+  overflow: hidden;
+}
+
+.post-item .card-body:first-of-type {
+  padding: 1rem 1.25rem;
+}
+
+.post-item .btn.text-muted:hover:not(.love-btn) {
+  color: var(--einfo-primary) !important;
+}
+
+.post-item .love-btn:hover {
+  color: var(--einfo-love) !important;
+}
+
+/* ===== Nav Item Custom (Category Pills) ===== */
+.nav-item-custom {
+  box-shadow: var(--einfo-shadow-sm);
+  transition: all var(--einfo-transition);
+}
+
+.nav-item-custom:hover {
+  transform: translateY(-1px);
+}
+
+.nav-item-custom.active {
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
+  background: linear-gradient(135deg, #0d6efd 0%, #6366f1 100%) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.nav-item-custom:not(.active):hover {
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%) !important;
+}
+
+/* ===== Create Post Form ===== */
+#simpleCreatePostForm .card {
+  border-radius: var(--einfo-radius);
+}
+
+#simpleCreatePostForm textarea.form-control {
+  border-radius: var(--einfo-radius-sm);
+  border: 1px solid var(--einfo-border);
+  transition: border-color var(--einfo-transition);
+}
+
+#simpleCreatePostForm textarea.form-control:focus {
+  border-color: var(--einfo-border-focus);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+#simpleCreatePostForm .form-select,
+#simpleCreatePostForm .input-group-text {
+  border-radius: var(--einfo-radius-sm);
+}
+
+#simpleCreatePostForm .btn-primary {
+  border-radius: var(--einfo-radius-sm);
+  font-weight: 500;
+  padding: 0.4rem 1rem;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  border-radius: var(--einfo-radius-sm);
+  font-weight: 500;
+  transition: all var(--einfo-transition);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0d6efd 0%, #6366f1 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0b5ed7 0%, #4f46e5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(13, 110, 253, 0.4);
+}
+
+.btn-outline-secondary:hover {
+  transform: translateY(-1px);
+}
+
+/* ===== Alerts ===== */
+.alert {
+  border-radius: var(--einfo-radius-sm);
+  border: none;
+}
+
+.alert-info.login-popup-trigger {
+  cursor: pointer;
+  transition: transform var(--einfo-transition), box-shadow var(--einfo-transition);
+}
+
+.alert-info.login-popup-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--einfo-shadow);
+}
+
+/* ===== Profile Card ===== */
+.profile-card .card,
+.card:has(.rounded-circle[style*="100px"]) {
+  border-radius: var(--einfo-radius);
+  overflow: visible;
+}
+
+.profile-card .card-body {
+  padding: 1.5rem;
+}
+
+.profile-card .rounded-circle {
+  border: 3px solid #fff;
+  box-shadow: var(--einfo-shadow);
+}
+
+.profile-card .btn {
+  border-radius: 20px;
+}
+
+/* ===== Sidebar ===== */
+.category-sidebar {
+  border-radius: 0 var(--einfo-radius) var(--einfo-radius) 0;
+  box-shadow: var(--einfo-shadow-lg);
+}
+
+.sidebar-header {
+  border-radius: 0 var(--einfo-radius-sm) 0 0;
+}
+
+/* ===== Modals ===== */
+.modal-content {
+  border-radius: var(--einfo-radius);
+  border: none;
+  box-shadow: var(--einfo-shadow-lg);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--einfo-border);
+  padding: 1rem 1.25rem;
+}
+
+.modal-body {
+  padding: 1.25rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--einfo-border);
+  padding: 1rem 1.25rem;
+}
+
+/* Auth Modal */
+#authModal .modal-content {
+  overflow: hidden;
+}
+
+#authModal .form-control {
+  border-radius: var(--einfo-radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+#authModal .btn-primary {
+  padding: 0.5rem 1rem;
+  border-radius: var(--einfo-radius-sm);
+}
+
+/* ===== Form Controls Global ===== */
+.form-control,
+.form-select {
+  border-radius: var(--einfo-radius-sm);
+  border: 1px solid var(--einfo-border);
+  transition: border-color var(--einfo-transition), box-shadow var(--einfo-transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--einfo-border-focus);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+/* ===== Search Suggestions ===== */
+#searchSuggestions {
+  border-radius: var(--einfo-radius-sm);
+  box-shadow: var(--einfo-shadow);
+  border: 1px solid var(--einfo-border);
+}
+
+.suggestion-item {
+  border-radius: 6px;
+  margin: 0 4px;
+}
+
+/* ===== Scroll Container ===== */
+.scroll-container {
+  border-radius: var(--einfo-radius-sm);
+}
+
+/* ===== Product/Service Cards ===== */
+.card-img-top {
+  border-radius: var(--einfo-radius) var(--einfo-radius) 0 0;
+}
+
+.products-grid .card,
+#posts-container .card {
+  transition: transform var(--einfo-transition), box-shadow var(--einfo-transition);
+}
+
+.products-grid .card:hover,
+#posts-container .card:hover {
+  transform: translateY(-2px);
+}
+
+.cart-badge:not(.disabled) {
+  transition: transform var(--einfo-transition);
+}
+
+.cart-badge:not(.disabled):hover {
+  transform: scale(1.05);
+}
+
+.badge.bg-primary {
+  background: linear-gradient(135deg, #0d6efd 0%, #6366f1 100%) !important;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+}
+
+.badge.bg-success {
+  box-shadow: 0 2px 4px rgba(25, 135, 84, 0.25);
+}
+
+.badge.bg-danger {
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.25);
+}
+
+/* Colorful action icons on post cards */
+.post-item .comment-toggle-btn:hover {
+  color: var(--einfo-teal) !important;
+}
+
+.post-item .share-btn:hover {
+  color: var(--einfo-purple) !important;
+}
+
+/* ===== Floating Cart ===== */
+.floating-cart .cart-icon,
+.floating-cart {
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d6efd 0%, #6366f1 100%) !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  transition: transform var(--einfo-transition), box-shadow var(--einfo-transition);
+}
+
+.floating-cart:hover .cart-icon,
+.floating-cart:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+}
+
+/* ===== Colorful Alerts ===== */
+.alert-info {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border-left: 4px solid #0ea5e9;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
+  border-left: 4px solid #22c55e;
+}
+
+/* ===== Login/Register Pages ===== */
+.card.rounded-3 {
+  border-radius: var(--einfo-radius) !important;
+}
+
+/* ===== Welcome Modal ===== */
+#welcomeModal .modal-content {
+  border-radius: var(--einfo-radius);
+}
+
+/* ===== Dark Mode Compatibility ===== */
+[data-bs-theme="dark"] .navbar {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+[data-bs-theme="dark"] .card {
+  border-color: #495057;
+}
+
+[data-bs-theme="dark"] .modal-content {
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+[data-bs-theme="dark"] footer {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+[data-bs-theme="dark"] .nav-item-custom.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+}

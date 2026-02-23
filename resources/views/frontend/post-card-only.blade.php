@@ -1,5 +1,5 @@
 <div class="mb-4 post-item" data-post-id="{{ $post->id }}">
-   <div class="card shadow-sm">
+   <div class="card shadow-sm border-0">
       <div>
          <div class="d-flex align-items-center justify-content-between card-body">
             <div class="d-flex align-items-center">
@@ -250,10 +250,10 @@
             <div class="d-flex justify-content-around text-muted border-top pt-2 pb-2">
                @auth
                <button 
-                  class="btn text-muted d-flex align-items-center like-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-primary' : '' }}" 
+                  class="btn text-muted d-flex align-items-center like-btn love-btn {{ $post->isLikedBy(Auth::id()) ? 'liked text-danger' : '' }}" 
                   data-post-id="{{ $post->id }}"
                   >
-               <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i> 
+               <i class="bi {{ $post->isLikedBy(Auth::id()) ? 'bi-heart-fill' : 'bi-heart' }} me-1"></i> 
                <span class="action-count">{{ $post->likesCount() }}</span>
                </button>
                @else
@@ -262,7 +262,7 @@
                   onclick="event.preventDefault(); var modal = new bootstrap.Modal(document.getElementById('authModal')); modal.show();"
                   type="button"
                   >
-               <i class="bi bi-hand-thumbs-up me-1"></i>
+               <i class="bi bi-heart me-1"></i>
                <span class="action-count">{{ $post->likesCount() }}</span>
                </button>
                @endauth
@@ -349,9 +349,9 @@
                         <div class="comment-actions-bar d-flex align-items-center mt-1">
                            <small class="text-muted me-3">{{ $comment->created_at->diffForHumans() }}</small>
                            @auth
-                           <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn {{ $comment->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
+                           <button class="btn btn-sm text-muted p-0 me-2 comment-like-btn love-btn {{ $comment->isLikedBy(Auth::id()) ? 'active text-danger' : '' }}" 
                               data-comment-id="{{ $comment->id }}">
-                           <i class="bi {{ $comment->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
+                           <i class="bi {{ $comment->isLikedBy(Auth::id()) ? 'bi-heart-fill' : 'bi-heart' }} me-1"></i>
                            <span class="action-count">{{ $comment->likesCount() }}</span>
                            </button>
                            @auth
@@ -371,7 +371,7 @@
                            @endauth
                            @else
                            <span class="text-muted me-2" style="font-size: 12px;">
-                           <i class="bi bi-hand-thumbs-up me-1"></i>
+                           <i class="bi bi-heart me-1"></i>
                            <span class="action-count">{{ $comment->likes_count ?? 0 }}</span>
                            </span>
                            <a href="javascript:void(0);" 
@@ -447,10 +447,10 @@
                                     {{ $reply->created_at->diffForHumans() }}
                                     </small>
                                     @auth
-                                    <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn {{ $reply->isLikedBy(Auth::id()) ? 'active text-primary' : '' }}" 
+                                    <button class="btn btn-sm text-muted p-0 me-2 reply-like-btn love-btn {{ $reply->isLikedBy(Auth::id()) ? 'active text-danger' : '' }}" 
                                        data-reply-id="{{ $reply->id }}" 
                                        style="font-size: 11px;">
-                                    <i class="bi {{ $reply->isLikedBy(Auth::id()) ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }} me-1"></i>
+                                    <i class="bi {{ $reply->isLikedBy(Auth::id()) ? 'bi-heart-fill' : 'bi-heart' }} me-1"></i>
                                     <span class="action-count">{{ $reply->likesCount() }}</span>
                                     </button>
                                     @auth
@@ -472,7 +472,7 @@
                                     @endauth
                                     @else
                                     <span class="text-muted me-2" style="font-size: 11px;">
-                                    <i class="bi bi-hand-thumbs-up me-1"></i>
+                                    <i class="bi bi-heart me-1"></i>
                                     <span class="action-count">{{ $reply->likes_count ?? 0 }}</span>
                                     </span>
                                     <button 

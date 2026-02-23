@@ -764,7 +764,8 @@ $(document).ready(function() {
 
 <style>
     .modal-content {
-        border-radius: 15px;
+        border-radius: 16px;
+        overflow: hidden;
     }
     .auth-step {
         min-height: 250px;

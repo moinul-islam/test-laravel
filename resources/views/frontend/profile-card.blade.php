@@ -1,8 +1,8 @@
 {{-- File Location: resources/views/frontend/partials/profile-card.blade.php --}}
 
-<div class="">
+<div class="profile-card">
    <div class="col-12">
-      <div class="card">
+      <div class="card shadow-sm">
          <div class="card-body text-center">
             
 
