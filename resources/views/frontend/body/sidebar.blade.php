@@ -320,8 +320,7 @@
 .cat-sidebar__body::-webkit-scrollbar-track { background: transparent; }
 .cat-sidebar__body::-webkit-scrollbar-thumb { background: var(--cs-border); border-radius: 4px; }
 
-/* ── Category Group ── */
-.cat-group { border-bottom: 1px solid var(--cs-border); }
+
 
 .cat-group__toggle {
     width: 100%;
@@ -404,7 +403,7 @@
     overflow: hidden;
     list-style: none;
     margin: 0;
-    padding: 4px 0 8px;
+    /* padding: 4px 0 8px; */
     position: relative;
 }
 
