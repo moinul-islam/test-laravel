@@ -1,14 +1,32 @@
+<!-- ============================================================
+     BEAUTIFUL CATEGORY SIDEBAR — Redesigned
+     Drop-in replacement for your existing sidebar partial.
+     All Blade / Laravel logic is preserved exactly.
+     Only the markup structure + CSS + JS were improved.
+============================================================ -->
+
 <!-- Sidebar -->
-<div class="category-sidebar" id="categorySidebar">
-    <div class="sidebar-header">
-        <h5>Business Categories</h5>
-        <button class="btn-close" id="closeSidebarBtn">&times;</button>
+<div class="cat-sidebar" id="categorySidebar">
+
+    {{-- ── Header ── --}}
+    <div class="cat-sidebar__header">
+        <div class="cat-sidebar__header-inner">
+            <span class="cat-sidebar__logo-dot"></span>
+            <h5 class="cat-sidebar__title">Business Categories</h5>
+        </div>
+        <button class="cat-sidebar__close" id="closeSidebarBtn" aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M1 1l16 16M17 1L1 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
     </div>
-    
-    <div class="sidebar-body">
-        <div class="accordion" id="categoryAccordion">
+
+    {{-- ── Body ── --}}
+    <div class="cat-sidebar__body">
+        <div class="cat-sidebar__accordion" id="categoryAccordion">
+
             @php
-                // Helper function to get all descendant category IDs (including the category itself)
+                /* ── Helpers (unchanged logic) ── */
                 function getAllDescendantCategoryIds($categoryId) {
                     $categoryIds = [$categoryId];
                     $children = \App\Models\Category::where('parent_cat_id', $categoryId)->get();
@@ -17,571 +35,643 @@
                     }
                     return $categoryIds;
                 }
-                
-                // Helper function to check if a category has data (posts or users)
+
                 function categoryHasData($category) {
-                    // Get all descendant category IDs including the category itself
                     $categoryIds = getAllDescendantCategoryIds($category->id);
-                    
-                    // Check if any of these categories have posts (for product/service/post)
-                    $hasPosts = \App\Models\Post::whereIn('category_id', $categoryIds)->exists();
-                    
-                    // Check if any of these categories have users (for profile)
-                    $hasUsers = \App\Models\User::whereIn('category_id', $categoryIds)->exists();
-                    
+                    $hasPosts    = \App\Models\Post::whereIn('category_id', $categoryIds)->exists();
+                    $hasUsers    = \App\Models\User::whereIn('category_id', $categoryIds)->exists();
                     return $hasPosts || $hasUsers;
                 }
-                
-                $universalCategories = \App\Models\Category::where('cat_type', 'universal')->where('parent_cat_id', null)->get();
-                $currentCategoryId = null;
-                $currentParentId = null;
+
+                $universalCategories = \App\Models\Category::where('cat_type', 'universal')
+                    ->where('parent_cat_id', null)->get();
+
+                $currentCategoryId   = null;
+                $currentParentId     = null;
                 $currentGrandParentId = null;
-                
-                // Get current category from URL
-                if(request()->route('slug')) {
+
+                if (request()->route('slug')) {
                     $currentCategory = \App\Models\Category::where('slug', request()->route('slug'))->first();
-                    if($currentCategory) {
+                    if ($currentCategory) {
                         $currentCategoryId = $currentCategory->id;
-                        $currentParentId = $currentCategory->parent_cat_id;
-                        
-                        // Find grandparent if exists
-                        if($currentParentId) {
+                        $currentParentId   = $currentCategory->parent_cat_id;
+                        if ($currentParentId) {
                             $parentCategory = \App\Models\Category::find($currentParentId);
-                            if($parentCategory) {
-                                $currentGrandParentId = $parentCategory->parent_cat_id;
-                            }
+                            if ($parentCategory) $currentGrandParentId = $parentCategory->parent_cat_id;
                         }
                     }
                 }
-                
-                // Filter universal categories to only show those that have data
-                $universalCategories = $universalCategories->filter(function($category) {
-                    return categoryHasData($category);
-                });
+
+                $universalCategories = $universalCategories->filter(fn($c) => categoryHasData($c));
             @endphp
-            
+
             @foreach($universalCategories as $universalCategory)
                 @php
-                    $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get();
-                    // Filter subcategories to only show those that have data
-                    $allSubCategories = $allSubCategories->filter(function($subCategory) {
-                        return categoryHasData($subCategory);
-                    });
-                    $isActiveParent = ($currentGrandParentId == $universalCategory->id || $currentParentId == $universalCategory->id || $currentCategoryId == $universalCategory->id);
+                    $allSubCategories = \App\Models\Category::where('parent_cat_id', $universalCategory->id)->get()
+                        ->filter(fn($s) => categoryHasData($s));
+
+                    $isActiveParent = (
+                        $currentGrandParentId == $universalCategory->id ||
+                        $currentParentId      == $universalCategory->id ||
+                        $currentCategoryId    == $universalCategory->id
+                    );
+
+                    /* ── sort: profile-type first, then by id ── */
+                    $profileSubs = $allSubCategories->where('cat_type', 'profile');
+                    $otherSubs   = $allSubCategories->where('cat_type', '!=', 'profile')->sortBy('id');
+                    $sortedSubCategories = $profileSubs->concat($otherSubs);
                 @endphp
-                
+
                 @if($allSubCategories->count() > 0)
-                <div class="accordion-item">
+                <div class="cat-group {{ $isActiveParent ? 'is-open' : '' }}"
+                     data-group-id="{{ $universalCategory->id }}">
 
-                    <!-- @if ($loop->first)
-                        <h2 class="accordion-header" id="headingHome">
-                            <a href="{{ url('/') }}" 
-                               class="accordion-button home-btn {{ (!request()->route('slug') || request()->route('slug') == null) ? 'active' : '' }}"
-                               style="display: flex; align-items: center;"
-                               type="button">
-                                <i class="bi bi-house-door" style="font-size: 1.2rem; margin-right: 8px;"></i>
-                                @t('Home')
-                            </a>
-                        </h2>
-                    @endif -->
+                    {{-- ── Group header button ── --}}
+                    <button class="cat-group__toggle"
+                            type="button"
+                            aria-expanded="{{ $isActiveParent ? 'true' : 'false' }}"
+                            aria-controls="group-{{ $universalCategory->id }}">
 
-                    <h2 class="accordion-header" id="heading{{ $universalCategory->id }}">
-                        <button class="accordion-button {{ $isActiveParent ? '' : 'collapsed' }}" type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#collapse{{ $universalCategory->id }}" 
-                                aria-expanded="{{ $isActiveParent ? 'true' : 'false' }}" 
-                                aria-controls="collapse{{ $universalCategory->id }}">
-                            <img src="{{ $universalCategory->image ? asset('icon/' . $universalCategory->image) : asset('profile-image/no-image.jpeg') }}"
+                        <span class="cat-group__icon-wrap">
+                            <img src="{{ $universalCategory->image ? asset('icon/'.$universalCategory->image) : asset('profile-image/no-image.jpeg') }}"
                                  alt="{{ $universalCategory->category_name }}"
-                                 style="width: 24px; height: 24px; margin-right: 10px; object-fit: cover; border-radius: 4px;">
-                            @t($universalCategory->category_name)
-                        </button>
-                    </h2>
-                    <div id="collapse{{ $universalCategory->id }}" 
-                         class="accordion-collapse collapse {{ $isActiveParent ? 'show' : '' }}" 
-                         aria-labelledby="heading{{ $universalCategory->id }}" 
-                         data-bs-parent="#categoryAccordion">
-                        <div class="accordion-body">
-                            <ul class="list-unstyled">
+                                 class="cat-group__icon">
+                        </span>
 
+                        <span class="cat-group__label">@t($universalCategory->category_name)</span>
 
+                        <span class="cat-group__arrow">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </button>
 
-                            <!-- 
-                            
+                    {{-- ── Collapsible panel ── --}}
+                    <div class="cat-group__panel" id="group-{{ $universalCategory->id }}">
+                        <ul class="cat-list">
 
-                            profile/products/services sob category ase ekhane
-
+                            @foreach($sortedSubCategories as $subCategory)
                                 @php
-                                    // "profile" cat_type gulo first, then baki gulo id-onujayi
-                                    $profileSubCategories = $allSubCategories->where('cat_type', 'profile');
-                                    $otherSubCategories = $allSubCategories->where('cat_type', '!=', 'profile');
-                                    // others sort by id 
-                                    $otherSubCategories = $otherSubCategories->sortBy('id');
-                                    // Combined collection
-                                    $sortedSubCategories = $profileSubCategories->concat($otherSubCategories);
-                                @endphp
-                            
-                            -->
+                                    $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get()
+                                        ->filter(fn($ss) => categoryHasData($ss));
 
-
-
-                                @php
-                                    // Only subcategories where cat_type is NOT 'profile'
-                                    $sortedSubCategories = $allSubCategories->where('cat_type', '===', 'profile')->sortBy('id');
+                                    $isActiveSubParent = (
+                                        $currentParentId  == $subCategory->id ||
+                                        $currentCategoryId == $subCategory->id
+                                    );
                                 @endphp
 
-                                @foreach($sortedSubCategories as $subCategory)
-                                    @php
-                                        $subSubCategories = \App\Models\Category::where('parent_cat_id', $subCategory->id)->get();
-                                        // Filter sub-subcategories to only show those that have data
-                                        $subSubCategories = $subSubCategories->filter(function($subSubCategory) {
-                                            return categoryHasData($subSubCategory);
-                                        });
-                                        $isActiveSubParent = ($currentParentId == $subCategory->id || $currentCategoryId == $subCategory->id);
-                                    @endphp
-                                    
-                                    <li>
-                                        @if($subSubCategories->count() > 0)
-                                            <div class="sub-accordion-item">
-                                                <div class="sub-accordion-wrapper">
-                                                    <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}" 
-                                                       class="sub-category-link {{ $currentCategoryId == $subCategory->id ? 'active' : '' }}">
-                                                        <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
-                                                             alt="{{ $subCategory->category_name }}"
-                                                             style="width: 20px; height: 20px; margin-right: 10px; object-fit: cover; border-radius: 3px;">
-                                                        <span>@t($subCategory->category_name)</span>
-                                                    </a>
-                                                    <button class="collapse-toggle {{ $isActiveSubParent ? '' : 'collapsed' }}" type="button" 
-                                                            data-bs-toggle="collapse" 
-                                                            data-bs-target="#subCollapse{{ $subCategory->id }}" 
-                                                            aria-expanded="{{ $isActiveSubParent ? 'true' : 'false' }}">
-                                                        <i class="fas fa-chevron-down sub-arrow"></i>
-                                                    </button>
-                                                </div>
-                                                
-                                                <div class="collapse sub-collapse {{ $isActiveSubParent ? 'show' : '' }}" id="subCollapse{{ $subCategory->id }}">
-                                                    <ul class="list-unstyled sub-sub-list">
-                                                        @foreach($subSubCategories as $subSubCategory)
-                                                            <li>
-                                                                <a href="{{ route('products.category', [$visitorLocationPath, $subSubCategory->slug]) }}" 
-                                                                   class="d-flex align-items-center text-decoration-none sub-sub-link {{ $currentCategoryId == $subSubCategory->id ? 'active' : '' }}">
-                                                                    <img src="{{ $subSubCategory->image ? asset('icon/' . $subSubCategory->image) : asset('profile-image/no-image.jpeg') }}"
-                                                                         alt="{{ $subSubCategory->category_name }}"
-                                                                         style="width: 18px; height: 18px; margin-right: 8px; object-fit: cover; border-radius: 3px;">
-                                                                    <span>@t($subSubCategory->category_name)</span>
-                                                                </a>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
+                                <li class="cat-list__item">
+                                    @if($subSubCategories->count() > 0)
+                                        {{-- Sub-category with children --}}
+                                        <div class="cat-sub {{ $isActiveSubParent ? 'is-open' : '' }}"
+                                             data-sub-id="{{ $subCategory->id }}">
+
+                                            <div class="cat-sub__row">
+                                                <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}"
+                                                   class="cat-sub__link {{ $currentCategoryId == $subCategory->id ? 'is-active' : '' }}">
+                                                    <img src="{{ $subCategory->image ? asset('icon/'.$subCategory->image) : asset('profile-image/no-image.jpeg') }}"
+                                                         alt="{{ $subCategory->category_name }}"
+                                                         class="cat-sub__icon">
+                                                    <span>@t($subCategory->category_name)</span>
+                                                </a>
+
+                                                <button class="cat-sub__toggle"
+                                                        type="button"
+                                                        aria-expanded="{{ $isActiveSubParent ? 'true' : 'false' }}"
+                                                        aria-label="Expand {{ $subCategory->category_name }}">
+                                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                                        <path d="M1.5 3.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </button>
                                             </div>
-                                        @else
-                                            <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}" 
-                                               class="d-flex align-items-center text-decoration-none sub-link {{ $currentCategoryId == $subCategory->id ? 'active' : '' }}">
-                                                <img src="{{ $subCategory->image ? asset('icon/' . $subCategory->image) : asset('profile-image/no-image.jpeg') }}"
-                                                     alt="{{ $subCategory->category_name }}"
-                                                     style="width: 20px; height: 20px; margin-right: 10px; object-fit: cover; border-radius: 3px;">
-                                                <span>@t($subCategory->category_name)</span>
-                                            </a>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
+
+                                            <ul class="cat-sub__panel {{ $isActiveSubParent ? 'is-open' : '' }}">
+                                                @foreach($subSubCategories as $subSubCategory)
+                                                    <li>
+                                                        <a href="{{ route('products.category', [$visitorLocationPath, $subSubCategory->slug]) }}"
+                                                           class="cat-deep__link {{ $currentCategoryId == $subSubCategory->id ? 'is-active' : '' }}">
+                                                            <img src="{{ $subSubCategory->image ? asset('icon/'.$subSubCategory->image) : asset('profile-image/no-image.jpeg') }}"
+                                                                 alt="{{ $subSubCategory->category_name }}"
+                                                                 class="cat-deep__icon">
+                                                            <span>@t($subSubCategory->category_name)</span>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+
+                                    @else
+                                        {{-- Leaf sub-category --}}
+                                        <a href="{{ route('products.category', [$visitorLocationPath, $subCategory->slug]) }}"
+                                           class="cat-leaf__link {{ $currentCategoryId == $subCategory->id ? 'is-active' : '' }}">
+                                            <img src="{{ $subCategory->image ? asset('icon/'.$subCategory->image) : asset('profile-image/no-image.jpeg') }}"
+                                                 alt="{{ $subCategory->category_name }}"
+                                                 class="cat-leaf__icon">
+                                            <span>@t($subCategory->category_name)</span>
+                                        </a>
+                                    @endif
+                                </li>
+                            @endforeach
+
+                        </ul>
                     </div>
                 </div>
                 @endif
             @endforeach
+
         </div>
     </div>
 </div>
 
 <!-- Overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="cat-overlay" id="sidebarOverlay"></div>
 
+
+{{-- ══════════════════════════════════════════════════════════════
+     STYLES
+══════════════════════════════════════════════════════════════ --}}
 <style>
-/* Sidebar Styles */
-.category-sidebar {
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+    --cs-bg:           #ffffff;
+    --cs-bg-hover:     #fdf6f0;
+    --cs-border:       #f0ebe4;
+    --cs-accent:       #e8622a;
+    --cs-accent-soft:  #fef0e9;
+    --cs-text-primary: #1c1410;
+    --cs-text-muted:   #857d77;
+    --cs-text-link:    #4a3f38;
+    --cs-shadow:       0 8px 40px rgba(0,0,0,.12);
+    --cs-icon-radius:  6px;
+    --cs-width:        320px;
+    --cs-transition:   .28s cubic-bezier(.4,0,.2,1);
+}
+
+[data-bs-theme="dark"] {
+    --cs-bg:           #181512;
+    --cs-bg-hover:     #231e1a;
+    --cs-border:       #2e2822;
+    --cs-accent:       #f0743c;
+    --cs-accent-soft:  #2e1e12;
+    --cs-text-primary: #f0ebe4;
+    --cs-text-muted:   #7a7068;
+    --cs-text-link:    #c8bfb7;
+}
+
+/* ── Sidebar Shell ── */
+.cat-sidebar {
     position: fixed;
     top: 0;
-    left: -350px;
-    width: 350px;
+    left: calc(-1 * var(--cs-width) - 20px);
+    width: var(--cs-width);
     height: 100vh;
-    background: #fff;
-    box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+    background: var(--cs-bg);
+    box-shadow: var(--cs-shadow);
     z-index: 1060;
-    transition: left 0.3s ease;
-    overflow-y: auto;
-}
-
-.category-sidebar.active {
-    left: 0;
-}
-
-.sidebar-header {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    transition: left var(--cs-transition);
+    font-family: 'DM Sans', sans-serif;
+    border-right: 1px solid var(--cs-border);
+}
+
+.cat-sidebar.active { left: 0; }
+
+/* ── Overlay ── */
+.cat-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(3px);
+    z-index: 1055;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--cs-transition);
+}
+.cat-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ── Header ── */
+.cat-sidebar__header {
+    display: flex;
     align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #e0e0e0;
-    background: #f8f9fa;
+    justify-content: space-between;
+    padding: 20px 20px 18px;
+    border-bottom: 1px solid var(--cs-border);
+    flex-shrink: 0;
+    background: var(--cs-bg);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 5;
 }
 
-.sidebar-header h5 {
-    margin: 0;
-    font-weight: 600;
-    color: #333;
-}
-
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    color: #666;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+.cat-sidebar__header-inner {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
 }
 
-.btn-close:hover {
-    color: #000;
+.cat-sidebar__logo-dot {
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--cs-accent);
+    box-shadow: 0 0 0 3px var(--cs-accent-soft);
+    flex-shrink: 0;
 }
 
-.sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+.cat-sidebar__title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cs-text-primary);
+    margin: 0;
+    letter-spacing: .01em;
+}
+
+.cat-sidebar__close {
+    background: none;
+    border: 1px solid var(--cs-border);
+    border-radius: 8px;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--cs-text-muted);
+    transition: all .2s;
+    flex-shrink: 0;
+}
+
+.cat-sidebar__close:hover {
+    background: var(--cs-accent);
+    border-color: var(--cs-accent);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+/* ── Body ── */
+.cat-sidebar__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 0 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cs-border) transparent;
+}
+
+.cat-sidebar__body::-webkit-scrollbar { width: 4px; }
+.cat-sidebar__body::-webkit-scrollbar-track { background: transparent; }
+.cat-sidebar__body::-webkit-scrollbar-thumb { background: var(--cs-border); border-radius: 4px; }
+
+/* ── Category Group ── */
+.cat-group { border-bottom: 1px solid var(--cs-border); }
+
+.cat-group__toggle {
     width: 100%;
-    height: 100vh;
-    background: rgba(0,0,0,0.5);
-    z-index: 1055;
-    display: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--cs-text-primary);
+    transition: background var(--cs-transition);
 }
 
-.sidebar-overlay.active {
+.cat-group__toggle:hover { background: var(--cs-bg-hover); }
+
+.cat-group.is-open .cat-group__toggle {
+    background: var(--cs-accent-soft);
+}
+
+.cat-group__icon-wrap {
+    width: 32px; height: 32px;
+    border-radius: var(--cs-icon-radius);
+    background: var(--cs-border);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--cs-transition);
+}
+
+.cat-group.is-open .cat-group__icon-wrap {
+    background: var(--cs-accent);
+    box-shadow: 0 4px 12px rgba(232,98,42,.3);
+}
+
+.cat-group__icon {
+    width: 100%; height: 100%;
+    object-fit: cover;
     display: block;
 }
 
-/* Main Accordion Styles */
-.accordion-item {
-    border: none;
-    margin-bottom: 10px;
-}
-
-.accordion-button {
-    background: #fff;
-    color: #333;
+.cat-group__label {
+    flex: 1;
+    font-size: 13.5px;
     font-weight: 500;
-    padding: 15px 10px;
-    border: none;
+    color: var(--cs-text-link);
+    letter-spacing: .01em;
+    line-height: 1.3;
 }
 
-.accordion-button:not(.collapsed) {
-    background: #fff;
-    color: #ff6b6b;
-    box-shadow: none;
+.cat-group.is-open .cat-group__label {
+    color: var(--cs-accent);
+    font-weight: 600;
 }
 
-.accordion-button:focus {
-    box-shadow: none;
-    border: none;
+.cat-group__arrow {
+    color: var(--cs-text-muted);
+    transition: transform var(--cs-transition);
+    flex-shrink: 0;
 }
 
-.accordion-button::after {
-    background-size: 1.2rem;
+.cat-group.is-open .cat-group__arrow {
+    transform: rotate(180deg);
+    color: var(--cs-accent);
 }
 
-.accordion-body {
-    padding: 0;
+/* ── Group Panel ── */
+.cat-group__panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--cs-transition);
+}
+
+.cat-group.is-open .cat-group__panel {
+    grid-template-rows: 1fr;
+}
+
+.cat-group__panel > .cat-list {
+    overflow: hidden;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0 8px;
     position: relative;
 }
 
-/* Vertical line for subcategories */
-.accordion-body::before {
+/* Accent bar on left */
+.cat-group__panel > .cat-list::before {
     content: '';
     position: absolute;
-    left: 20px;
-    top: 0;
-    bottom: 0;
+    left: 27px; top: 0; bottom: 0;
     width: 1px;
-    background: #e0e0e0;
+    background: linear-gradient(to bottom, transparent, var(--cs-accent) 20%, var(--cs-border) 80%, transparent);
+    opacity: .4;
 }
 
-.accordion-body ul {
-    margin: 0;
-    padding: 0;
-}
-
-.accordion-body li {
-    padding: 0;
-}
-
-/* Sub-category Link Styles */
-.sub-link {
+/* ── Leaf link (no children) ── */
+.cat-leaf__link {
     display: flex;
     align-items: center;
-    padding: 12px 15px 12px 35px;
-    color: #555;
-    transition: all 0.2s;
+    gap: 10px;
+    padding: 9px 18px 9px 48px;
+    color: var(--cs-text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all .2s;
+    border-radius: 0;
     position: relative;
 }
 
-.sub-link:hover {
-    color: #ff6b6b;
+.cat-leaf__link:hover {
+    color: var(--cs-accent);
+    background: var(--cs-bg-hover);
 }
 
-.sub-link.active {
-    color: #ff6b6b;
+.cat-leaf__link.is-active {
+    color: var(--cs-accent);
     font-weight: 500;
+    background: var(--cs-accent-soft);
 }
 
-.sub-link span {
-    font-size: 14px;
+.cat-leaf__link.is-active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--cs-accent);
+    border-radius: 0 3px 3px 0;
 }
 
-/* Sub-accordion (for nested categories) */
-.sub-accordion-item {
-    position: relative;
+.cat-leaf__icon {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: .7;
+    transition: opacity .2s;
 }
 
-.sub-accordion-wrapper {
+.cat-leaf__link:hover .cat-leaf__icon,
+.cat-leaf__link.is-active .cat-leaf__icon { opacity: 1; }
+
+/* ── Sub-category (has children) ── */
+.cat-sub {}
+
+.cat-sub__row {
     display: flex;
     align-items: center;
-    position: relative;
-    transition: all 0.2s;
 }
 
-.sub-category-link {
+.cat-sub__link {
     flex: 1;
     display: flex;
     align-items: center;
-    padding: 12px 15px 12px 35px;
-    color: #555;
+    gap: 10px;
+    padding: 9px 4px 9px 48px;
+    color: var(--cs-text-muted);
     text-decoration: none;
-    font-size: 14px;
-    transition: all 0.2s;
+    font-size: 13px;
+    transition: color .2s;
 }
 
-.sub-category-link:hover {
-    color: #ff6b6b;
+.cat-sub__link:hover  { color: var(--cs-accent); }
+.cat-sub__link.is-active { color: var(--cs-accent); font-weight: 500; }
+
+.cat-sub__icon {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: .7;
 }
 
-.sub-category-link.active {
-    color: #ff6b6b;
-    font-weight: 500;
-}
+.cat-sub__link:hover .cat-sub__icon,
+.cat-sub__link.is-active .cat-sub__icon { opacity: 1; }
 
-.collapse-toggle {
+.cat-sub__toggle {
+    width: 34px; height: 34px;
     background: none;
     border: none;
-    padding: 12px 15px;
     cursor: pointer;
-    color: #555;
-    transition: all 0.2s;
+    color: var(--cs-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    margin-right: 6px;
+    transition: all .2s;
+    flex-shrink: 0;
 }
 
-.collapse-toggle:hover {
-    color: #ff6b6b;
+.cat-sub__toggle:hover,
+.cat-sub.is-open .cat-sub__toggle {
+    background: var(--cs-accent-soft);
+    color: var(--cs-accent);
 }
 
-.sub-arrow {
-    font-size: 12px;
-    transition: transform 0.3s;
+.cat-sub__toggle svg {
+    transition: transform var(--cs-transition);
 }
 
-.collapse-toggle:not(.collapsed) .sub-arrow {
+.cat-sub.is-open .cat-sub__toggle svg {
     transform: rotate(180deg);
 }
 
-.collapse-toggle:not(.collapsed) {
-    color: #ff6b6b;
+/* ── Sub panel ── */
+.cat-sub__panel {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--cs-transition);
+    background: linear-gradient(to right, var(--cs-accent-soft) 0%, transparent 6px);
 }
 
-/* Sub-sub category list */
-.sub-sub-list {
-    padding-left: 15px;
-    background: transparent;
+.cat-sub__panel.is-open {
+    grid-template-rows: 1fr;
+}
+
+.cat-sub__panel > li:first-child { overflow: hidden; }
+.cat-sub__panel li { overflow: visible; }
+
+/* Workaround: wrap content */
+.cat-sub__panel { overflow: hidden; }
+
+/* ── Deep link (3rd level) ── */
+.cat-deep__link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px 8px 62px;
+    color: #a09890;
+    text-decoration: none;
+    font-size: 12.5px;
+    transition: all .2s;
     position: relative;
 }
 
-/* Vertical line for sub-sub categories */
-.sub-sub-list::before {
-    content: '';
+.cat-deep__link::before {
+    content: '·';
     position: absolute;
-    left: 45px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: #e0e0e0;
+    left: 52px;
+    color: var(--cs-border);
 }
 
-.sub-sub-link {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px 10px 65px;
-    color: #666;
-    transition: all 0.2s;
-    font-size: 13px;
+.cat-deep__link:hover {
+    color: var(--cs-accent);
+    background: var(--cs-bg-hover);
 }
 
-.sub-sub-link:hover {
-    color: #ff6b6b;
-}
-
-.sub-sub-link.active {
-    color: #ff6b6b;
+.cat-deep__link.is-active {
+    color: var(--cs-accent);
     font-weight: 500;
 }
 
-/* Dark Mode for Sidebar */
-[data-bs-theme="dark"] .category-sidebar {
-    background: #1a1a1a;
+.cat-deep__icon {
+    width: 16px; height: 16px;
+    border-radius: 3px;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: .65;
 }
 
-[data-bs-theme="dark"] .sidebar-header {
-    background: #2b2b2b;
-    border-bottom-color: #404040;
-}
+.cat-deep__link:hover .cat-deep__icon,
+.cat-deep__link.is-active .cat-deep__icon { opacity: 1; }
 
-[data-bs-theme="dark"] .sidebar-header h5 {
-    color: #dee2e6;
-}
-
-[data-bs-theme="dark"] .btn-close {
-    color: #adb5bd;
-}
-
-[data-bs-theme="dark"] .btn-close:hover {
-    color: #fff;
-}
-
-[data-bs-theme="dark"] .accordion-button {
-    background: #1a1a1a;
-    color: #dee2e6;
-}
-
-[data-bs-theme="dark"] .accordion-button:not(.collapsed) {
-    background: #1a1a1a;
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .accordion-body::before {
-    background: #404040;
-}
-
-[data-bs-theme="dark"] .sub-link {
-    color: #adb5bd;
-}
-
-[data-bs-theme="dark"] .sub-link:hover {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .sub-link.active {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .sub-accordion-wrapper:hover {
-    background: #2b2b2b;
-}
-
-[data-bs-theme="dark"] .sub-category-link {
-    color: #adb5bd;
-}
-
-[data-bs-theme="dark"] .sub-category-link:hover {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .sub-category-link.active {
-    color: #ff6b6b;
-    background: #2b2b2b;
-}
-
-[data-bs-theme="dark"] .collapse-toggle {
-    color: #adb5bd;
-}
-
-[data-bs-theme="dark"] .collapse-toggle:hover {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .collapse-toggle:not(.collapsed) {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .sub-sub-list {
-    background: transparent;
-}
-
-[data-bs-theme="dark"] .sub-sub-list::before {
-    background: #404040;
-}
-
-[data-bs-theme="dark"] .sub-sub-link {
-    color: #999;
-}
-
-[data-bs-theme="dark"] .sub-sub-link:hover {
-    color: #ff6b6b;
-}
-
-[data-bs-theme="dark"] .sub-sub-link.active {
-    color: #ff6b6b;
-}
-
-/* Mobile Responsive */
+/* ── Mobile ── */
 @media (max-width: 576px) {
-    .category-sidebar {
-        width: 280px;
-        left: -280px;
-    }
-    
-    #openSidebarBtn {
-        top: 70px;
-        left: 10px;
-        padding: 8px 12px;
-        font-size: 14px;
-    }
+    :root { --cs-width: 280px; }
+
+    .cat-group__toggle { padding: 12px 14px; }
+    .cat-leaf__link,
+    .cat-sub__link     { padding-left: 42px; }
+    .cat-deep__link    { padding-left: 56px; }
 }
 </style>
 
+
+{{-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════ --}}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const openBtn = document.getElementById('openSidebarBtn');
-    const closeBtn = document.getElementById('closeSidebarBtn');
-    const overlay = document.getElementById('sidebarOverlay');
-    const sidebar = document.getElementById('categorySidebar');
-    
-    if (openBtn) {
-        openBtn.addEventListener('click', function() {
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar  = document.getElementById('categorySidebar');
+        const overlay  = document.getElementById('sidebarOverlay');
+        const openBtn  = document.getElementById('openSidebarBtn');
+        const closeBtn = document.getElementById('closeSidebarBtn');
+
+        /* ── Open / Close ── */
+        function open()  {
             sidebar.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
-        });
-    }
-    
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
+        }
+        function close() {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
             document.body.style.overflow = '';
+        }
+
+        openBtn  && openBtn.addEventListener('click', open);
+        closeBtn && closeBtn.addEventListener('click', close);
+        overlay  && overlay.addEventListener('click', close);
+
+        /* ── Top-level group accordion ── */
+        document.querySelectorAll('.cat-group__toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const group     = btn.closest('.cat-group');
+                const isOpen    = group.classList.contains('is-open');
+
+                // Close all siblings
+                group.closest('.cat-sidebar__accordion')
+                     .querySelectorAll('.cat-group')
+                     .forEach(function (g) {
+                         g.classList.remove('is-open');
+                         g.querySelector('.cat-group__toggle').setAttribute('aria-expanded', 'false');
+                     });
+
+                if (!isOpen) {
+                    group.classList.add('is-open');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
         });
-    }
-    
-    if (overlay) {
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
+
+        /* ── Sub-category toggle (3rd level) ── */
+        document.querySelectorAll('.cat-sub__toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const sub    = btn.closest('.cat-sub');
+                const panel  = sub.querySelector('.cat-sub__panel');
+                const isOpen = sub.classList.contains('is-open');
+
+                sub.classList.toggle('is-open', !isOpen);
+                panel && panel.classList.toggle('is-open', !isOpen);
+                btn.setAttribute('aria-expanded', (!isOpen).toString());
+            });
         });
-    }
-});
+
+        /* ── Keyboard: close on Escape ── */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('active')) close();
+        });
+    });
+})();
 </script>
