@@ -80,13 +80,13 @@
                                         </a>
                                     </h6>
                                     <small class="text-muted"><i class="bi bi-pin-map"></i> {{ $item->area ? Str::limit($item->area, 20) : 'No Address' }}</small>
-                                    <small class="text-muted"><i class="bi bi-clock"></i> 
+                                    <!-- <small class="text-muted"><i class="bi bi-clock"></i> 
                                         @if(!$isOpen)
                                             <span class="text-danger">Currently Closed</span>
                                         @else
                                             <span class="text-success">Open Now</span>
                                         @endif
-                                    </small>
+                                    </small> -->
                                 </div>
                             </div>
                             <div class="dropdown">
