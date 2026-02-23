@@ -366,7 +366,7 @@
 .snav__item {
     background: rgba(0,0,0,.05);
     color: #222;
-    transform: translateY(-1px);
+    /* transform: translateY(-1px);/ */
 }
 
 [data-bs-theme="dark"] .snav__item:hover {
